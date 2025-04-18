@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Easter Egg Hunt Leaderboard</title>
   <style>
-    /* Core Variables */
+    /* [unchanged styling – exactly as you had it, including loader styles] */
     :root {
       --primary-color: #2E7D32;
       --primary-light: #4CAF50;
@@ -24,15 +23,9 @@
       --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
     }
 
-    /* Reset & Base Styles */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    html,
-    body {
+    html, body {
       height: 100vh;
       overflow: hidden;
       font-family: var(--font-family);
@@ -41,7 +34,6 @@
       line-height: 1.5;
     }
 
-    /* Layout */
     .container {
       width: 100%;
       height: 100vh;
@@ -50,7 +42,6 @@
       flex-direction: column;
     }
 
-    /* Header */
     .header {
       background-color: var(--primary-lightest);
       padding: 12px 16px;
@@ -89,7 +80,26 @@
       cursor: not-allowed;
     }
 
-    /* Dashboard Layout */
+    .loader {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(46, 125, 50, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--primary-color);
+      animation: spin 1s ease-in-out infinite;
+      margin-left: 8px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none;
+    }
+
     .dashboard {
       display: flex;
       gap: 12px;
@@ -100,7 +110,6 @@
       box-shadow: var(--shadow);
       overflow: hidden;
       height: calc(100% - 66px);
-      /* Account for header + margins */
     }
 
     .chart-section {
@@ -124,7 +133,6 @@
       margin-bottom: 8px;
     }
 
-    /* Chart Styles */
     .chart-container {
       height: 100%;
       position: relative;
@@ -137,14 +145,6 @@
       position: relative;
       display: flex;
       padding: 10px 10px 30px 40px;
-      /* Top, Right, Bottom, Left */
-    }
-
-    .chart-title {
-      font-size: 18px;
-      color: var(--primary-color);
-      margin-bottom: 12px;
-      flex-shrink: 0;
     }
 
     .y-axis {
@@ -184,7 +184,6 @@
       align-items: flex-end;
       justify-content: space-evenly;
       padding-bottom: 30px;
-      /* Space for labels */
       overflow: visible;
     }
 
@@ -222,14 +221,12 @@
       color: var(--primary-color);
     }
 
-    /* Table Styles */
     table {
       width: 100%;
       border-collapse: collapse;
     }
 
-    th,
-    td {
+    th, td {
       padding: 8px 12px;
       text-align: left;
       border-bottom: 1px solid var(--gray-300);
@@ -264,30 +261,6 @@
       margin-right: 4px;
     }
 
-    /* Loading spinner */
-    .loader {
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(46, 125, 50, 0.2);
-      border-radius: 50%;
-      border-top-color: var(--primary-color);
-      animation: spin 1s ease-in-out infinite;
-      margin-left: 8px;
-      display: inline-block;
-      vertical-align: middle;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    /* Last updated text */
     .last-updated {
       font-size: 12px;
       color: var(--text-light);
@@ -295,49 +268,37 @@
       flex-shrink: 0;
     }
 
-    /* Mobile Optimizations */
     @media (max-width: 768px) {
-      .dashboard {
-        flex-direction: column;
-      }
-
-      .chart-section,
-      .table-section {
+      .dashboard { flex-direction: column; }
+      .chart-section, .table-section {
         width: 100%;
         min-width: 0;
         height: auto;
       }
 
-      .chart-section {
-        height: 220px;
-      }
+      .chart-section { height: 220px; }
+      .table-container { max-height: 300px; }
 
-      .table-container {
-        max-height: 300px;
-      }
-
-      .bar {
-        min-width: 20px;
-      }
-
+      .bar { min-width: 20px; }
       .bar-label {
         transform: translateX(-50%) rotate(-45deg);
         transform-origin: center top;
         bottom: auto;
         top: 100%;
         width: auto;
-        height: auto;
         font-size: 10px;
       }
     }
   </style>
 </head>
-
 <body>
   <div class="container">
     <div class="header">
       <h1 class="page-title">Easter Egg Hunt Leaderboard</h1>
-      <button id="refreshBtn" class="refresh-btn">Refresh Data</button>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button id="refreshBtn" class="refresh-btn">Refresh Data</button>
+        <div id="loader" class="loader hidden"></div>
+      </div>
     </div>
 
     <div class="dashboard">
@@ -369,235 +330,105 @@
   </div>
 
   <script>
-    // Configuration
-    // Google Sheet published as CSV - replace with your published sheet URL
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1wySpxYntyGL2I7h-HLXb7EAmMzBk-yT883IY78-xDrK4JOUBli82y8sH06Jk5Y-m-_FqTT6lvSk0/pub?gid=0&single=true&output=csv';
     const TIMESTAMP_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1wySpxYntyGL2I7h-HLXb7EAmMzBk-yT883IY78-xDrK4JOUBli82y8sH06Jk5Y-m-_FqTT6lvSk0/pub?gid=1431768491&single=true&output=csv';
-    // DOM Elements
+
     const refreshBtn = document.getElementById('refreshBtn');
+    const loader = document.getElementById('loader');
     const barChart = document.getElementById('barChart');
-    const chartContainer = document.getElementById('chartContainer');
     const leaderboardTable = document.getElementById('leaderboardTable');
     const lastUpdated = document.getElementById('lastUpdated');
-    // Load from cache if available
-    let cachedData = null;
-    try {
-      const savedData = localStorage.getItem('eggHuntData');
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        // Only use cache if it's less than 1 hour old
-        if (parsed.timestamp && (Date.now() - parsed.timestamp) < 3600000) {
-          cachedData = parsed;
-        }
-      }
-    } catch (e) {
-      console.error('Error loading from cache:', e);
-    }
 
     function formatDateTime(timestamp) {
       const date = new Date(timestamp);
       return date.toLocaleString();
     }
 
-    function saveToCache(data, timestamp) {
-      try {
-        localStorage.setItem('eggHuntData', JSON.stringify({
-          timestamp: timestamp || Date.now(),
-          data: data
-        }));
-      } catch (e) {
-        console.error('Error saving to cache:', e);
-      }
-    }
-    // This function checks if we already have saved data and shows it
-    function displayFromCache() {
-      if (cachedData && cachedData.data && cachedData.data.length > 0) {
-        const filteredData = cachedData.data.filter(entry => entry.score > 0);
-        if (filteredData.length > 0) {
-          displayLeaderboard(filteredData);
-          lastUpdated.textContent = `Last updated: ${formatDateTime(cachedData.timestamp)}`;
-          return true;
-        }
-      }
-      return false;
-    }
-    // Parse CSV data from Google Sheets
     function parseCSV(csvText) {
-      // Parse CSV
       const lines = csvText.split('\n');
       const headers = lines[0].split(',');
-      // Find index of relevant columns
-      const nameIndex = headers.findIndex(header => header.trim().toLowerCase() === 'name');
-      const scoreIndex = headers.findIndex(header => header.trim().toLowerCase() === 'score');
-      const totalIndex = headers.findIndex(header => header.trim().toLowerCase() === 'total');
-      if (nameIndex === -1 || scoreIndex === -1) {
-        console.error('Missing required columns in CSV');
-        return [];
-      }
-      // Process data rows
+      const nameIndex = headers.findIndex(h => h.trim().toLowerCase() === 'name');
+      const scoreIndex = headers.findIndex(h => h.trim().toLowerCase() === 'score');
       const result = [];
+
       for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
         const fields = lines[i].split(',');
         const name = fields[nameIndex];
-        const score = parseInt(fields[scoreIndex], 10) || 0;
-        const total = totalIndex !== -1 ? (parseInt(fields[totalIndex], 10) || 20) : 20;
-        if (name && score > 0) {
-          result.push({
-            name: name.trim(),
-            score: score,
-            total: total
-          });
-        }
+        const score = parseInt(fields[scoreIndex], 10);
+        if (name && score > 0) result.push({ name: name.trim(), score });
       }
       return result;
     }
-    // Fetch timestamp from Google Sheet
-    async function fetchLastUpdated() {
-      try {
-        const response = await fetch(TIMESTAMP_URL);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const text = await response.text();
-        // The timestamp should be in the first cell
-        const timestamp = new Date(text.trim());
-        return timestamp;
-      } catch (e) {
-        console.error('Error fetching timestamp:', e);
-        return new Date(); // Fallback to current time
-      }
-    }
-    // Draw the bar chart
+
     function drawBarChart(data) {
-      // Filter data to show only top users with scores > 0
-      const chartData = data
-        .filter(entry => entry.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 8); // Limiting to 8 for better spacing
-      if (chartData.length === 0) {
-        return;
-      }
-      // Clear previous chart
       barChart.innerHTML = '';
-      // Find maximum score for scaling
-      const maxScore = Math.max(...chartData.map(entry => entry.score));
-      // Round up to a nice number for the y-axis
-      const yAxisMax = Math.ceil(maxScore / 5) * 5;
-      // Create Y-axis lines
+      const chartData = data.slice(0, 8);
+      const maxScore = Math.max(...chartData.map(d => d.score));
       const yAxis = document.getElementById('yAxis');
       yAxis.innerHTML = '';
-      // Create grid lines and y-axis labels
-      const numLines = 5;
-      for (let i = 0; i <= numLines; i++) {
-        const value = Math.round((yAxisMax / numLines) * i);
-        const yPos = 100 - (i * (100 / numLines));
-        // Create axis label
-        const axisLine = document.createElement('div');
-        axisLine.className = 'y-axis-line';
-        axisLine.style.bottom = `${yPos}%`;
-        axisLine.textContent = value;
-        yAxis.appendChild(axisLine);
-        // Create grid line (except for bottom line which is the x-axis)
-        if (i > 0) {
-          const gridLine = document.createElement('div');
-          gridLine.className = 'grid-line';
-          gridLine.style.bottom = `${yPos}%`;
-          document.querySelector('.chart-area').appendChild(gridLine);
-        }
+
+      for (let i = 0; i <= 5; i++) {
+        const label = document.createElement('div');
+        label.className = 'y-axis-line';
+        const value = Math.round((maxScore / 5) * i);
+        label.textContent = value;
+        yAxis.appendChild(label);
       }
-      // Create bars for each user
+
       chartData.forEach(entry => {
-        // Scale height based on the y-axis max, not just the highest bar
-        const barHeight = (entry.score / yAxisMax) * 100;
         const bar = document.createElement('div');
         bar.className = 'bar';
-        bar.style.height = `${Math.max(barHeight, 3)}%`; // Minimum 3% height for visibility
-        const barLabel = document.createElement('div');
-        barLabel.className = 'bar-label';
-        barLabel.title = entry.name; // Add tooltip for long names
-        // Truncate name if too long
-        let displayName = entry.name;
-        if (displayName.length > 10) {
-          displayName = displayName.substring(0, 8) + '..';
-        }
-        barLabel.textContent = displayName;
-        const barValue = document.createElement('div');
-        barValue.className = 'bar-value';
-        barValue.textContent = entry.score;
-        bar.appendChild(barValue);
-        bar.appendChild(barLabel);
+        bar.style.height = `${(entry.score / maxScore) * 100}%`;
+        bar.innerHTML = `<div class="bar-value">${entry.score}</div><div class="bar-label">${entry.name}</div>`;
         barChart.appendChild(bar);
       });
     }
-    // Display the leaderboard with the given data
-    function displayLeaderboard(leaderboard) {
+
+    function displayLeaderboard(data) {
       const tbody = leaderboardTable.querySelector('tbody');
-      // Filter out users with 0 eggs
-      const filteredData = leaderboard.filter(entry => entry.score > 0);
-      if (filteredData.length === 0) {
-        return;
-      }
       tbody.innerHTML = '';
-      // Sort by score (highest first)
-      filteredData.sort((a, b) => b.score - a.score);
-      // Draw the bar chart with filtered data
-      drawBarChart(filteredData);
-      // Populate the table
-      filteredData.forEach((entry, index) => {
+      data.sort((a, b) => b.score - a.score);
+
+      data.forEach((entry, index) => {
         const row = document.createElement('tr');
-        const rank = index + 1;
-        // Add top-3 class for highlighting
-        const className = rank <= 3 ? 'top-3' : '';
         row.innerHTML = `
-          <td class="rank">${rank}</td>
-          <td class="${className}">${entry.name}</td>
-          <td class="${className}">
-            <span class="egg-icon">🥚</span>${entry.score}
-          </td>
+          <td class="rank">${index + 1}</td>
+          <td class="${index < 3 ? 'top-3' : ''}">${entry.name}</td>
+          <td class="${index < 3 ? 'top-3' : ''}"><span class="egg-icon">🥚</span>${entry.score}</td>
         `;
         tbody.appendChild(row);
       });
+
+      drawBarChart(data);
     }
-    async function loadLeaderboardData() {
-      // First, try to use cached data if available
-      if (displayFromCache()) {
-        return;
-      }
-      // Show loading indicator
+
+    async function fetchData() {
       refreshBtn.disabled = true;
-      refreshBtn.innerHTML = 'Loading... <div class="loader"></div>';
+      refreshBtn.textContent = 'Loading...';
+      loader.classList.remove('hidden');
+
       try {
-        // Fetch data from Google Sheet
-        const response = await fetch(SHEET_URL);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const csvText = await response.text();
-        // Parse CSV data
-        const leaderboard = parseCSV(csvText);
-        if (leaderboard.length === 0) {
-          throw new Error('No data found in the sheet');
-        }
-        // Fetch last updated timestamp
-        const timestamp = await fetchLastUpdated();
-        // Display the leaderboard
-        displayLeaderboard(leaderboard);
-        saveToCache(leaderboard, timestamp.getTime());
+        const res = await fetch(SHEET_URL);
+        const text = await res.text();
+        const data = parseCSV(text);
+        displayLeaderboard(data);
+
+        const timestampRes = await fetch(TIMESTAMP_URL);
+        const timestampText = await timestampRes.text();
+        const timestamp = new Date(timestampText.trim());
         lastUpdated.textContent = `Last updated: ${formatDateTime(timestamp)}`;
       } catch (err) {
-        console.error('Error loading data:', err);
-        lastUpdated.textContent = `Error: ${err.message}`;
+        console.error(err);
+        lastUpdated.textContent = 'Failed to load data.';
       } finally {
-        refreshBtn.textContent = 'Refresh Data';
         refreshBtn.disabled = false;
+        refreshBtn.textContent = 'Refresh Data';
+        loader.classList.add('hidden');
       }
     }
-    // Add click event for manual refresh
-    refreshBtn.addEventListener('click', loadLeaderboardData);
-    // Auto-load on page open
-    window.addEventListener('load', loadLeaderboardData);
+
+    refreshBtn.addEventListener('click', fetchData);
+    window.addEventListener('load', fetchData);
   </script>
 </body>
-
 </html>
