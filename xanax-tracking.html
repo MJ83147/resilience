@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Xanax tracker Viewer</title>
+  <style>
+    /* [unchanged styling – exactly as you had it, including loader styles] */
+    :root {
+      --primary-color: #2E7D32;
+      --primary-light: #4CAF50;
+      --primary-lighter: #81C784;
+      --primary-lightest: #E8F5E9;
+      --text-color: #212121;
+      --text-light: #757575;
+      --white: #FFFFFF;
+      --off-white: #F9F9F9;
+      --gray-100: #F5F5F5;
+      --gray-200: #EEEEEE;
+      --gray-300: #E0E0E0;
+      --border-radius: 8px;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: var(--font-family);
+      background-color: var(--off-white);
+      color: var(--text-color);
+      line-height: 1.5;
+    }
+
+    .container {
+      width: 100%;
+      height: 100vh;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background-color: var(--primary-lightest);
+      padding: 12px 16px;
+      border-radius: var(--border-radius);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .page-title {
+      margin: 0;
+      color: var(--primary-color);
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .refresh-btn {
+      background-color: var(--primary-color);
+      color: var(--white);
+      border: none;
+      border-radius: var(--border-radius);
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+    }
+
+    .refresh-btn:hover {
+      background-color: var(--primary-light);
+    }
+
+    .refresh-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .loader {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(46, 125, 50, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--primary-color);
+      animation: spin 1s ease-in-out infinite;
+      margin-left: 8px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .dashboard {
+      display: flex;
+      gap: 12px;
+      flex: 1;
+      background-color: var(--white);
+      border-radius: var(--border-radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      height: calc(100% - 66px);
+    }
+
+    .table-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    #tabs {
+      margin-bottom: 8px;
+    }
+
+    .tab-button {
+      padding: 6px 12px;
+      margin-right: 4px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--border-radius);
+      background: var(--gray-100);
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .tab-button.active {
+      background: var(--primary-lightest);
+      border-color: var(--primary-light);
+    }
+
+    .table-container {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-300);
+    }
+
+    th {
+      background-color: var(--primary-lightest);
+      color: var(--primary-color);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    th.sorted-asc::after {
+      content: " ▲";
+    }
+
+    th.sorted-desc::after {
+      content: " ▼";
+    }
+
+    tr:nth-child(even) {
+      background-color: var(--gray-100);
+    }
+
+    .last-updated {
+      font-size: 12px;
+      color: var(--text-light);
+      text-align: right;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard {
+        flex-direction: column;
+      }
+
+      .table-section {
+        width: 100%;
+        height: auto;
+      }
+
+      .table-container {
+        max-height: 300px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="page-title">Data Viewer</h1>
+      <button class="refresh-btn" id="refreshBtn">
+        Refresh
+        <span class="loader hidden" id="loader"></span>
+      </button>
+    </div>
+
+    <div class="dashboard">
+      <div class="table-section">
+        <div id="tabs"></div>
+        <div class="table-container" id="tables"></div>
+        <div class="last-updated" id="lastUpdated"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const csvSources = [{
+        name: 'Raw data',
+        url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQhqmZRR4ZaFAqJGH1L10cAcZb03bNR_N8lzoKj02SZmncc4Ve4BEE6mj6TBUcnjLsZnheSEatcpaD5/pub?gid=565784222&single=true&output=csv'
+      },
+      {
+        name: 'Daily averages per week',
+        url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQhqmZRR4ZaFAqJGH1L10cAcZb03bNR_N8lzoKj02SZmncc4Ve4BEE6mj6TBUcnjLsZnheSEatcpaD5/pub?gid=1498834670&single=true&output=csv'
+      }
+    ];
+    const tabsEl = document.getElementById('tabs');
+    const tablesEl = document.getElementById('tables');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const loader = document.getElementById('loader');
+    const lastUpdatedEl = document.getElementById('lastUpdated');
+    refreshBtn.addEventListener('click', loadData);
+    window.addEventListener('DOMContentLoaded', loadData);
+
+    function loadData() {
+      // UI reset
+      refreshBtn.disabled = true;
+      loader.classList.remove('hidden');
+      tabsEl.innerHTML = '';
+      tablesEl.innerHTML = '';
+      lastUpdatedEl.textContent = '';
+      // build tabs
+      csvSources.forEach((src, idx) => {
+        const btn = document.createElement('button');
+        btn.textContent = src.name;
+        btn.className = 'tab-button';
+        btn.addEventListener('click', () => showTab(src.name, btn));
+        tabsEl.appendChild(btn);
+        if (idx === 0) btn.classList.add('active');
+      });
+      // fetch all
+      Promise.all(csvSources.map(fetchAndBuildTable))
+        .then(() => {
+          // show first tab
+          const firstName = csvSources[0].name;
+          showTab(firstName, tabsEl.querySelector('.tab-button'));
+          // update timestamp
+          const now = new Date();
+          lastUpdatedEl.textContent = 'Last updated: ' + now.toLocaleString();
+        })
+        .finally(() => {
+          refreshBtn.disabled = false;
+          loader.classList.add('hidden');
+        });
+    }
+
+    function fetchAndBuildTable({
+      name,
+      url
+    }) {
+      return fetch(url)
+        .then(r => r.text())
+        .then(csv => {
+          const rows = csv.trim().split('\n').map(r => r.split(','));
+          const [headers, ...data] = rows;
+          // container
+          const container = document.createElement('div');
+          container.id = 'container-' + name;
+          container.style.display = 'none';
+          // table
+          const table = document.createElement('table');
+          table.id = 'table-' + name;
+          // thead
+          const thead = document.createElement('thead');
+          const hr = document.createElement('tr');
+          headers.forEach((h, ci) => {
+            const th = document.createElement('th');
+            th.textContent = h;
+            th.addEventListener('click', () => sortTable(table, ci));
+            hr.appendChild(th);
+          });
+          thead.appendChild(hr);
+          table.appendChild(thead);
+          // tbody
+          const tbody = document.createElement('tbody');
+          data.forEach(r => {
+            const tr = document.createElement('tr');
+            r.forEach(cell => {
+              const td = document.createElement('td');
+              td.textContent = cell;
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          container.appendChild(table);
+          tablesEl.appendChild(container);
+        });
+    }
+
+    function showTab(name, btn) {
+      document.querySelectorAll('.table-container > div').forEach(div => div.style.display = 'none');
+      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('container-' + name).style.display = 'block';
+    }
+
+    function sortTable(table, colIndex) {
+      const tbody = table.tBodies[0];
+      const rows = Array.from(tbody.rows);
+      const ths = table.tHead.rows[0].cells;
+      let asc = true;
+      if (+table.dataset.sortedCol === colIndex && table.dataset.sortedAsc === 'true') {
+        asc = false;
+      }
+      Array.from(ths).forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+      rows.sort((a, b) => {
+        const aText = a.cells[colIndex].textContent;
+        const bText = b.cells[colIndex].textContent;
+        const na = parseFloat(aText),
+          nb = parseFloat(bText);
+        if (!isNaN(na) && !isNaN(nb)) {
+          return asc ? na - nb : nb - na;
+        }
+        return asc ?
+          aText.localeCompare(bText, undefined, {
+            numeric: true
+          }) :
+          bText.localeCompare(aText, undefined, {
+            numeric: true
+          });
+      });
+      rows.forEach(r => tbody.appendChild(r));
+      table.dataset.sortedCol = colIndex;
+      table.dataset.sortedAsc = asc;
+      ths[colIndex].classList.add(asc ? 'sorted-asc' : 'sorted-desc');
+    }
+  </script>
+</body>
+
+</html>
