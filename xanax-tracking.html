@@ -5,7 +5,6 @@
   <meta charset="utf-8">
   <title>Xanax tracker Viewer</title>
   <style>
-    /* [unchanged styling – exactly as you had it, including loader styles] */
     :root {
       --primary-color: #2E7D32;
       --primary-light: #4CAF50;
@@ -147,6 +146,22 @@
       border-color: var(--primary-light);
     }
 
+    .export-btn {
+      background-color: var(--primary-lighter);
+      color: var(--white);
+      border: none;
+      border-radius: var(--border-radius);
+      padding: 6px 12px;
+      margin: 0 0 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .export-btn:hover {
+      background-color: var(--primary-light);
+    }
+
     .table-container {
       flex: 1;
       overflow-y: auto;
@@ -233,7 +248,8 @@
   </div>
 
   <script>
-    const csvSources = [{
+    const csvSources = [
+      {
         name: 'Raw data',
         url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQhqmZRR4ZaFAqJGH1L10cAcZb03bNR_N8lzoKj02SZmncc4Ve4BEE6mj6TBUcnjLsZnheSEatcpaD5/pub?gid=565784222&single=true&output=csv'
       },
@@ -247,17 +263,17 @@
     const refreshBtn = document.getElementById('refreshBtn');
     const loader = document.getElementById('loader');
     const lastUpdatedEl = document.getElementById('lastUpdated');
+
     refreshBtn.addEventListener('click', loadData);
     window.addEventListener('DOMContentLoaded', loadData);
 
     function loadData() {
-      // UI reset
       refreshBtn.disabled = true;
       loader.classList.remove('hidden');
       tabsEl.innerHTML = '';
       tablesEl.innerHTML = '';
       lastUpdatedEl.textContent = '';
-      // build tabs
+
       csvSources.forEach((src, idx) => {
         const btn = document.createElement('button');
         btn.textContent = src.name;
@@ -266,13 +282,11 @@
         tabsEl.appendChild(btn);
         if (idx === 0) btn.classList.add('active');
       });
-      // fetch all
+
       Promise.all(csvSources.map(fetchAndBuildTable))
         .then(() => {
-          // show first tab
           const firstName = csvSources[0].name;
           showTab(firstName, tabsEl.querySelector('.tab-button'));
-          // update timestamp
           const now = new Date();
           lastUpdatedEl.textContent = 'Last updated: ' + now.toLocaleString();
         })
@@ -282,23 +296,33 @@
         });
     }
 
-    function fetchAndBuildTable({
-      name,
-      url
-    }) {
+    function fetchAndBuildTable({ name, url }) {
       return fetch(url)
         .then(r => r.text())
         .then(csv => {
           const rows = csv.trim().split('\n').map(r => r.split(','));
           const [headers, ...data] = rows;
-          // container
+
           const container = document.createElement('div');
           container.id = 'container-' + name;
           container.style.display = 'none';
-          // table
+
+          // Export CSV button
+          const exportBtn = document.createElement('button');
+          exportBtn.textContent = 'Export CSV';
+          exportBtn.className = 'export-btn';
+          exportBtn.addEventListener('click', () =>
+            exportTableToCSV(
+              container.querySelector('table'),
+              `${name.replace(/\s+/g, '_')}.csv`
+            )
+          );
+          container.appendChild(exportBtn);
+
+          // Build table
           const table = document.createElement('table');
           table.id = 'table-' + name;
-          // thead
+
           const thead = document.createElement('thead');
           const hr = document.createElement('tr');
           headers.forEach((h, ci) => {
@@ -309,7 +333,7 @@
           });
           thead.appendChild(hr);
           table.appendChild(thead);
-          // tbody
+
           const tbody = document.createElement('tbody');
           data.forEach(r => {
             const tr = document.createElement('tr');
@@ -321,6 +345,7 @@
             tbody.appendChild(tr);
           });
           table.appendChild(tbody);
+
           container.appendChild(table);
           tablesEl.appendChild(container);
         });
@@ -345,23 +370,36 @@
       rows.sort((a, b) => {
         const aText = a.cells[colIndex].textContent;
         const bText = b.cells[colIndex].textContent;
-        const na = parseFloat(aText),
-          nb = parseFloat(bText);
-        if (!isNaN(na) && !isNaN(nb)) {
-          return asc ? na - nb : nb - na;
-        }
-        return asc ?
-          aText.localeCompare(bText, undefined, {
-            numeric: true
-          }) :
-          bText.localeCompare(aText, undefined, {
-            numeric: true
-          });
+        const na = parseFloat(aText), nb = parseFloat(bText);
+        if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+        return asc
+          ? aText.localeCompare(bText, undefined, { numeric: true })
+          : bText.localeCompare(aText, undefined, { numeric: true });
       });
       rows.forEach(r => tbody.appendChild(r));
       table.dataset.sortedCol = colIndex;
       table.dataset.sortedAsc = asc;
       ths[colIndex].classList.add(asc ? 'sorted-asc' : 'sorted-desc');
+    }
+
+    // CSV export helper
+    function exportTableToCSV(table, filename) {
+      const rows = Array.from(table.querySelectorAll('tr'));
+      const csv = rows
+        .map(row =>
+          Array.from(row.cells)
+            .map(cell => `"${cell.textContent.replace(/"/g, '""')}"`)
+            .join(',')
+        )
+        .join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 </body>
