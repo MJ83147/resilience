@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 
@@ -210,9 +209,17 @@
       content: " ▼";
     }
 
-    tr:nth-child(even) {
+    /* Adjust the even rows to maintain the striping */
+    tr:nth-child(even) td {
       background-color: var(--gray-100);
     }
+    
+    tr:nth-child(even) td:nth-child(1),
+    tr:nth-child(even) td:nth-child(2) {
+      background-color: var(--gray-100);
+    }
+    
+    /* Other styles remain unchanged */
 
     .last-updated {
       font-size: 12px;
@@ -358,6 +365,11 @@ function fetchAndBuildTable({ name, url }) {
       );
       container.appendChild(exportBtn);
 
+      /* Create a special table wrapper for fixed columns */
+      const tableWrapper = document.createElement('div');
+      tableWrapper.className = 'table-wrapper';
+      tableWrapper.style.cssText = 'position: relative; overflow-x: auto; width: 100%;';
+      
       /* actual table */
       const table = document.createElement('table');
       table.id = 'table-' + name;
@@ -369,13 +381,21 @@ function fetchAndBuildTable({ name, url }) {
       /* "#" header (not sortable) */
       const numTh = document.createElement('th');
       numTh.textContent = '#';
+      numTh.style.cssText = 'position: sticky; left: 0; z-index: 2; min-width: 40px; background-color: var(--primary-lightest);';
       hr.appendChild(numTh);
 
-      /* data headers (clickable) */
-      headers.forEach((h, ci) => {
+      /* First column header (fixed) */
+      const firstColTh = document.createElement('th');
+      firstColTh.textContent = headers[0];
+      firstColTh.style.cssText = 'position: sticky; left: 40px; z-index: 2; min-width: 150px; background-color: var(--primary-lightest);';
+      firstColTh.addEventListener('click', () => sortTable(table, 1));
+      hr.appendChild(firstColTh);
+
+      /* remaining data headers (clickable) */
+      headers.slice(1).forEach((h, ci) => {
         const th = document.createElement('th');
         th.textContent = h;
-        th.addEventListener('click', () => sortTable(table, ci + 1)); // +1 offset
+        th.addEventListener('click', () => sortTable(table, ci + 2)); // +2 offset (# column + first fixed column)
         hr.appendChild(th);
       });
       thead.appendChild(hr);
@@ -386,13 +406,22 @@ function fetchAndBuildTable({ name, url }) {
       data.forEach((rowArr, ri) => {
         const tr = document.createElement('tr');
 
-        /* "#" cell */
+        /* "#" cell (fixed) */
         const numTd = document.createElement('td');
         numTd.textContent = ri + 1;
+        numTd.style.cssText = 'position: sticky; left: 0; z-index: 1; background-color: ' + 
+                             (ri % 2 === 0 ? 'var(--gray-100)' : 'var(--white)') + ';';
         tr.appendChild(numTd);
 
+        /* First column data (fixed) */
+        const firstColTd = document.createElement('td');
+        firstColTd.textContent = rowArr[0];
+        firstColTd.style.cssText = 'position: sticky; left: 40px; z-index: 1; background-color: ' + 
+                                  (ri % 2 === 0 ? 'var(--gray-100)' : 'var(--white)') + ';';
+        tr.appendChild(firstColTd);
+
         /* rest of data cells */
-        rowArr.forEach(cell => {
+        rowArr.slice(1).forEach(cell => {
           const td = document.createElement('td');
           td.textContent = cell;
           tr.appendChild(td);
@@ -403,7 +432,8 @@ function fetchAndBuildTable({ name, url }) {
       table.appendChild(tbody);
 
       /* finish up */
-      container.appendChild(table);
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
       tablesEl.appendChild(container);
       renumber(table);
     });
