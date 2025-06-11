@@ -1,0 +1,46 @@
+<html>
+    <head>
+  <link rel="stylesheet" href="index.css">
+    </head>
+<body>
+    
+  <header>
+    <div class="logo">
+      <div class="logo-icon">CW</div>
+      Chain Watch
+    </div>
+    <button onclick="openModal()">Sign Up</button>
+  </header>
+
+  <main class="container">
+    <section id="schedule">
+      <h1>Current Chain Watch Schedule</h1>
+      <div id="schedule-table">Loading schedule...</div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="signup-modal">
+    <div class="modal">
+      <h2>Sign Up for Chain Watch</h2>
+      <form id="signup-form">
+        <div class="form-group">
+          <label for="user">Faction Member</label>
+          <select id="user" name="user" required></select>
+        </div>
+        <div class="form-group">
+          <label for="date">Select Date</label>
+          <select id="date" name="date" required onchange="updateAvailableHours()"></select>
+        </div>
+        <div class="form-group">
+          <label>Choose Hours (TCT)</label>
+          <div id="hour-checkboxes"></div>
+        </div>
+        <button type="submit">Submit</button>
+        <div id="feedback"></div>
+      </form>
+    </div>
+  </div>
+<script src="index.js"></script>
+</body>
+
+</html>
