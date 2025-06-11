@@ -1,0 +1,260 @@
+/*//https://script.google.com/macros/s/AKfycbzx8W9mWkx4Q3kn4_AEAkcqBeuyMePgk9e3hDkNISowcuesbAiQInEXt8fJT0stSPdmjQ/exec
+*/
+:root {
+  --primary-color: #2e7d32;
+  --primary-light: #4caf50;
+  --primary-lighter: #81c784;
+  --primary-lightest: #e8f5e9;
+  --text-color: #212121;
+  --text-light: #757575;
+  --white: #ffffff;
+  --border-radius: 12px;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", sans-serif;
+  background-color: #f9f9f9;
+  color: var(--text-color);
+  margin: 0;
+}
+
+header {
+  background-color: var(--white);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--primary-color);
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ===== TABLE SCROLL CONTAINER (NEW) ===== */
+#schedule-table {
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: auto;
+  max-height: 70vh; /* Table scrolls, not whole page */
+  margin-top: 24px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0; /* Remove original margin since container has it */
+  min-width: 600px; /* Ensures horizontal scroll on mobile */
+}
+
+th,
+td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background-color: var(--primary-lightest);
+  color: var(--primary-color);
+  position: sticky; /* Keep headers visible when scrolling */
+  top: 0;
+  z-index: 5;
+}
+
+/* Keep first column (names) visible when scrolling horizontally */
+td:first-child, th:first-child {
+  position: sticky;
+  left: 0;
+  background-color: white;
+  z-index: 3;
+  border-right: 2px solid #ccc;
+}
+
+th:first-child {
+  background-color: var(--primary-lightest);
+  z-index: 10;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.modal {
+  background-color: white;
+  padding: 24px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh; /* Prevent modal from being too tall on mobile */
+  overflow-y: auto;
+}
+
+.modal h2 {
+  margin-top: 0;
+  color: var(--primary-color);
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+select,
+input[type="date"] {
+  width: 100%;
+  padding: 8px;
+  border-radius: var(--border-radius);
+  border: 1px solid #ccc;
+}
+
+#hour-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-height: 200px; /* Scroll if too many hours */
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid #eee;
+  border-radius: var(--border-radius);
+}
+
+#hour-checkboxes div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+}
+
+button {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+button:hover {
+  background-color: var(--primary-light);
+}
+
+#feedback {
+  margin-top: 12px;
+  font-weight: 500;
+}
+
+/* ===== MOBILE RESPONSIVE (NEW) ===== */
+@media (max-width: 768px) {
+  header {
+    padding: 12px 16px;
+  }
+  
+  .logo {
+    font-size: 18px;
+  }
+  
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .container {
+    padding: 16px;
+  }
+  
+  #schedule-table {
+    max-height: 60vh;
+  }
+  
+  th, td {
+    padding: 6px 4px;
+    font-size: 14px;
+  }
+  
+  .modal {
+    padding: 20px 16px;
+    width: 95%;
+  }
+  
+  #hour-checkboxes {
+    max-height: 150px;
+  }
+  
+  button {
+    width: 100%;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  header {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .container {
+    padding: 12px;
+  }
+  
+  th, td {
+    padding: 4px 2px;
+    font-size: 12px;
+  }
+  
+  .modal {
+    width: 98%;
+    padding: 16px 12px;
+  }
+  
+  #schedule-table {
+    max-height: 50vh;
+  }
+}
