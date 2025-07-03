@@ -189,14 +189,15 @@
 
         console.log('Payload to send:', payload);
 
-        // Step 2: Send data to Google Apps Script
+        // Step 2: Send data to Google Apps Script using simple request headers
         status.textContent = 'Saving to spreadsheet...';
         
-        const response = await fetch("https://script.google.com/macros/s/AKfycbwXKfjUp7ZlDnhVwbwZqGaQ7SJ2CQZsxYQ-BtcLpfAqPqrM4WiYjzf8feVP1URiz4xGKw/exec", {
-          method: "POST",
+        const response = await fetch("https://script.google.com/macros/s/AKfycbwxR-reJY07auyvtN79drbL6VhYfhuJubhLGx5mgFovrL1QFf0PDJlW51MR_EkdXdFikg/exec", {
+          redirect: "follow",
+          method: 'POST',
           body: JSON.stringify(payload),
           headers: {
-            "Content-Type": "application/json"
+            'Content-Type': "text/plain;charset=utf-8"
           }
         });
 
