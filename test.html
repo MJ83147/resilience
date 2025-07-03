@@ -102,7 +102,7 @@
   </style>
 </head>
 <body>
-  <h1>v2 Faction Honour Tracker</h1>
+  <h1>v1 Faction Honour Tracker</h1>
   <p>This tool helps the faction support all members in earning merits. By identifying missing honours, we can coordinate help so everyone gets a fair shot.</p>
 
   <div class="card">
@@ -206,26 +206,37 @@
         const userHonors = userData.honors || [];
         const userMedals = userData.medals || [];
 
+        // Debug: Log the actual data format
+        console.log('User honors:', userHonors);
+        console.log('User medals:', userMedals);
+        console.log('Sample honor check:', userHonors.includes(230), userHonors.includes("230"));
+
         // Create matrix data for Google Sheets
         const matrixData = [];
 
         // Add honors to matrix
         Object.keys(TRACKED_HONORS).forEach(honorId => {
+          const honorIdNum = parseInt(honorId);
+          const hasHonor = userHonors.includes(honorIdNum) || userHonors.includes(honorId) || userHonors.includes(honorId.toString());
+          
           matrixData.push({
-            ID: parseInt(honorId),
+            ID: honorIdNum,
             Type: "Honor",
             Name: TRACKED_HONORS[honorId].name,
-            [username]: userHonors.includes(parseInt(honorId))
+            [username]: hasHonor
           });
         });
 
         // Add medals to matrix
         Object.keys(TRACKED_MEDALS).forEach(medalId => {
+          const medalIdNum = parseInt(medalId);
+          const hasMedal = userMedals.includes(medalIdNum) || userMedals.includes(medalId) || userMedals.includes(medalId.toString());
+          
           matrixData.push({
-            ID: parseInt(medalId),
+            ID: medalIdNum,
             Type: "Medal",
             Name: TRACKED_MEDALS[medalId].name,
-            [username]: userMedals.includes(parseInt(medalId))
+            [username]: hasMedal
           });
         });
 
