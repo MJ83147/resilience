@@ -134,27 +134,39 @@
       try {
         // Step 1: Fetch data from Torn API
         console.log('Fetching user and torn data...');
-        const [userRes, tornRes] = await Promise.all([
-          fetch(`https://api.torn.com/user/?selections=basic,honors&key=${apiKey}`),
-          fetch(`https://api.torn.com/v2/torn?selections=honors`)
+        const [userRes, tornHonorsRes, tornMedalsRes] = await Promise.all([
+          fetch(`https://api.torn.com/user/?selections=basic,honors,medals&key=${apiKey}`),
+          fetch(`https://api.torn.com/torn/?selections=honors&key=${apiKey}`),
+          fetch(`https://api.torn.com/torn/?selections=medals&key=${apiKey}`)
         ]);
 
         const userData = await userRes.json();
-        const tornData = await tornRes.json();
+        const tornHonorsData = await tornHonorsRes.json();
+        const tornMedalsData = await tornMedalsRes.json();
 
         console.log('User data:', userData);
-        console.log('Torn data:', tornData);
+        console.log('Torn honors data:', tornHonorsData);
+        console.log('Torn medals data:', tornMedalsData);
 
         if (userData.error) {
           throw new Error(`Torn API Error: ${userData.error.error} - ${userData.error.code}`);
         }
-        if (tornData.error) {
-          throw new Error(`Torn API Error: ${tornData.error.error} - ${tornData.error.code}`);
+        if (tornHonorsData.error) {
+          throw new Error(`Torn API Error (honors): ${tornHonorsData.error.error} - ${tornHonorsData.error.code}`);
+        }
+        if (tornMedalsData.error) {
+          throw new Error(`Torn API Error (medals): ${tornMedalsData.error.error} - ${tornMedalsData.error.code}`);
         }
 
         const username = userData.name || "Unknown";
-        const awarded = userData.honors_awarded ? userData.honors_awarded.map(id => id.toString()) : [];
-        const allHonours = tornData.honors || {};
+        
+        // Combine user's awarded honors and medals
+        const awardedHonors = userData.honors_awarded ? userData.honors_awarded.map(id => id.toString()) : [];
+        const awardedMedals = userData.medals_awarded ? userData.medals_awarded.map(id => id.toString()) : [];
+        const awarded = [...awardedHonors, ...awardedMedals];
+        
+        // Combine all honors and medals
+        const allHonours = { ...tornHonorsData.honors, ...tornMedalsData.medals };
 
         const awardedList = [];
         const unawardedList = [];
