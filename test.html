@@ -203,8 +203,8 @@
         }
 
         const username = userData.name || "Unknown";
-        const userHonors = userData.honors || [];
-        const userMedals = userData.medals || [];
+        const userHonors = userData.honors_awarded || [];
+        const userMedals = userData.medals_awarded || [];
 
         // Debug: Log the actual data format
         console.log('User honors:', userHonors);
