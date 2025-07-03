@@ -2,132 +2,167 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Torn Honour Checker</title>
+  <title>Faction Honour Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    :root {
+      --bg: #0d0d0d;
+      --fg: #e0e0e0;
+      --primary: #4ae3b5;
+      --accent: #e84b6a;
+      --card: #1a1a1a;
+    }
+
     body {
-      background-color: #111;
-      color: #d2f3d4;
-      font-family: system-ui, sans-serif;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--fg);
+      margin: 0;
       padding: 2rem;
-      max-width: 700px;
-      margin: auto;
     }
+
     h1 {
-      color: #90ee90;
+      font-size: 2rem;
+      color: var(--primary);
     }
+
     label {
       display: block;
-      margin: 1rem 0 0.25rem;
-    }
-    input {
-      width: 100%;
-      padding: 0.5rem;
-      background: #222;
-      border: 1px solid #555;
-      color: #d2f3d4;
-      border-radius: 4px;
-    }
-    button {
       margin-top: 1rem;
+      font-weight: 600;
+    }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--card);
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: var(--fg);
+      font-size: 1rem;
+    }
+
+    button {
+      margin-top: 1.5rem;
       padding: 0.75rem 1.5rem;
-      background: #28a745;
+      background-color: var(--primary);
+      color: #000;
       border: none;
-      border-radius: 4px;
-      color: #fff;
-      font-weight: bold;
+      border-radius: 6px;
+      font-weight: 600;
       cursor: pointer;
     }
-    .small {
-      font-size: 0.9rem;
-      color: #aaa;
-      margin-bottom: 1rem;
+
+    button:hover {
+      background-color: #39b392;
     }
-    .result {
-      white-space: pre-wrap;
-      background: #1a1a1a;
+
+    .helper {
+      font-size: 0.85rem;
+      color: #999;
+      margin-top: 0.25rem;
+    }
+
+    .card {
+      background-color: var(--card);
       padding: 1rem;
+      border-radius: 8px;
+      margin-top: 2rem;
+    }
+
+    a.link-button {
+      background: #333;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      color: var(--fg);
+      text-decoration: none;
+      display: inline-block;
       margin-top: 1rem;
-      border-left: 4px solid #28a745;
+    }
+
+    a.link-button:hover {
+      background: var(--primary);
+      color: #000;
     }
   </style>
 </head>
 <body>
-  <h1>🏅 Torn Honour Checker</h1>
+  <h1>Faction Honour Tracker</h1>
+  <p>This tool helps the faction support all members in earning merits. By identifying missing honours, we can coordinate help so everyone gets a fair shot.</p>
 
-  <p class="small">
-    Your faction wants to help you earn more merits. This tool shows which honour bars you’ve unlocked and where help might be useful.<br>
-    You'll need to create an API key with minimal access – <strong>basic,honors</strong> only. It’s never stored and stays in your browser.
-  </p>
+  <div class="card">
+    <label for="username">Torn Username</label>
+    <input type="text" id="username" placeholder="e.g. Systoned" autocomplete="username" />
 
-  <button onclick="window.open('https://www.torn.com/preferences.php#tab=api?&step=addNewKey&title=Minimal%20access%20key&type=2', '_blank')">
-    ➕ Create your Torn API Key
-  </button>
+    <label for="apiKey">Minimal API Key</label>
+    <input type="password" id="apiKey" placeholder="Paste your API key here" autocomplete="new-password" />
+    <div class="helper">We do not store your API key. It is used in your browser only and never transmitted to a server. You can revoke it at any time.</div>
 
-  <form id="honourForm">
-    <label for="apiKey">Paste your API Key here:</label>
-    <input type="password" id="apiKey" required />
-    <button type="submit">Check Honours</button>
-  </form>
+    <a class="link-button" href="https://www.torn.com/preferences.php#tab=api?&step=addNewKey&title=Minimal%20access%20key&type=2&user=basic,honors" target="_blank">Create your API key</a>
 
-  <div id="status" class="result"></div>
+    <button id="submit">Check Honours</button>
+    <div id="status"></div>
+    <pre id="output"></pre>
+  </div>
 
   <script>
-    const form = document.getElementById('honourForm');
-    const status = document.getElementById('status');
-
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('submit').addEventListener('click', async function(e) {
       e.preventDefault();
-      status.textContent = "Fetching data…";
-
-      const apiKey = document.getElementById('apiKey').value;
-      const googleAppsScriptURL = 'https://script.google.com/macros/s/AKfycbwthDvE3bsBizfBFqzIljZgNGUC9UvaCSgIWugEPIen6-TaIoCWezwqFzgjoQ3WalFX9Q/exec';
+      const username = document.getElementById('username').value.trim();
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const status = document.getElementById('status');
+      const output = document.getElementById('output');
+      status.textContent = 'Fetching data...';
+      output.textContent = '';
 
       try {
-        // Get user honours + username
-        const userRes = await fetch(`https://api.torn.com/user/?selections=basic,honors&key=${apiKey}`);
-        const userText = await userRes.text();
-        const userData = JSON.parse(userText);
-        if (userData.error) throw new Error(`Torn API error: ${userData.error}`);
+        const [userRes, tornRes] = await Promise.all([
+          fetch(`https://api.torn.com/user/?selections=honors&key=${apiKey}`),
+          fetch(`https://api.torn.com/v2/torn?selections=honors`)
+        ]);
 
-        const username = userData.name;
-        const awardedIds = (userData.honors_awarded || []).map(String);
+        const userData = await userRes.json();
+        const tornData = await tornRes.json();
 
-        // Get full honour list
-        const tornRes = await fetch('https://api.torn.com/v2/torn?selections=honors');
-        const tornText = await tornRes.text();
-        const tornData = JSON.parse(tornText);
-        const allHonours = tornData.honors || {};
+        if (userData.error || tornData.error) throw new Error('API Error');
 
-        // Compare
-        const awarded = [];
-        const unawarded = [];
+        const awarded = userData.honors_awarded.map(id => id.toString());
+        const allHonours = tornData.honors;
 
-        Object.entries(allHonours).forEach(([id, data]) => {
-          const honour = { id, name: data.name, description: data.description };
-          if (awardedIds.includes(id)) awarded.push(honour);
-          else unawarded.push(honour);
-        });
+        const awardedList = [];
+        const unawardedList = [];
+
+        for (const id in allHonours) {
+          const honour = allHonours[id];
+          const entry = { id, name: honour.name, description: honour.description };
+          if (awarded.includes(id)) {
+            awardedList.push(entry);
+          } else {
+            unawardedList.push(entry);
+          }
+        }
+
+        const payload = {
+          username,
+          awarded: awardedList,
+          unawarded: unawardedList
+        };
 
         // Post to Google Sheets
-        await fetch(googleAppsScriptURL, {
-          method: 'POST',
-          body: JSON.stringify({ username, awarded, unawarded }),
-          headers: { 'Content-Type': 'application/json' }
+        await fetch("https://script.google.com/macros/s/AKfycbwXKfjUp7ZlDnhVwbwZqGaQ7SJ2CQZsxYQ-BtcLpfAqPqrM4WiYjzf8feVP1URiz4xGKw/exec", {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: {
+            "Content-Type": "application/json"
+          }
         });
 
-        status.textContent =
-          `👤 Username: ${username}\n` +
-          `🏆 Awarded: ${awarded.length}\n` +
-          `🚫 Unawarded: ${unawarded.length}\n\n` +
-          `--- Awarded Honours ---\n` +
-          awarded.slice(0, 10).map(h => `${h.id}: ${h.name}`).join('\n') +
-          `\n\n--- Unawarded Honours ---\n` +
-          unawarded.slice(0, 10).map(h => `${h.id}: ${h.name}`).join('\n') +
-          `\n\n✅ Logged to Google Sheets.`;
+        status.textContent = `✅ Processed ${awardedList.length} awarded and ${unawardedList.length} unawarded honours.`;
+        output.textContent = JSON.stringify(payload, null, 2);
+
       } catch (err) {
+        status.textContent = '❌ Something went wrong.';
         console.error(err);
-        status.textContent = "❌ Error: " + err.message;
       }
     });
   </script>
