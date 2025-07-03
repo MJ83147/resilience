@@ -102,7 +102,7 @@
   </style>
 </head>
 <body>
-  <h1>v1 Faction Honour Tracker</h1>
+  <h1>v2 Faction Honour Tracker</h1>
   <p>This tool helps the faction support all members in earning merits. By identifying missing honours, we can coordinate help so everyone gets a fair shot.</p>
 
   <div class="card">
@@ -118,6 +118,67 @@
   </div>
 
   <script>
+    // Tracked items from CSV files
+    const TRACKED_HONORS = {
+      230: {name: "Domino Effect"},
+      239: {name: "Middleman"},
+      254: {name: "Flatline"},
+      317: {name: "Phoenix"},
+      367: {name: "Clotted"},
+      398: {name: "Anaemic"},
+      418: {name: "Transfusion"},
+      475: {name: "Chain Hitter"},
+      476: {name: "Hospitalized"},
+      477: {name: "Reckless"},
+      478: {name: "Mugger"},
+      481: {name: "Deadly"},
+      488: {name: "Lightweight"},
+      500: {name: "Survivalist"},
+      513: {name: "Kamikaze"},
+      519: {name: "Teetotaler"},
+      552: {name: "Carnage"},
+      605: {name: "Berserker"},
+      615: {name: "Bully"},
+      627: {name: "Sickness"},
+      631: {name: "Iron Maiden"},
+      639: {name: "Graveyard Shift"},
+      719: {name: "Nemesis"},
+      739: {name: "Spray and Pray"},
+      740: {name: "Gunsmith"},
+      741: {name: "Weapons Collector"},
+      781: {name: "Poisoner"},
+      786: {name: "Lone Wolf"},
+      827: {name: "Sharpshooter"},
+      828: {name: "Gunslinger"},
+      838: {name: "Butcher"},
+      860: {name: "Sledgehammer"},
+      916: {name: "Viral"},
+      955: {name: "Pacifist"}
+    };
+
+    const TRACKED_MEDALS = {
+      26: {name: "Apprentice Faction Member"},
+      27: {name: "Committed Faction Member"},
+      28: {name: "Loyal Faction Member"},
+      29: {name: "Dedicated Faction Member"},
+      108: {name: "Faithful Faction Member"},
+      109: {name: "Allegiant Faction Member"},
+      148: {name: "Devoted Faction Member"},
+      149: {name: "Dutiful Faction Member"},
+      150: {name: "Steadfast Faction Member"},
+      151: {name: "Tenacious Faction Member"},
+      215: {name: "Staunch Faction Member"},
+      216: {name: "Unwavering Faction Member"},
+      217: {name: "Stalwart Faction Member"},
+      218: {name: "Reliable Faction Member"},
+      219: {name: "Dependable Faction Member"},
+      220: {name: "Trustworthy Faction Member"},
+      221: {name: "Truthful Faction Member"},
+      222: {name: "Sincere Faction Member"},
+      223: {name: "Honest Faction Member"},
+      224: {name: "Genuine Faction Member"}
+    };
+
     document.getElementById('submit').addEventListener('click', async function(e) {
       e.preventDefault();
       const apiKey = document.getElementById('apiKey').value.trim();
@@ -125,123 +186,76 @@
       const output = document.getElementById('output');
       const submitBtn = document.getElementById('submit');
       
-      // Disable button during processing
       submitBtn.disabled = true;
       status.textContent = 'Fetching data...';
       status.className = '';
       output.textContent = '';
 
       try {
-        // Step 1: Fetch data from Torn API
-        console.log('Fetching user and torn data...');
-        const [userRes, tornHonorsRes, tornMedalsRes] = await Promise.all([
-          fetch(`https://api.torn.com/user/?selections=basic,honors,medals&key=${apiKey}`),
-          fetch(`https://api.torn.com/torn/?selections=honors&key=${apiKey}`),
-          fetch(`https://api.torn.com/torn/?selections=medals&key=${apiKey}`)
-        ]);
-
+        console.log('Fetching user data...');
+        const userRes = await fetch(`https://api.torn.com/user/?selections=basic,honors,medals&key=${apiKey}`);
         const userData = await userRes.json();
-        const tornHonorsData = await tornHonorsRes.json();
-        const tornMedalsData = await tornMedalsRes.json();
 
         console.log('User data:', userData);
-        console.log('Torn honors data:', tornHonorsData);
-        console.log('Torn medals data:', tornMedalsData);
-
+        
         if (userData.error) {
           throw new Error(`Torn API Error: ${userData.error.error} - ${userData.error.code}`);
         }
-        if (tornHonorsData.error) {
-          throw new Error(`Torn API Error (honors): ${tornHonorsData.error.error} - ${tornHonorsData.error.code}`);
-        }
-        if (tornMedalsData.error) {
-          throw new Error(`Torn API Error (medals): ${tornMedalsData.error.error} - ${tornMedalsData.error.code}`);
-        }
 
         const username = userData.name || "Unknown";
-        
-        // Combine user's awarded honors and medals
-        const awardedHonors = userData.honors_awarded ? userData.honors_awarded.map(id => id.toString()) : [];
-        const awardedMedals = userData.medals_awarded ? userData.medals_awarded.map(id => id.toString()) : [];
-        const awarded = [...awardedHonors, ...awardedMedals];
-        
-        // Combine all honors and medals
-        const allHonours = { ...tornHonorsData.honors, ...tornMedalsData.medals };
+        const userHonors = userData.honors || [];
+        const userMedals = userData.medals || [];
 
-        const awardedList = [];
-        const unawardedList = [];
+        // Create matrix data for Google Sheets
+        const matrixData = [];
 
-        for (const id in allHonours) {
-          const honour = allHonours[id];
-          const entry = { id, name: honour.name, description: honour.description };
-          if (awarded.includes(id)) {
-            awardedList.push(entry);
-          } else {
-            unawardedList.push(entry);
-          }
-        }
-
-        const payload = {
-          username,
-          awarded: awardedList,
-          unawarded: unawardedList,
-          // Add raw data for proper medal/honor separation
-          raw_honors_awarded: userData.honors_awarded || [],
-          raw_medals_awarded: userData.medals_awarded || []
-        };
-
-        console.log('Payload to send:', payload);
-        console.log('User has', userData.honors_awarded?.length || 0, 'honors total');
-        console.log('User has', userData.medals_awarded?.length || 0, 'medals total');
-        console.log('Sample honors:', userData.honors_awarded?.slice(0, 10));
-        console.log('Sample medals:', userData.medals_awarded?.slice(0, 10));
-
-        // Step 2: Send data to Google Apps Script using simple request headers
-        status.textContent = 'Saving to spreadsheet...';
-        
-        const response = await fetch("https://script.google.com/macros/s/AKfycbwxR-reJY07auyvtN79drbL6VhYfhuJubhLGx5mgFovrL1QFf0PDJlW51MR_EkdXdFikg/exec", {
-          redirect: "follow",
-          method: 'POST',
-          body: JSON.stringify(payload),
-          headers: {
-            'Content-Type': "text/plain;charset=utf-8"
-          }
+        // Add honors to matrix
+        Object.keys(TRACKED_HONORS).forEach(honorId => {
+          matrixData.push({
+            ID: parseInt(honorId),
+            Type: "Honor",
+            Name: TRACKED_HONORS[honorId].name,
+            [username]: userHonors.includes(parseInt(honorId))
+          });
         });
 
-        console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
+        // Add medals to matrix
+        Object.keys(TRACKED_MEDALS).forEach(medalId => {
+          matrixData.push({
+            ID: parseInt(medalId),
+            Type: "Medal",
+            Name: TRACKED_MEDALS[medalId].name,
+            [username]: userMedals.includes(parseInt(medalId))
+          });
+        });
 
-        const responseText = await response.text();
-        console.log('Response text:', responseText);
+        // Send to Google Apps Script
+        console.log('Sending data to Google Apps Script...');
+        const response = await fetch('https://script.google.com/macros/s/AKfycbwxR-reJY07auyvtN79drbL6VhYfhuJubhLGx5mgFovrL1QFf0PDJlW51MR_EkdXdFikg/exec', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+          },
+          body: JSON.stringify({
+            playerName: username,
+            matrixData: matrixData
+          }),
+        });
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${responseText}`);
+        const result = await response.json();
+        console.log('Google Apps Script response:', result);
+        
+        if (result.message === 'Success!') {
+          status.textContent = 'Data sent successfully!';
+          status.className = 'success';
+        } else {
+          throw new Error('Failed to send data to sheet');
         }
 
-        // Try to parse response as JSON
-        let result;
-        try {
-          result = JSON.parse(responseText);
-        } catch (parseError) {
-          console.warn('Could not parse response as JSON:', parseError);
-          result = { result: "success", rawResponse: responseText };
-        }
-
-        console.log('Parsed result:', result);
-
-        if (result.result === "error") {
-          throw new Error(`Server Error: ${result.message}`);
-        }
-
-        status.textContent = `✅ Successfully saved data for ${username}! (${awardedList.length} awarded, ${unawardedList.length} unawarded honours)`;
-        status.className = 'success';
-        output.textContent = JSON.stringify(payload, null, 2);
-
-      } catch (err) {
-        console.error('Full error:', err);
-        status.textContent = `❌ Error: ${err.message}`;
+      } catch (error) {
+        console.error('Error:', error);
+        status.textContent = `Error: ${error.message}`;
         status.className = 'error';
-        output.textContent = `Error details:\n${err.stack || err.message}`;
       } finally {
         submitBtn.disabled = false;
       }
