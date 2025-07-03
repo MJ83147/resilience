@@ -102,7 +102,7 @@
   </style>
 </head>
 <body>
-  <h1>v2 Faction Honour Tracker</h1>
+  <h1>v3 Faction Honour Tracker</h1>
   <p>This tool helps the faction support all members in earning merits. By identifying missing honours, we can coordinate help so everyone gets a fair shot.</p>
 
   <div class="card">
@@ -144,10 +144,9 @@
         const tornHonorsData = await tornHonorsRes.json();
         const tornMedalsData = await tornMedalsRes.json();
 
-        console.log('User data FULL OBJECT:', JSON.stringify(userData, null, 2));
-        console.log('User honors_awarded:', userData.honors_awarded);
-        console.log('User medals_awarded:', userData.medals_awarded);
-        console.log('All user keys:', Object.keys(userData));
+        console.log('User data:', userData);
+        console.log('Torn honors data:', tornHonorsData);
+        console.log('Torn medals data:', tornMedalsData);
 
         if (userData.error) {
           throw new Error(`Torn API Error: ${userData.error.error} - ${userData.error.code}`);
@@ -192,8 +191,6 @@
         };
 
         console.log('Payload to send:', payload);
-        console.log('Raw honors being sent:', payload.raw_honors_awarded);
-        console.log('Raw medals being sent:', payload.raw_medals_awarded);
 
         // Step 2: Send data to Google Apps Script using simple request headers
         status.textContent = 'Saving to spreadsheet...';
