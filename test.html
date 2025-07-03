@@ -102,7 +102,7 @@
   </style>
 </head>
 <body>
-  <h1>v3 Faction Honour Tracker</h1>
+  <h1>v5 Faction Honour Tracker</h1>
   <p>This tool helps the faction support all members in earning merits. By identifying missing honours, we can coordinate help so everyone gets a fair shot.</p>
 
   <div class="card">
@@ -191,6 +191,10 @@
         };
 
         console.log('Payload to send:', payload);
+        console.log('User has', userData.honors_awarded?.length || 0, 'honors total');
+        console.log('User has', userData.medals_awarded?.length || 0, 'medals total');
+        console.log('Sample honors:', userData.honors_awarded?.slice(0, 10));
+        console.log('Sample medals:', userData.medals_awarded?.slice(0, 10));
 
         // Step 2: Send data to Google Apps Script using simple request headers
         status.textContent = 'Saving to spreadsheet...';
