@@ -6,11 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     :root {
-      --bg: #0d0d0d;
-      --fg: #e0e0e0;
+      --bg: #ffffff;
+      --fg: #1a1a1a;
       --primary: #4ae3b5;
       --accent: #e84b6a;
-      --card: #1a1a1a;
+      --card: #f5f5f5;
     }
 
     body {
@@ -32,11 +32,11 @@
       font-weight: 600;
     }
 
-    input[type="text"], input[type="password"] {
+    input[type="password"] {
       width: 100%;
       padding: 0.75rem;
       background: var(--card);
-      border: 1px solid #333;
+      border: 1px solid #ccc;
       border-radius: 6px;
       color: var(--fg);
       font-size: 1rem;
@@ -59,7 +59,7 @@
 
     .helper {
       font-size: 0.85rem;
-      color: #999;
+      color: #555;
       margin-top: 0.25rem;
     }
 
@@ -71,7 +71,7 @@
     }
 
     a.link-button {
-      background: #333;
+      background: #ccc;
       padding: 0.5rem 1rem;
       border-radius: 5px;
       color: var(--fg);
@@ -91,9 +91,6 @@
   <p>This tool helps the faction support all members in earning merits. By identifying missing honours, we can coordinate help so everyone gets a fair shot.</p>
 
   <div class="card">
-    <label for="username">Torn Username</label>
-    <input type="text" id="username" placeholder="e.g. Systoned" autocomplete="username" />
-
     <label for="apiKey">Minimal API Key</label>
     <input type="password" id="apiKey" placeholder="Paste your API key here" autocomplete="new-password" />
     <div class="helper">We do not store your API key. It is used in your browser only and never transmitted to a server. You can revoke it at any time.</div>
@@ -108,7 +105,6 @@
   <script>
     document.getElementById('submit').addEventListener('click', async function(e) {
       e.preventDefault();
-      const username = document.getElementById('username').value.trim();
       const apiKey = document.getElementById('apiKey').value.trim();
       const status = document.getElementById('status');
       const output = document.getElementById('output');
@@ -117,7 +113,7 @@
 
       try {
         const [userRes, tornRes] = await Promise.all([
-          fetch(`https://api.torn.com/user/?selections=honors&key=${apiKey}`),
+          fetch(`https://api.torn.com/user/?selections=basic,honors&key=${apiKey}`),
           fetch(`https://api.torn.com/v2/torn?selections=honors`)
         ]);
 
@@ -126,6 +122,7 @@
 
         if (userData.error || tornData.error) throw new Error('API Error');
 
+        const username = userData.name || "Unknown";
         const awarded = userData.honors_awarded.map(id => id.toString());
         const allHonours = tornData.honors;
 
@@ -148,7 +145,6 @@
           unawarded: unawardedList
         };
 
-        // Post to Google Sheets
         await fetch("https://script.google.com/macros/s/AKfycbwXKfjUp7ZlDnhVwbwZqGaQ7SJ2CQZsxYQ-BtcLpfAqPqrM4WiYjzf8feVP1URiz4xGKw/exec", {
           method: "POST",
           body: JSON.stringify(payload),
