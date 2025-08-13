@@ -65,7 +65,7 @@ function init() {
       );
       document.getElementById("summary").textContent = `${
         DATA.length
-      } members • £${totalMoney.toLocaleString("en-GB")}`;
+      } members • $${totalMoney.toLocaleString("en-GB")}`;
       document.getElementById("dateCol").textContent = latestDate
         ? `Latest: ${latestDate}`
         : "No date cols";
@@ -138,7 +138,7 @@ function renderTable() {
       <td>${esc(r.name)}</td>
       <td>${r.level || 0}</td>
       <td>${r.mug_count || 0}</td>
-      <td>£${Number(r.money_total || 0).toLocaleString("en-GB")}</td>`;
+      <td>$${Number(r.money_total || 0).toLocaleString("en-GB")}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -158,7 +158,7 @@ function drawCharts() {
       labels: topMoney.map((r) => r.name),
       datasets: [
         {
-          label: "£",
+          label: "$",
           data: topMoney.map((r) => r.money_total),
           backgroundColor: "rgba(242,152,115,0.7)"
         }
