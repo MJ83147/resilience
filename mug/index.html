@@ -8,20 +8,30 @@
   <style>
     :root {
       /* Softened colors - still vibrant but less jarring */
-      --c-text-1: #1A2626; /* Softer dark */
-      --c-text-2: #5A6670; /* Medium gray */
-      --c-accent: #FF8866; /* Softer coral */
-      --c-accent-2: #4ECDC4; /* Softer teal */
-      --c-accent-3: #FFD93D; /* Softer yellow */
-      --c-gold: #FFD700; /* 1st place */
-      --c-silver: #C0C0C0; /* 2nd place */
-      --c-bronze: #CD7F32; /* 3rd place */
+      --c-text-1: #1A2626;
+      /* Softer dark */
+      --c-text-2: #5A6670;
+      /* Medium gray */
+      --c-accent: #FF8866;
+      /* Softer coral */
+      --c-accent-2: #4ECDC4;
+      /* Softer teal */
+      --c-accent-3: #FFD93D;
+      /* Softer yellow */
+      --c-gold: #FFD700;
+      /* 1st place */
+      --c-silver: #C0C0C0;
+      /* 2nd place */
+      --c-bronze: #CD7F32;
+      /* 3rd place */
       --c-bg: #FBFBFB;
       --c-bg-2: #F8F7FF;
       --c-card: #FFFFFF;
-      --c-border: #E0E0E8; /* Softer borders */
+      --c-border: #E0E0E8;
+      /* Softer borders */
       --c-table-head: #F0F3F5;
-      --shadow: 0 6px 24px rgba(20, 30, 30, 0.08); /* Gentler shadows */
+      --shadow: 0 6px 24px rgba(20, 30, 30, 0.08);
+      /* Gentler shadows */
       --radius: 16px;
       --sp-1: 8px;
       --sp-2: 12px;
@@ -47,7 +57,8 @@
 
     h1 {
       font-size: 32px;
-      font-weight: 700; /* Less bold */
+      font-weight: 700;
+      /* Less bold */
       letter-spacing: -0.02em;
       color: var(--c-text-1);
     }
@@ -77,17 +88,49 @@
       min-height: 0;
     }
 
+    /* Left panel (table) - fixed height with scrolling */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      max-height: 700px;
+      /* Fixed height to match right column */
+    }
+
     /* ensure table area can scroll independently */
     .table-wrapper {
       flex: 1;
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--c-border);
+      border-radius: 8px;
+      background: white;
+    }
+
+    /* Custom scrollbar styling */
+    .table-wrapper::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+      background: var(--c-accent-2);
+      border-radius: 4px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb:hover {
+      background: var(--c-accent);
     }
 
     /* right column - always stack cards vertically */
     .right-column {
       display: flex;
-      flex-direction: column; /* Always vertical */
+      flex-direction: column;
+      max-height: 700px;
       width: 100%;
       gap: 1rem;
     }
@@ -101,7 +144,8 @@
 
     .card {
       background: var(--c-card);
-      border: 1px solid var(--c-border); /* Thinner border */
+      border: 1px solid var(--c-border);
+      /* Thinner border */
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: var(--sp-4);
@@ -127,14 +171,9 @@
       font-size: 18px;
       font-weight: 600;
       color: var(--c-text-1);
-      text-transform: none; /* Remove uppercase */
+      text-transform: none;
+      /* Remove uppercase */
       letter-spacing: normal;
-    }
-
-    /* Left panel (table) */
-    .left-panel {
-      display: flex;
-      flex-direction: column
     }
 
     table {
@@ -175,12 +214,12 @@
       content: "🥇 ";
       font-size: 18px;
     }
-    
+
     tbody tr:nth-child(2) td:first-child::before {
       content: "🥈 ";
       font-size: 18px;
     }
-    
+
     tbody tr:nth-child(3) td:first-child::before {
       content: "🥉 ";
       font-size: 18px;
@@ -189,17 +228,18 @@
     tbody tr:nth-child(1) {
       background: linear-gradient(to right, rgba(255, 215, 0, 0.1), transparent);
     }
-    
+
     tbody tr:nth-child(2) {
       background: linear-gradient(to right, rgba(192, 192, 192, 0.1), transparent);
     }
-    
+
     tbody tr:nth-child(3) {
       background: linear-gradient(to right, rgba(205, 127, 50, 0.1), transparent);
     }
 
     tbody tr:hover {
-      background: rgba(78, 205, 196, 0.05); /* Softer hover */
+      background: rgba(78, 205, 196, 0.05);
+      /* Softer hover */
     }
 
     .amount {
@@ -210,7 +250,6 @@
 
     .highlight {
       text-align: center;
-      padding: var(--sp-4);
       border: 2px solid var(--c-accent);
       border-radius: 12px;
       background: rgba(255, 136, 102, 0.05);
@@ -236,8 +275,37 @@
       color: var(--c-accent);
     }
 
+    .mini-table-wrapper {
+      max-height: 150px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--c-border);
+      border-radius: 8px;
+      background: white;
+    }
+
+    /* Custom scrollbar styling for mini tables */
+    .mini-table-wrapper::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .mini-table-wrapper::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+
+    .mini-table-wrapper::-webkit-scrollbar-thumb {
+      background: var(--c-accent-2);
+      border-radius: 3px;
+    }
+
+    .mini-table-wrapper::-webkit-scrollbar-thumb:hover {
+      background: var(--c-accent);
+    }
+
     .mini-table td {
-      padding: 12px 0;
+      padding: 12px;
       border-bottom: 1px solid var(--c-border);
       font-weight: 500;
     }
@@ -283,6 +351,11 @@
         padding: var(--sp-3)
       }
 
+      .left-panel {
+        max-height: 500px;
+        /* Smaller on compact screens */
+      }
+
       thead th,
       tbody td {
         padding: 10px
@@ -293,6 +366,11 @@
     @media (max-width:768px) {
       .main-layout {
         grid-template-columns: 1fr;
+      }
+
+      .left-panel {
+        max-height: 400px;
+        /* Smaller on mobile */
       }
     }
   </style>
@@ -324,6 +402,16 @@
       <div class="right-column">
         <div class="card">
           <div class="card-header">
+            <div class="card-title">Total mugged</div>
+          </div>
+          <div id="totalMugged" class="highlight">
+            <span class="name">All players</span>
+            <span class="amount">$0</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
             <div class="card-title">Biggest mug</div>
           </div>
           <div id="biggestMug" class="highlight">
@@ -336,18 +424,22 @@
           <div class="card-header">
             <div class="card-title">Most mugs</div>
           </div>
-          <table class="mini-table" id="mostMugs">
-            <tbody></tbody>
-          </table>
+          <div class="mini-table-wrapper">
+            <table class="mini-table" id="mostMugs">
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="card">
           <div class="card-header">
             <div class="card-title">Over $500k</div>
           </div>
-          <table class="mini-table" id="over500k">
-            <tbody></tbody>
-          </table>
+          <div class="mini-table-wrapper">
+            <table class="mini-table" id="over500k">
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -385,6 +477,7 @@
         name: '-',
         amount: 0
       };
+      let totalMuggedAmount = 0;
       mugs.forEach(m => {
         const name = m.attackerName || 'Unknown';
         if (!userStats[name]) userStats[name] = {
@@ -394,29 +487,34 @@
         };
         userStats[name].count++;
         userStats[name].totalAmount += m.amount;
+        totalMuggedAmount += m.amount;
         if (m.amount > 500000) userStats[name].over500k++;
         if (m.amount > biggestMug.amount) biggestMug = {
           name,
           amount: m.amount
         };
       });
+      // Update total mugged amount
+      document.getElementById('totalMugged').innerHTML =
+        `<span class="name">All players</span>
+         <span class="amount">${totalMuggedAmount.toLocaleString()}</span>`;
       const tbody = document.querySelector('#summaryTable tbody');
       tbody.innerHTML = '';
       Object.entries(userStats)
         .sort((a, b) => b[1].totalAmount - a[1].totalAmount)
         .forEach(([name, stats]) => {
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${name}</td><td>${stats.count}</td><td class="amount">$${stats.totalAmount.toLocaleString()}</td>`;
+          tr.innerHTML = `<td>${name}</td><td>${stats.count}</td><td class="amount">${stats.totalAmount.toLocaleString()}</td>`;
           tbody.appendChild(tr);
         });
       document.getElementById('biggestMug').innerHTML =
         `<span class="name">${biggestMug.name}</span>
-         <span class="amount">$${biggestMug.amount.toLocaleString()}</span>`;
+         <span class="amount">${biggestMug.amount.toLocaleString()}</span>`;
       const mostMugsBody = document.querySelector('#mostMugs tbody');
       mostMugsBody.innerHTML = '';
       Object.entries(userStats)
         .sort((a, b) => b[1].count - a[1].count)
-        .slice(0, 5)
+        .slice(0, 10)
         .forEach(([name, stats]) => {
           const tr = document.createElement('tr');
           tr.innerHTML = `<td>${name}</td><td>${stats.count}</td>`;
@@ -427,7 +525,7 @@
       Object.entries(userStats)
         .filter(([, s]) => s.over500k > 0)
         .sort((a, b) => b[1].over500k - a[1].over500k)
-        .slice(0, 5)
+        .slice(0, 10)
         .forEach(([name, stats]) => {
           const tr = document.createElement('tr');
           tr.innerHTML = `<td>${name}</td><td>${stats.over500k}</td>`;
