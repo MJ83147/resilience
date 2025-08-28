@@ -75,57 +75,100 @@
 (function () {
   let apiKey = "";
   let selectedWar = null;
-  let factionId = null;
   let warStart = 0;
   let warEnd = 0;
   let faction1 = null;
   let faction2 = null;
+  let factionId = null; // best effort
+
+  async function fetchJson(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(`${data.error.code}: ${data.error.error}`);
+    return data;
+  }
+
+  function asArray(x) {
+    if (Array.isArray(x)) return x;
+    if (x && typeof x === "object") return Object.values(x);
+    return [];
+  }
 
   window.loadRankedWars = async function () {
-    apiKey = document.getElementById("apiKey").value.trim();
-    const url = `https://api.torn.com/v2/faction?selections=rankedwars&key=${apiKey}`;
+    try {
+      apiKey = document.getElementById("apiKey").value.trim();
+      if (!apiKey) throw new Error("API key required.");
+      const url = `https://api.torn.com/v2/faction?selections=rankedwars&key=${apiKey}`;
+      const data = await fetchJson(url);
 
-    const res = await fetch(url);
-    const data = await res.json();
+      // payload shape tolerance
+      factionId = data.ID ?? data.faction_id ?? data.faction?.id ?? null;
+      const wars = data.rankedwars ?? data.ranked_wars;
+      if (!wars || typeof wars !== "object")
+        throw new Error("No ranked wars found.");
 
-    factionId = data.ID;
-    const dropdown = document.getElementById("warDropdown");
-    dropdown.innerHTML = "";
-    Object.entries(data.rankedwars).forEach(([id, war]) => {
-      const option = document.createElement("option");
-      option.value = id;
-      option.text = `${war.factions[war.factions_attacker].name} vs ${
-        war.factions[war.factions_defender].name
-      }`;
-      option.dataset.start = war.war.start;
-      option.dataset.end = war.war.end;
-      option.dataset.f1 = war.factions_attacker;
-      option.dataset.f2 = war.factions_defender;
-      dropdown.appendChild(option);
-    });
-    document.getElementById("warSelector").style.display = "block";
+      const dropdown = document.getElementById("warDropdown");
+      dropdown.innerHTML = "";
+
+      for (const [id, war] of Object.entries(wars)) {
+        const fAtt = war.factions_attacker;
+        const fDef = war.factions_defender;
+        const nameA = war.factions?.[fAtt]?.name ?? `Attacker ${fAtt ?? ""}`;
+        const nameD = war.factions?.[fDef]?.name ?? `Defender ${fDef ?? ""}`;
+        const start = war.war?.start ?? war.start ?? "";
+        const end = war.war?.end ?? war.end ?? "";
+
+        const option = document.createElement("option");
+        option.value = id;
+        option.text = `${nameA} vs ${nameD}`;
+        option.dataset.start = start;
+        option.dataset.end = end;
+        option.dataset.f1 = fAtt ?? "";
+        option.dataset.f2 = fDef ?? "";
+        option.dataset.fid = factionId ?? "";
+        dropdown.appendChild(option);
+      }
+
+      document.getElementById("warSelector").style.display = "block";
+    } catch (e) {
+      alert(`Failed to load ranked wars: ${e.message}`);
+      console.error(e);
+    }
   };
 
   window.loadAttackLogs = async function () {
-    const dropdown = document.getElementById("warDropdown");
-    selectedWar = dropdown.value;
-    warStart = dropdown.selectedOptions[0].dataset.start;
-    warEnd = dropdown.selectedOptions[0].dataset.end;
-    faction1 = dropdown.selectedOptions[0].dataset.f1;
-    faction2 = dropdown.selectedOptions[0].dataset.f2;
+    try {
+      const dropdown = document.getElementById("warDropdown");
+      if (!dropdown.value) throw new Error("Select a war first.");
 
-    let url = `https://api.torn.com/v2/faction/attacks?from=${warStart}&to=${warEnd}&limit=100&sort=DESC&key=${apiKey}`;
-    let allAttacks = [];
+      selectedWar = dropdown.value;
+      warStart = dropdown.selectedOptions[0].dataset.start;
+      warEnd = dropdown.selectedOptions[0].dataset.end;
+      faction1 = dropdown.selectedOptions[0].dataset.f1;
+      faction2 = dropdown.selectedOptions[0].dataset.f2;
+      factionId = dropdown.selectedOptions[0].dataset.fid || factionId;
 
-    while (url) {
-      const res = await fetch(url);
-      const data = await res.json();
-      const newAttacks = data.attacks.filter((a) => a.ranked_war === 1);
-      allAttacks = allAttacks.concat(newAttacks);
-      url = data._metadata?.links?.prev || null;
+      if (!warStart || !warEnd) throw new Error("Missing war time window.");
+
+      let url = `https://api.torn.com/v2/faction/attacks?from=${warStart}&to=${warEnd}&limit=100&sort=DESC&key=${apiKey}`;
+      let allAttacks = [];
+
+      while (url) {
+        const page = await fetchJson(url);
+        const attacks = asArray(page.attacks);
+        const newAttacks = attacks.filter((a) => Number(a?.ranked_war) === 1);
+        allAttacks = allAttacks.concat(newAttacks);
+
+        // pagination guard
+        url = page._metadata?.links?.prev || null;
+      }
+
+      renderTable(allAttacks);
+    } catch (e) {
+      alert(`Failed to load attacks: ${e.message}`);
+      console.error(e);
     }
-
-    renderTable(allAttacks);
   };
 
   function renderTable(attacks) {
@@ -146,23 +189,35 @@
     const tbody = document.createElement("tbody");
     attacks.forEach((atk) => {
       const row = document.createElement("tr");
-      const isStealth = !atk.attacker?.name || atk.attacker.name === "N/A";
-      const defIsUs = atk.defender.faction === factionId;
 
-      if (isStealth && defIsUs) {
-        row.className = "stealth-defence";
-      } else if (
-        [atk.attacker.faction, atk.defender.faction].includes(faction1) ||
-        [atk.attacker.faction, atk.defender.faction].includes(faction2)
+      const attackerName = atk?.attacker?.name ?? "STEALTHED";
+      const defenderName = atk?.defender?.name ?? "";
+      const attackerFaction = atk?.attacker?.faction ?? "";
+      const defenderFaction = atk?.defender?.faction ?? "";
+      const isStealth = !atk?.attacker?.name || atk.attacker.name === "N/A";
+
+      // highlight rows involving selected war factions
+      const involvesF1F2 =
+        [attackerFaction, defenderFaction].includes(String(faction1)) ||
+        [attackerFaction, defenderFaction].includes(String(faction2));
+
+      if (
+        isStealth &&
+        defenderFaction &&
+        defenderFaction === String(factionId)
       ) {
+        row.className = "stealth-defence";
+      } else if (involvesF1F2) {
         row.className = "highlight";
       }
 
+      const ended = Number(atk?.timestamp_ended) || Number(atk?.timestamp) || 0;
+
       row.innerHTML = `
-        <td>${new Date(atk.timestamp_ended * 1000).toLocaleString()}</td>
-        <td>${atk.attacker?.name || "STEALTHED"}</td>
-        <td>${atk.defender?.name || ""}</td>
-        <td>${atk.result}</td>
+        <td>${ended ? new Date(ended * 1000).toLocaleString() : ""}</td>
+        <td>${attackerName}</td>
+        <td>${defenderName}</td>
+        <td>${atk?.result ?? ""}</td>
       `;
       tbody.appendChild(row);
     });
@@ -172,6 +227,7 @@
     container.appendChild(table);
   }
 })();
+
 
   </script>
 </body>
