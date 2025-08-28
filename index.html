@@ -1,217 +1,509 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Torn Ranked War Analyzer</title>
   <style>
+    :root {
+      --text: #1A1A1A;
+      --background: #FFFFFF;
+      --muted: #F6F6F6;
+      --border: #ECECEC;
+      --primary: #7CB9A8;
+      --stealth: #FFEB99;
+      --my-faction: #B7D7E8;
+      --opponent: #FFA5A5;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
     body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background: #f4f4f4;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--background);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 15px;
     }
-
+    
     .container {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 8px;
-      max-width: 900px;
-      margin: auto;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      width: 95%;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
     }
-
-    input,
-    button,
-    select {
-      padding: 0.5rem;
-      margin: 0.5rem 0;
+    
+    h2 {
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+      font-size: 1.5rem;
     }
-
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    
+    textarea, select {
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 1rem;
+      background-color: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      transition: border 0.2s;
+    }
+    
+    textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-right: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    button:hover {
+      opacity: 0.9;
+    }
+    
+    #warSelector {
+      background-color: var(--muted);
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+    
+    /* Tab styling */
+    .tab-container {
+      margin-top: 1rem;
+    }
+    
+    .tab-buttons {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+    }
+    
+    .tab-buttons button {
+      background: transparent;
+      color: var(--text);
+      border-radius: 0;
+      border-bottom: 2px solid transparent;
+      padding: 0.6rem 1rem;
+      margin: 0 0.5rem 0 0;
+      transition: all 0.2s;
+    }
+    
+    .tab-buttons button:hover {
+      background: transparent;
+      color: var(--primary);
+      opacity: 1;
+    }
+    
+    .tab-buttons button.active {
+      color: var(--primary);
+      border-bottom: 2px solid var(--primary);
+      font-weight: 500;
+    }
+    
+    .tab-section {
+      display: none;
+      background-color: var(--background);
+      height: 75vh;
+    }
+    
+    .tab-section.active {
+      display: block;
+    }
+    
+    /* Table styling */
+    #tableWrapper {
+      height: 100%;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
+      font-size: 0.85rem;
     }
-
-    th,
-    td {
-      padding: 0.5rem;
-      border-bottom: 1px solid #ddd;
-    }
-
-    th {
+    
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--muted);
+      color: var(--text);
+      padding: 0.75rem 0.6rem;
+      text-align: left;
+      z-index: 2;
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
       cursor: pointer;
     }
-
-    .highlight {
-      background-color: #ffeeba;
+    
+    thead th:hover {
+      background-color: var(--border);
     }
-
+    
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+    }
+    
+    tbody tr:nth-child(even) {
+      background-color: var(--muted);
+    }
+    
+    tbody tr:hover {
+      background-color: var(--border);
+    }
+    
+    td {
+      padding: 0.6rem;
+      vertical-align: top;
+    }
+    
+    /* Custom classes */
+    .highlight {
+      background-color: var(--muted);
+    }
+    
     .stealth-defence {
-      background-color: #f8d7da;
-      font-weight: bold;
+      background-color: var(--stealth);
+      font-weight: 500;
+    }
+    
+    .my-faction-faction {
+      background-color: var(--my-faction);
+      font-weight: 500;
+    }
+    
+    .opponent-faction-faction {
+      background-color: var(--opponent);
+      font-weight: 500;
+    }
+    
+    .blank-attacker {
+      background-color: var(--stealth) !important;
+    }
+    
+    /* Action buttons */
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        width: 100%;
+        padding: 1rem 0.5rem;
+      }
+      
+      .tab-section {
+        height: 65vh;
+      }
+      
+      button {
+        padding: 0.5rem 0.75rem;
+      }
     }
   </style>
 </head>
-
 <body>
   <div class="container">
     <h2>Torn Ranked War Analyzer</h2>
-    <label>API Key:</label>
-    <input type="text" id="apiKey" placeholder="Enter your Torn API key" />
-    <button onclick="loadRankedWars()">Load Ranked Wars</button>
-
-    <div id="warSelector" style="display:none;">
-      <label>Select a Ranked War:</label>
-      <select id="warDropdown"></select>
-      <button onclick="loadAttackLogs()">Load Attacks</button>
+    
+    <div class="setup-section">
+      <label for="apiKey">API Key:</label>
+      <textarea id="apiKey" rows="2" placeholder="Paste your Torn API key here"></textarea>
+      <button onclick="loadRankedWars()">Load Ranked Wars</button>
     </div>
-
-    <div id="tableContainer"></div>
+    
+    <div id="warSelector">
+      <label for="warDropdown">Select a Ranked War:</label>
+      <select id="warDropdown"></select>
+      <div class="action-buttons">
+        <button onclick="loadAttackLogs()">Load Attacks</button>
+        <button onclick="exportToCSV()">Export to CSV</button>
+      </div>
+    </div>
+    
+    <div class="tab-container">
+      <div class="tab-buttons">
+        <button id="logTabBtn" class="active" onclick="showTab('logTab', 'logTabBtn')">Attack Log</button>
+        <button id="summaryTabBtn" onclick="showTab('summaryTab', 'summaryTabBtn')">Grouped Summary</button>
+      </div>
+      
+      <div id="logTab" class="tab-section active">
+        <div id="tableWrapper">
+          <div id="tableContainer"></div>
+        </div>
+      </div>
+      
+      <div id="summaryTab" class="tab-section">
+        <div id="tableWrapper">
+          <div id="summaryTable"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
-    (function() {
-      let apiKey = "";
-      let selectedWar = null;
-      let warStart = 0;
-      let warEnd = 0;
-      let faction1 = null;
-      let faction2 = null;
-      let factionId = null;
-      async function fetchJson(url) {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    let apiKey = "";
+    let faction1 = null;
+    let faction2 = null;
+
+    function showTab(tabId, btnId) {
+      // Hide all tabs and remove active class from buttons
+      document.querySelectorAll('.tab-section').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-buttons button').forEach(btn => btn.classList.remove('active'));
+      
+      // Show selected tab and activate button
+      document.getElementById(tabId).classList.add('active');
+      document.getElementById(btnId).classList.add('active');
+    }
+
+    async function loadRankedWars() {
+      apiKey = document.getElementById("apiKey").value.trim();
+      if (!apiKey) {
+        alert("Please enter your API key");
+        return;
+      }
+      
+      try {
+        const res = await fetch(`https://api.torn.com/v2/faction?selections=rankedwars&key=${apiKey}`);
         const data = await res.json();
-        if (data.error) throw new Error(`${data.error.code}: ${data.error.error}`);
-        return data;
-      }
-
-      function asArray(x) {
-        if (Array.isArray(x)) return x;
-        if (x && typeof x === "object") return Object.values(x);
-        return [];
-      }
-      window.loadRankedWars = async function() {
-        try {
-          apiKey = document.getElementById("apiKey").value.trim();
-          if (!apiKey) throw new Error("API key required.");
-          const url = `https://api.torn.com/v2/faction?selections=rankedwars&key=${apiKey}`;
-          const data = await fetchJson(url);
-          // Extract faction ID from the response
-          factionId = data.ID ?? data.faction_id ?? data.faction?.id ?? null;
-          const wars = data.rankedwars;
-          if (!Array.isArray(wars) || wars.length === 0) {
-            throw new Error("No ranked wars found.");
-          }
-          const dropdown = document.getElementById("warDropdown");
-          dropdown.innerHTML = "";
-          wars.forEach((war) => {
-            const factions = war.factions || [];
-            const nameA = factions[0]?.name ?? "Faction A";
-            const nameD = factions[1]?.name ?? "Faction B";
-            const start = war.start ?? "";
-            const end = war.end ?? "";
-            const f1Id = factions[0]?.id ?? "";
-            const f2Id = factions[1]?.id ?? "";
-            const option = document.createElement("option");
-            option.value = war.id;
-            option.text = `${nameA} vs ${nameD}`;
-            option.dataset.start = start;
-            option.dataset.end = end;
-            option.dataset.f1 = f1Id;
-            option.dataset.f2 = f2Id;
-            option.dataset.fid = factionId ?? "";
-            dropdown.appendChild(option);
-          });
-          document.getElementById("warSelector").style.display = "block";
-        } catch (e) {
-          alert(`Failed to load ranked wars: ${e.message}`);
-          console.error(e);
+        
+        if (data.error) {
+          alert(`API Error: ${data.error.error}`);
+          return;
         }
-      };
-      window.loadAttackLogs = async function() {
-        try {
-          const dropdown = document.getElementById("warDropdown");
-          if (!dropdown.value) throw new Error("Select a war first.");
-          selectedWar = dropdown.value;
-          warStart = dropdown.selectedOptions[0].dataset.start;
-          warEnd = dropdown.selectedOptions[0].dataset.end;
-          faction1 = dropdown.selectedOptions[0].dataset.f1;
-          faction2 = dropdown.selectedOptions[0].dataset.f2;
-          factionId = dropdown.selectedOptions[0].dataset.fid || factionId;
-          if (!warStart || !warEnd) throw new Error("Missing war time window.");
-          let url = `https://api.torn.com/v2/faction/attacks?from=${warStart}&to=${warEnd}&limit=100&sort=DESC&key=${apiKey}`;
-          let allAttacks = [];
-          while (url) {
-            const page = await fetchJson(url);
-            const attacks = asArray(page.attacks);
-            const newAttacks = attacks.filter((a) => Number(a?.ranked_war) === 1);
-            allAttacks = allAttacks.concat(newAttacks);
-            // Better pagination handling
-            if (page._metadata?.links?.prev && newAttacks.length > 0) {
-              // Get the oldest timestamp from current batch to use as new 'to' parameter
-              const oldestTimestamp = Math.min(...attacks.map(a => Number(a?.timestamp_ended) || Number(a?.timestamp) || 0));
-              url = `https://api.torn.com/v2/faction/attacks?from=${warStart}&to=${oldestTimestamp}&limit=100&sort=DESC&key=${apiKey}`;
-            } else {
-              url = null;
-            }
-          }
-          renderTable(allAttacks);
-        } catch (e) {
-          alert(`Failed to load attacks: ${e.message}`);
-          console.error(e);
-        }
-      };
-
-      function renderTable(attacks) {
-        const container = document.getElementById("tableContainer");
-        const table = document.createElement("table");
-        const headers = ["Time", "Attacker", "Defender", "Result"];
-        const thead = document.createElement("thead");
-        const tr = document.createElement("tr");
-        headers.forEach((h) => {
-          const th = document.createElement("th");
-          th.textContent = h;
-          tr.appendChild(th);
+        
+        const wars = data.rankedwars.filter(w => w.end && w.factions?.length === 2).sort((a, b) => b.end - a.end).slice(0, 4);
+        const dropdown = document.getElementById("warDropdown");
+        dropdown.innerHTML = "";
+        
+        wars.forEach(w => {
+          const opt = document.createElement("option");
+          opt.value = JSON.stringify(w);
+          opt.textContent = `${w.factions[0].name} vs ${w.factions[1].name}`;
+          dropdown.appendChild(opt);
         });
-        thead.appendChild(tr);
-        table.appendChild(thead);
-        const tbody = document.createElement("tbody");
-        attacks.forEach((atk) => {
-          const row = document.createElement("tr");
-          const attackerName = atk?.attacker?.name ?? "STEALTHED";
-          const defenderName = atk?.defender?.name ?? "";
-          const attackerFaction = atk?.attacker?.faction ?? "";
-          const defenderFaction = atk?.defender?.faction ?? "";
-          const isStealth = !atk?.attacker?.name || atk.attacker.name === "N/A";
-          // highlight rows involving selected war factions
-          const involvesF1F2 = [attackerFaction, defenderFaction].includes(String(faction1)) || [attackerFaction, defenderFaction].includes(String(faction2));
-          if (
-            isStealth &&
-            defenderFaction &&
-            defenderFaction === String(factionId)
-          ) {
-            row.className = "stealth-defence";
-          } else if (involvesF1F2) {
-            row.className = "highlight";
+        
+        document.getElementById("warSelector").style.display = "block";
+      } catch (err) {
+        console.error("Error loading wars:", err);
+        alert("Error loading wars. Check your API key and try again.");
+      }
+    }
+
+    async function loadAttackLogs() {
+      try {
+        const warData = document.getElementById("warDropdown").value;
+        if (!warData) {
+          alert("Please select a war first");
+          return;
+        }
+        
+        const war = JSON.parse(warData);
+        faction1 = war.factions[0].id;
+        faction2 = war.factions[1].id;
+        
+        // Show loading indicator
+        document.getElementById("tableContainer").innerHTML = "<div style='text-align:center;padding:2rem;'>Loading attack logs...</div>";
+        document.getElementById("summaryTable").innerHTML = "<div style='text-align:center;padding:2rem;'>Loading summary data...</div>";
+        
+        let url = `https://api.torn.com/v2/faction/attacks?from=${war.start}&to=${war.end}&limit=100&sort=DESC`;
+        const headers = { 'Authorization': `ApiKey ${apiKey}` };
+        let attacks = [];
+        
+        while (url) {
+          const res = await fetch(url, { headers });
+          const data = await res.json();
+          
+          if (data.error) {
+            alert(`API Error: ${data.error.error}`);
+            return;
           }
-          const ended = Number(atk?.timestamp_ended) || Number(atk?.timestamp) || 0;
+          
+          attacks = attacks.concat(data.attacks.filter(a => a.is_ranked_war));
+          url = data._metadata?.links?.prev || null;
+        }
+        
+        renderTable(attacks);
+        renderSummary(attacks);
+      } catch (err) {
+        console.error("Error loading attack logs:", err);
+        alert("Error loading attack logs. Please try again.");
+      }
+    }
+
+    function renderSummary(attacks) {
+      const counts = {};
+      attacks.forEach(a => {
+        const defender = a.defender;
+        const attacker = a.attacker;
+        const isResilienceDefender = defender?.faction?.name === "Resilience";
+        const isResilienceAttacker = attacker?.faction?.name === "Resilience";
+
+        if (a.is_ranked_war && isResilienceDefender) {
+          const name = defender.name || "Unknown";
+          if (!counts[name]) counts[name] = { known: 0, stealth: 0, respectTotal: 0, respectCount: 0 };
+          if (!attacker?.name) counts[name].stealth++;
+          else counts[name].known++;
+        }
+
+        if (a.is_ranked_war && isResilienceAttacker && attacker?.name && a.respect_gain !== undefined) {
+          const name = attacker.name;
+          const chainMod = a.modifiers?.chain || 0;
+          const adjustedRespect = a.respect_gain - chainMod;
+          if (!counts[name]) counts[name] = { known: 0, stealth: 0, respectTotal: 0, respectCount: 0 };
+          counts[name].respectTotal += adjustedRespect;
+          counts[name].respectCount += 1;
+        }
+      });
+
+      const table = document.createElement("table");
+      table.innerHTML = `<thead>
+        <tr>
+          <th style="width: 25%;">Resilience Member</th>
+          <th style="width: 15%;">Known Defences</th>
+          <th style="width: 15%;">Stealth Defences</th>
+          <th style="width: 15%;">Total</th>
+          <th style="width: 30%;">Avg Adjusted Respect Gain</th>
+        </tr>
+      </thead>`;
+
+      const tbody = document.createElement("tbody");
+      Object.entries(counts)
+        .sort((a, b) => (b[1].known + b[1].stealth) - (a[1].known + a[1].stealth))
+        .forEach(([name, data]) => {
+          const avg = data.respectCount ? (data.respectTotal / data.respectCount).toFixed(2) : "-";
+          const row = document.createElement("tr");
           row.innerHTML = `
-        <td>${ended ? new Date(ended * 1000).toLocaleString() : ""}</td>
-        <td>${attackerName}</td>
-        <td>${defenderName}</td>
-        <td>${atk?.result ?? ""}</td>
-      `;
+            <td>${name}</td>
+            <td>${data.known}</td>
+            <td>${data.stealth}</td>
+            <td>${data.known + data.stealth}</td>
+            <td>${avg}</td>
+          `;
           tbody.appendChild(row);
         });
-        table.appendChild(tbody);
-        container.innerHTML = "";
-        container.appendChild(table);
+
+      table.appendChild(tbody);
+      document.getElementById("summaryTable").innerHTML = "";
+      document.getElementById("summaryTable").appendChild(table);
+    }
+
+    function renderTable(attacks) {
+      const headers = ["Started", "Ended", "Attack ID", "Attack Code", "Attacker Name", "Attacker Level", "Attacker Faction Name",
+                       "Attacker Faction ID", "Defender Name", "Defender Level", "Defender Faction Name", "Defender Faction ID",
+                       "Result", "Respect Gain", "Respect Loss", "Chain", "Modifiers: Chain", "Interrupted", "Stealthed", "Is Ranked War"];
+      
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const hrow = document.createElement("tr");
+      
+      headers.forEach(h => {
+        const th = document.createElement("th");
+        th.textContent = h;
+        th.setAttribute('title', h); // Add tooltip for narrow columns
+        hrow.appendChild(th);
+      });
+      
+      thead.appendChild(hrow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      attacks.forEach(a => {
+        const row = document.createElement("tr");
+        if (!a.attacker?.name) row.classList.add("blank-attacker");
+        
+        const attackerFactionClass = a.attacker?.faction?.id === faction1 ? "my-faction-faction" :
+                                     a.attacker?.faction?.id === faction2 ? "opponent-faction-faction" : "";
+        
+        const defenderFactionClass = a.defender?.faction?.id === faction1 ? "my-faction-faction" :
+                                     a.defender?.faction?.id === faction2 ? "opponent-faction-faction" : "";
+        
+        const chainMod = a.modifiers?.chain ?? "";
+        
+        const cells = [
+          new Date(a.started * 1000).toLocaleString(),
+          new Date(a.ended * 1000).toLocaleString(),
+          a.id, a.code,
+          a.attacker?.name || "STEALTHED", a.attacker?.level || "",
+          { val: a.attacker?.faction?.name || "", cls: attackerFactionClass }, a.attacker?.faction?.id || "",
+          a.defender?.name || "", a.defender?.level || "",
+          { val: a.defender?.faction?.name || "", cls: defenderFactionClass }, a.defender?.faction?.id || "",
+          a.result, a.respect_gain?.toFixed(2) || 0, a.respect_loss?.toFixed(2) || 0, a.chain || "",
+          chainMod,
+          a.is_interrupted ? "Yes" : "No", a.is_stealthed ? "Yes" : "No", a.is_ranked_war ? "Yes" : "No"
+        ];
+        
+        cells.forEach(cell => {
+          const td = document.createElement("td");
+          if (typeof cell === 'object') {
+            td.textContent = cell.val;
+            if (cell.cls) td.className = cell.cls;
+          } else td.textContent = cell;
+          row.appendChild(td);
+        });
+        
+        tbody.appendChild(row);
+      });
+
+      table.appendChild(tbody);
+      document.getElementById("tableContainer").innerHTML = "";
+      document.getElementById("tableContainer").appendChild(table);
+    }
+
+    function exportToCSV() {
+      const exportTable = (selector, filename) => {
+        const rows = Array.from(document.querySelectorAll(`${selector} table tr`));
+        const csv = rows.map(row =>
+          Array.from(row.children).map(cell =>
+            `"${cell.textContent.replace(/"/g, '""')}"`
+          ).join(",")
+        ).join("\n");
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const currentTab = document.querySelector('.tab-section.active').id;
+      
+      if (currentTab === 'logTab') {
+        exportTable("#logTab", "ranked_war_attacks.csv");
+      } else {
+        exportTable("#summaryTab", "resilience_defence_summary.csv");
       }
-    })();
+    }
   </script>
 </body>
-
 </html>
