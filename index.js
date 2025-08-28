@@ -1,0 +1,100 @@
+(function () {
+  let apiKey = "";
+  let selectedWar = null;
+  let factionId = null;
+  let warStart = 0;
+  let warEnd = 0;
+  let faction1 = null;
+  let faction2 = null;
+
+  window.loadRankedWars = async function () {
+    apiKey = document.getElementById("apiKey").value.trim();
+    const url = `https://api.torn.com/v2/faction?selections=rankedwars&key=${apiKey}`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    factionId = data.ID;
+    const dropdown = document.getElementById("warDropdown");
+    dropdown.innerHTML = "";
+    Object.entries(data.rankedwars).forEach(([id, war]) => {
+      const option = document.createElement("option");
+      option.value = id;
+      option.text = `${war.factions[war.factions_attacker].name} vs ${
+        war.factions[war.factions_defender].name
+      }`;
+      option.dataset.start = war.war.start;
+      option.dataset.end = war.war.end;
+      option.dataset.f1 = war.factions_attacker;
+      option.dataset.f2 = war.factions_defender;
+      dropdown.appendChild(option);
+    });
+    document.getElementById("warSelector").style.display = "block";
+  };
+
+  window.loadAttackLogs = async function () {
+    const dropdown = document.getElementById("warDropdown");
+    selectedWar = dropdown.value;
+    warStart = dropdown.selectedOptions[0].dataset.start;
+    warEnd = dropdown.selectedOptions[0].dataset.end;
+    faction1 = dropdown.selectedOptions[0].dataset.f1;
+    faction2 = dropdown.selectedOptions[0].dataset.f2;
+
+    let url = `https://api.torn.com/v2/faction/attacks?from=${warStart}&to=${warEnd}&limit=100&sort=DESC&key=${apiKey}`;
+    let allAttacks = [];
+
+    while (url) {
+      const res = await fetch(url);
+      const data = await res.json();
+      const newAttacks = data.attacks.filter((a) => a.ranked_war === 1);
+      allAttacks = allAttacks.concat(newAttacks);
+      url = data._metadata?.links?.prev || null;
+    }
+
+    renderTable(allAttacks);
+  };
+
+  function renderTable(attacks) {
+    const container = document.getElementById("tableContainer");
+    const table = document.createElement("table");
+    const headers = ["Time", "Attacker", "Defender", "Result"];
+
+    const thead = document.createElement("thead");
+    const tr = document.createElement("tr");
+    headers.forEach((h) => {
+      const th = document.createElement("th");
+      th.textContent = h;
+      tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    attacks.forEach((atk) => {
+      const row = document.createElement("tr");
+      const isStealth = !atk.attacker?.name || atk.attacker.name === "N/A";
+      const defIsUs = atk.defender.faction === factionId;
+
+      if (isStealth && defIsUs) {
+        row.className = "stealth-defence";
+      } else if (
+        [atk.attacker.faction, atk.defender.faction].includes(faction1) ||
+        [atk.attacker.faction, atk.defender.faction].includes(faction2)
+      ) {
+        row.className = "highlight";
+      }
+
+      row.innerHTML = `
+        <td>${new Date(atk.timestamp_ended * 1000).toLocaleString()}</td>
+        <td>${atk.attacker?.name || "STEALTHED"}</td>
+        <td>${atk.defender?.name || ""}</td>
+        <td>${atk.result}</td>
+      `;
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+
+    container.innerHTML = "";
+    container.appendChild(table);
+  }
+})();
