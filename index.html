@@ -79,7 +79,7 @@
   let warEnd = 0;
   let faction1 = null;
   let faction2 = null;
-  let factionId = null; // best effort
+  let factionId = null;
 
   async function fetchJson(url) {
     const res = await fetch(url);
@@ -100,35 +100,38 @@
       apiKey = document.getElementById("apiKey").value.trim();
       if (!apiKey) throw new Error("API key required.");
       const url = `https://api.torn.com/v2/faction?selections=rankedwars&key=${apiKey}`;
-const data = await fetchJson(url);
-console.log("Full API response:", JSON.stringify(data, null, 2)); // ADD THIS LINE
-      // payload shape tolerance
+      const data = await fetchJson(url);
+
+      // Extract faction ID from the response
       factionId = data.ID ?? data.faction_id ?? data.faction?.id ?? null;
-      const wars = data.rankedwars ?? data.ranked_wars;
-      if (!wars || typeof wars !== "object")
+      
+      const wars = data.rankedwars;
+      if (!Array.isArray(wars) || wars.length === 0) {
         throw new Error("No ranked wars found.");
+      }
 
       const dropdown = document.getElementById("warDropdown");
       dropdown.innerHTML = "";
 
-      for (const [id, war] of Object.entries(wars)) {
-        const fAtt = war.factions_attacker;
-        const fDef = war.factions_defender;
-        const nameA = war.factions?.[fAtt]?.name ?? `Attacker ${fAtt ?? ""}`;
-        const nameD = war.factions?.[fDef]?.name ?? `Defender ${fDef ?? ""}`;
-        const start = war.war?.start ?? war.start ?? "";
-        const end = war.war?.end ?? war.end ?? "";
+      wars.forEach((war) => {
+        const factions = war.factions || [];
+        const nameA = factions[0]?.name ?? "Faction A";
+        const nameD = factions[1]?.name ?? "Faction B";
+        const start = war.start ?? "";
+        const end = war.end ?? "";
+        const f1Id = factions[0]?.id ?? "";
+        const f2Id = factions[1]?.id ?? "";
 
         const option = document.createElement("option");
-        option.value = id;
+        option.value = war.id;
         option.text = `${nameA} vs ${nameD}`;
         option.dataset.start = start;
         option.dataset.end = end;
-        option.dataset.f1 = fAtt ?? "";
-        option.dataset.f2 = fDef ?? "";
+        option.dataset.f1 = f1Id;
+        option.dataset.f2 = f2Id;
         option.dataset.fid = factionId ?? "";
         dropdown.appendChild(option);
-      }
+      });
 
       document.getElementById("warSelector").style.display = "block";
     } catch (e) {
@@ -160,8 +163,8 @@ console.log("Full API response:", JSON.stringify(data, null, 2)); // ADD THIS LI
         const newAttacks = attacks.filter((a) => Number(a?.ranked_war) === 1);
         allAttacks = allAttacks.concat(newAttacks);
 
-        // pagination guard
-        url = page._metadata?.links?.prev || null;
+        // Fixed pagination with API key
+        url = page._metadata?.links?.prev ? `${page._metadata.links.prev}&key=${apiKey}` : null;
       }
 
       renderTable(allAttacks);
@@ -227,8 +230,6 @@ console.log("Full API response:", JSON.stringify(data, null, 2)); // ADD THIS LI
     container.appendChild(table);
   }
 })();
-
-
   </script>
 </body>
 
