@@ -100,8 +100,8 @@
       apiKey = document.getElementById("apiKey").value.trim();
       if (!apiKey) throw new Error("API key required.");
       const url = `https://api.torn.com/v2/faction?selections=rankedwars&key=${apiKey}`;
-      const data = await fetchJson(url);
-
+const data = await fetchJson(url);
+console.log("Full API response:", JSON.stringify(data, null, 2)); // ADD THIS LINE
       // payload shape tolerance
       factionId = data.ID ?? data.faction_id ?? data.faction?.id ?? null;
       const wars = data.rankedwars ?? data.ranked_wars;
