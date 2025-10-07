@@ -360,8 +360,9 @@
       }
     }
 
-  function renderSummary(attacks) {
+ function renderSummary(attacks) {
   const counts = {};
+  const BONUS_CHAIN_NUMBERS = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000];
   
   attacks.forEach(a => {
     const defender = a.defender;
@@ -384,17 +385,18 @@
       if (!counts[name].totalOutgoing) {
         counts[name].totalOutgoing = 0;
         counts[name].netRespectSum = 0;
-        counts[name].adjustedRespectSum = 0;
       }
-      
-      counts[name].totalOutgoing++;
       
       const respectGain = a.respect_gain || 0;
       const respectLoss = a.respect_loss || 0;
-      const chainMod = a.modifiers?.chain || 1;
+      const chainNumber = a.chain;
       
+      // Skip bonus chain hits
+      const isBonusHit = BONUS_CHAIN_NUMBERS.includes(chainNumber);
+      if (isBonusHit) return;
+      
+      counts[name].totalOutgoing++;
       counts[name].netRespectSum += (respectGain - respectLoss);
-      counts[name].adjustedRespectSum += (respectGain / chainMod);
     }
   });
 
@@ -405,7 +407,6 @@
       <th>Total Outgoing Attacks</th>
       <th>Total Defends</th>
       <th>Avg Net Respect</th>
-      <th>Avg Adjusted Respect</th>
     </tr>
   </thead>`;
 
@@ -415,7 +416,6 @@
     .forEach(([name, data]) => {
       const outgoing = data.totalOutgoing || 0;
       const avgNet = outgoing ? (data.netRespectSum / outgoing).toFixed(2) : "-";
-      const avgAdjusted = outgoing ? (data.adjustedRespectSum / outgoing).toFixed(2) : "-";
       
       const row = document.createElement("tr");
       row.innerHTML = `
@@ -423,7 +423,6 @@
         <td>${outgoing}</td>
         <td>${data.totalDefends || 0}</td>
         <td>${avgNet}</td>
-        <td>${avgAdjusted}</td>
       `;
       tbody.appendChild(row);
     });
@@ -432,7 +431,6 @@
   document.getElementById("summaryTable").innerHTML = "";
   document.getElementById("summaryTable").appendChild(table);
 }
-
     function renderTable(attacks) {
       const headers = ["Started", "Ended", "Attack ID", "Attack Code", "Attacker Name", "Attacker Level", "Attacker Faction Name",
                        "Attacker Faction ID", "Defender Name", "Defender Level", "Defender Faction Name", "Defender Faction ID",
