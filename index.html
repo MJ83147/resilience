@@ -375,14 +375,14 @@
           else counts[name].known++;
         }
 
-        if (a.is_ranked_war && isResilienceAttacker && attacker?.name && a.respect_gain !== undefined) {
-          const name = attacker.name;
-          const chainMod = a.modifiers?.chain || 0;
-          const adjustedRespect = a.respect_gain - chainMod;
-          if (!counts[name]) counts[name] = { known: 0, stealth: 0, respectTotal: 0, respectCount: 0 };
-          counts[name].respectTotal += adjustedRespect;
-          counts[name].respectCount += 1;
-        }
+       if (a.is_ranked_war && isResilienceAttacker && attacker?.name && a.respect_gain !== undefined) {
+  const name = attacker.name;
+  const chainMod = a.modifiers?.chain || 1;  // Default to 1 if missing
+  const adjustedRespect = a.respect_gain / chainMod;  // DIVIDE to remove chain multiplier
+  if (!counts[name]) counts[name] = { known: 0, stealth: 0, respectTotal: 0, respectCount: 0 };
+  counts[name].respectTotal += adjustedRespect;
+  counts[name].respectCount += 1;
+}
       });
 
       const table = document.createElement("table");
