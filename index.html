@@ -360,7 +360,7 @@
       }
     }
 
- function renderSummary(attacks) {
+function renderSummary(attacks) {
   const counts = {};
   const BONUS_CHAIN_NUMBERS = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000];
   
@@ -385,18 +385,21 @@
       if (!counts[name].totalOutgoing) {
         counts[name].totalOutgoing = 0;
         counts[name].netRespectSum = 0;
+        counts[name].netRespectCount = 0;
       }
+      
+      counts[name].totalOutgoing++;
       
       const respectGain = a.respect_gain || 0;
       const respectLoss = a.respect_loss || 0;
       const chainNumber = a.chain;
       
-      // Skip bonus chain hits
+      // Only add to average if NOT a bonus chain hit AND has respect gain
       const isBonusHit = BONUS_CHAIN_NUMBERS.includes(chainNumber);
-      if (isBonusHit) return;
-      
-      counts[name].totalOutgoing++;
-      counts[name].netRespectSum += (respectGain - respectLoss);
+      if (!isBonusHit && respectGain > 0) {
+        counts[name].netRespectSum += (respectGain - respectLoss);
+        counts[name].netRespectCount++;
+      }
     }
   });
 
@@ -414,13 +417,12 @@
   Object.entries(counts)
     .sort((a, b) => (b[1].totalDefends || 0) - (a[1].totalDefends || 0))
     .forEach(([name, data]) => {
-      const outgoing = data.totalOutgoing || 0;
-      const avgNet = outgoing ? (data.netRespectSum / outgoing).toFixed(2) : "-";
+      const avgNet = data.netRespectCount ? (data.netRespectSum / data.netRespectCount).toFixed(2) : "-";
       
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${name}</td>
-        <td>${outgoing}</td>
+        <td>${data.totalOutgoing || 0}</td>
         <td>${data.totalDefends || 0}</td>
         <td>${avgNet}</td>
       `;
