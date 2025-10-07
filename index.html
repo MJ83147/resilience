@@ -360,62 +360,78 @@
       }
     }
 
-    function renderSummary(attacks) {
-      const counts = {};
-      attacks.forEach(a => {
-        const defender = a.defender;
-        const attacker = a.attacker;
-        const isResilienceDefender = defender?.faction?.name === "Resilience";
-        const isResilienceAttacker = attacker?.faction?.name === "Resilience";
+  function renderSummary(attacks) {
+  const counts = {};
+  
+  attacks.forEach(a => {
+    const defender = a.defender;
+    const attacker = a.attacker;
+    const isResilienceDefender = defender?.faction?.name === "Resilience";
+    const isResilienceAttacker = attacker?.faction?.name === "Resilience";
 
-        if (a.is_ranked_war && isResilienceDefender) {
-          const name = defender.name || "Unknown";
-          if (!counts[name]) counts[name] = { known: 0, stealth: 0, respectTotal: 0, respectCount: 0 };
-          if (!attacker?.name) counts[name].stealth++;
-          else counts[name].known++;
-        }
-
-       if (a.is_ranked_war && isResilienceAttacker && attacker?.name && a.respect_gain !== undefined) {
-  const name = attacker.name;
-  const chainMod = a.modifiers?.chain || 1;  // Default to 1 if missing
-  const adjustedRespect = a.respect_gain / chainMod;  // DIVIDE to remove chain multiplier
-  if (!counts[name]) counts[name] = { known: 0, stealth: 0, respectTotal: 0, respectCount: 0 };
-  counts[name].respectTotal += adjustedRespect;
-  counts[name].respectCount += 1;
-}
-      });
-
-      const table = document.createElement("table");
-      table.innerHTML = `<thead>
-        <tr>
-          <th style="width: 25%;">Resilience Member</th>
-          <th style="width: 15%;">Known Defences</th>
-          <th style="width: 15%;">Stealth Defences</th>
-          <th style="width: 15%;">Total</th>
-          <th style="width: 30%;">Avg Adjusted Respect Gain</th>
-        </tr>
-      </thead>`;
-
-      const tbody = document.createElement("tbody");
-      Object.entries(counts)
-        .sort((a, b) => (b[1].known + b[1].stealth) - (a[1].known + a[1].stealth))
-        .forEach(([name, data]) => {
-          const avg = data.respectCount ? (data.respectTotal / data.respectCount).toFixed(2) : "-";
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${name}</td>
-            <td>${data.known}</td>
-            <td>${data.stealth}</td>
-            <td>${data.known + data.stealth}</td>
-            <td>${avg}</td>
-          `;
-          tbody.appendChild(row);
-        });
-
-      table.appendChild(tbody);
-      document.getElementById("summaryTable").innerHTML = "";
-      document.getElementById("summaryTable").appendChild(table);
+    // DEFENSIVE: Count times Resilience was defended
+    if (a.is_ranked_war && isResilienceDefender) {
+      const name = defender.name || "Unknown";
+      if (!counts[name]) counts[name] = { totalDefends: 0 };
+      counts[name].totalDefends++;
     }
+
+    // OFFENSIVE: Track outgoing attacks and respect
+    if (a.is_ranked_war && isResilienceAttacker && attacker?.name) {
+      const name = attacker.name;
+      if (!counts[name]) counts[name] = {};
+      
+      if (!counts[name].totalOutgoing) {
+        counts[name].totalOutgoing = 0;
+        counts[name].netRespectSum = 0;
+        counts[name].adjustedRespectSum = 0;
+      }
+      
+      counts[name].totalOutgoing++;
+      
+      const respectGain = a.respect_gain || 0;
+      const respectLoss = a.respect_loss || 0;
+      const chainMod = a.modifiers?.chain || 1;
+      
+      counts[name].netRespectSum += (respectGain - respectLoss);
+      counts[name].adjustedRespectSum += (respectGain / chainMod);
+    }
+  });
+
+  const table = document.createElement("table");
+  table.innerHTML = `<thead>
+    <tr>
+      <th>Resilience Member</th>
+      <th>Total Outgoing Attacks</th>
+      <th>Total Defends</th>
+      <th>Avg Net Respect</th>
+      <th>Avg Adjusted Respect</th>
+    </tr>
+  </thead>`;
+
+  const tbody = document.createElement("tbody");
+  Object.entries(counts)
+    .sort((a, b) => (b[1].totalDefends || 0) - (a[1].totalDefends || 0))
+    .forEach(([name, data]) => {
+      const outgoing = data.totalOutgoing || 0;
+      const avgNet = outgoing ? (data.netRespectSum / outgoing).toFixed(2) : "-";
+      const avgAdjusted = outgoing ? (data.adjustedRespectSum / outgoing).toFixed(2) : "-";
+      
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${name}</td>
+        <td>${outgoing}</td>
+        <td>${data.totalDefends || 0}</td>
+        <td>${avgNet}</td>
+        <td>${avgAdjusted}</td>
+      `;
+      tbody.appendChild(row);
+    });
+
+  table.appendChild(tbody);
+  document.getElementById("summaryTable").innerHTML = "";
+  document.getElementById("summaryTable").appendChild(table);
+}
 
     function renderTable(attacks) {
       const headers = ["Started", "Ended", "Attack ID", "Attack Code", "Attacker Name", "Attacker Level", "Attacker Faction Name",
