@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xanax Tracker</title>
+  <style>
+    :root {
+      --green: #2E7D32;
+      --green-light: #E8F5E9;
+      --red: #C62828;
+      --red-light: #FFEBEE;
+      --text: #212121;
+      --text-light: #757575;
+      --white: #FFFFFF;
+      --gray-100: #F5F5F5;
+      --gray-200: #EEEEEE;
+      --gray-300: #E0E0E0;
+      --radius: 8px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.1);
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: var(--gray-100);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background: var(--white);
+      padding: 16px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      color: var(--green);
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      font-size: 14px;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: var(--green);
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .filter-group label {
+      font-size: 14px;
+      color: var(--text-light);
+    }
+
+    .filter-btn {
+      padding: 8px 14px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      background: var(--white);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      background: var(--gray-100);
+    }
+
+    .filter-btn.active {
+      background: var(--green-light);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .week-toggles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .week-btn {
+      padding: 6px 10px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      background: var(--white);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .week-btn:hover {
+      background: var(--gray-100);
+    }
+
+    .week-btn.active {
+      background: var(--green-light);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .table-wrapper {
+      flex: 1;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-200);
+      white-space: nowrap;
+    }
+
+    th {
+      background: var(--gray-100);
+      font-weight: 600;
+      color: var(--text);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    th:hover {
+      background: var(--gray-200);
+    }
+
+    th.sorted-asc::after {
+      content: " ▲";
+      font-size: 10px;
+    }
+
+    th.sorted-desc::after {
+      content: " ▼";
+      font-size: 10px;
+    }
+
+    /* Sticky first two columns */
+    th:nth-child(1), td:nth-child(1) {
+      position: sticky;
+      left: 0;
+      z-index: 11;
+      background: var(--gray-100);
+    }
+
+    td:nth-child(1) {
+      background: var(--white);
+      font-weight: 500;
+    }
+
+    tr:nth-child(even) td:nth-child(1) {
+      background: var(--gray-100);
+    }
+
+    tr:nth-child(even) td {
+      background: var(--gray-100);
+    }
+
+    /* Week group headers */
+    .week-header {
+      text-align: center;
+      border-left: 2px solid var(--gray-300);
+    }
+
+    .week-cell {
+      border-left: 2px solid var(--gray-300);
+    }
+
+    /* Avg cell coloring */
+    .avg-ahead {
+      background: var(--green-light);
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .avg-behind {
+      background: var(--red-light);
+      color: var(--red);
+      font-weight: 600;
+    }
+
+    /* OD cell */
+    .od-yes {
+      color: var(--red);
+      font-weight: 600;
+    }
+
+    /* Status */
+    .status-ok {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .status-behind {
+      color: var(--red);
+      font-weight: 600;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-light);
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--gray-200);
+      font-size: 14px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-count {
+      font-weight: 600;
+    }
+
+    .stat-count.green { color: var(--green); }
+    .stat-count.red { color: var(--red); }
+
+    @media (max-width: 768px) {
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .filter-group {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Xanax Tracker</h1>
+      <div class="controls">
+        <input type="text" class="search-box" id="search" placeholder="Search member...">
+        
+        <div class="filter-group">
+          <label>Status:</label>
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="behind">Behind</button>
+          <button class="filter-btn" data-filter="ok">On Track</button>
+        </div>
+
+        <div class="filter-group">
+          <label>Weeks:</label>
+          <div class="week-toggles" id="weekToggles"></div>
+        </div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat">Total: <span class="stat-count" id="totalCount">0</span></div>
+        <div class="stat">On Track: <span class="stat-count green" id="okCount">0</span></div>
+        <div class="stat">Behind: <span class="stat-count red" id="behindCount">0</span></div>
+        <div class="stat">Showing: <span class="stat-count" id="showingCount">0</span></div>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="dataTable">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="loading" id="loading">Loading data...</div>
+    </div>
+  </div>
+
+  <script>
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSmISHBbWz7ywK8d5VpL45ZJ-IbRdtnHYUpJpLMTjnbKa7beyygtOhoWwBnU60z8ZQzptgIykIiUM8R/pub?gid=1631528527&single=true&output=csv';
+
+    let rawData = [];
+    let headers = [];
+    let weeks = [];
+    let visibleWeeks = new Set();
+    let currentFilter = 'all';
+    let searchTerm = '';
+    let sortCol = null;
+    let sortAsc = true;
+
+    // DOM elements
+    const searchInput = document.getElementById('search');
+    const weekToggles = document.getElementById('weekToggles');
+    const tableHead = document.getElementById('tableHead');
+    const tableBody = document.getElementById('tableBody');
+    const loading = document.getElementById('loading');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+
+    // Load data
+    fetch(CSV_URL)
+      .then(r => r.text())
+      .then(csv => {
+        parseCSV(csv);
+        loading.style.display = 'none';
+        renderTable();
+      })
+      .catch(err => {
+        loading.textContent = 'Error loading data: ' + err.message;
+      });
+
+    function parseCSV(csv) {
+      const rows = csv.trim().split('\n').map(r => {
+        // Handle CSV properly (commas in quotes)
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let char of r) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      });
+
+      headers = rows[0];
+      rawData = rows.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => {
+          obj[h] = row[i] || '';
+        });
+        return obj;
+      });
+
+      // Extract weeks from headers (look for "X/X Avg" pattern)
+      weeks = [];
+      headers.forEach(h => {
+        const match = h.match(/^(\d+\/\d+)\s+Avg$/);
+        if (match) {
+          weeks.push(match[1]);
+        }
+      });
+
+      // Show last 3 weeks by default
+      const defaultWeeks = weeks.slice(-3);
+      visibleWeeks = new Set(defaultWeeks);
+
+      buildWeekToggles();
+    }
+
+    function buildWeekToggles() {
+      weekToggles.innerHTML = '';
+      weeks.forEach(week => {
+        const btn = document.createElement('button');
+        btn.className = 'week-btn' + (visibleWeeks.has(week) ? ' active' : '');
+        btn.textContent = week;
+        btn.addEventListener('click', () => {
+          if (visibleWeeks.has(week)) {
+            visibleWeeks.delete(week);
+            btn.classList.remove('active');
+          } else {
+            visibleWeeks.add(week);
+            btn.classList.add('active');
+          }
+          renderTable();
+        });
+        weekToggles.appendChild(btn);
+      });
+    }
+
+    function renderTable() {
+      // Build headers
+      let headerHTML = '<tr>';
+      headerHTML += '<th onclick="sortBy(\'Member\')">Member</th>';
+      headerHTML += '<th onclick="sortBy(\'Days\')">Days</th>';
+
+      // Week columns
+      weeks.forEach(week => {
+        if (!visibleWeeks.has(week)) return;
+        headerHTML += `<th class="week-header" onclick="sortBy('${week} Total')">${week} Total</th>`;
+        headerHTML += `<th onclick="sortBy('${week} Avg')">${week} Avg</th>`;
+        headerHTML += `<th onclick="sortBy('${week} OD')">${week} OD</th>`;
+      });
+
+      headerHTML += '<th onclick="sortBy(\'Status\')">Status</th>';
+      headerHTML += '</tr>';
+      tableHead.innerHTML = headerHTML;
+
+      // Apply sort indicator
+      if (sortCol) {
+        const ths = tableHead.querySelectorAll('th');
+        ths.forEach(th => {
+          if (th.textContent === sortCol || th.textContent === sortCol.replace(/ (Total|Avg|OD)$/, ' $1')) {
+            th.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+          }
+        });
+      }
+
+      // Filter data
+      let filtered = rawData.filter(row => {
+        // Search filter
+        if (searchTerm && !row['Member']?.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+        // Status filter
+        if (currentFilter === 'behind' && row['Status'] !== 'Behind') return false;
+        if (currentFilter === 'ok' && row['Status'] === 'Behind') return false;
+        return true;
+      });
+
+      // Sort data
+      if (sortCol) {
+        filtered.sort((a, b) => {
+          let aVal = a[sortCol] || '';
+          let bVal = b[sortCol] || '';
+
+          // Try numeric sort
+          const aNum = parseFloat(aVal);
+          const bNum = parseFloat(bVal);
+
+          if (!isNaN(aNum) && !isNaN(bNum)) {
+            return sortAsc ? aNum - bNum : bNum - aNum;
+          }
+
+          // String sort
+          return sortAsc 
+            ? aVal.localeCompare(bVal, undefined, { numeric: true })
+            : bVal.localeCompare(aVal, undefined, { numeric: true });
+        });
+      }
+
+      // Build body
+      let bodyHTML = '';
+      filtered.forEach(row => {
+        bodyHTML += '<tr>';
+        bodyHTML += `<td>${row['Member'] || ''}</td>`;
+        bodyHTML += `<td>${row['Days'] || ''}</td>`;
+
+        weeks.forEach(week => {
+          if (!visibleWeeks.has(week)) return;
+
+          const total = row[`${week} Total`] || '';
+          const avg = row[`${week} Avg`] || '';
+          const od = row[`${week} OD`] || '';
+
+          bodyHTML += `<td class="week-cell">${total}</td>`;
+
+          // Color code avg
+          const avgNum = parseFloat(avg);
+          let avgClass = '';
+          if (!isNaN(avgNum)) {
+            avgClass = avgNum >= 2 ? 'avg-ahead' : 'avg-behind';
+          }
+          bodyHTML += `<td class="${avgClass}">${avg}</td>`;
+
+          // OD styling
+          const odClass = od.toLowerCase() === 'yes' ? 'od-yes' : '';
+          bodyHTML += `<td class="${odClass}">${od}</td>`;
+        });
+
+        // Status
+        const status = row['Status'] || '';
+        const statusClass = status === 'Behind' ? 'status-behind' : 'status-ok';
+        bodyHTML += `<td class="${statusClass}">${status}</td>`;
+
+        bodyHTML += '</tr>';
+      });
+
+      tableBody.innerHTML = bodyHTML;
+
+      // Update stats
+      const total = rawData.length;
+      const behind = rawData.filter(r => r['Status'] === 'Behind').length;
+      const ok = total - behind;
+
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('okCount').textContent = ok;
+      document.getElementById('behindCount').textContent = behind;
+      document.getElementById('showingCount').textContent = filtered.length;
+    }
+
+    // Sort function
+    function sortBy(col) {
+      if (sortCol === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortCol = col;
+        sortAsc = true;
+      }
+      renderTable();
+    }
+
+    // Search input
+    searchInput.addEventListener('input', e => {
+      searchTerm = e.target.value;
+      renderTable();
+    });
+
+    // Filter buttons
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderTable();
+      });
+    });
+  </script>
+</body>
+</html>
