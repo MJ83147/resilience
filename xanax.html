@@ -520,12 +520,12 @@
           bodyHTML += `<td class="${avgClass}">${avg}</td>`;
         });
 
-        // Status with OD underneath
+        // Status with OD underneath (only if Yes)
         const status = row['VisibleStatus'];
         const od = row['VisibleOD'];
         const statusClass = status === 'Behind' ? 'status-behind' : 'status-ok';
-        const odClass = od.toLowerCase() === 'yes' ? 'od-yes' : '';
-        bodyHTML += `<td class="${statusClass}">${status}<br><span class="${odClass}" style="font-size: 11px;">(OD: ${od})</span></td>`;
+        const odDisplay = od.toLowerCase() === 'yes' ? '<br><span style="font-size: 11px;">(OD)</span>' : '';
+        bodyHTML += `<td class="${statusClass}">${status}${odDisplay}</td>`;
 
         bodyHTML += '</tr>';
       });
