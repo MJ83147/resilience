@@ -108,30 +108,18 @@
       color: var(--green);
     }
 
-    .week-toggles {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .week-btn {
-      padding: 6px 10px;
+    .week-select {
+      padding: 8px 12px;
       border: 1px solid var(--gray-300);
       border-radius: var(--radius);
       background: var(--white);
+      font-size: 14px;
       cursor: pointer;
-      font-size: 12px;
-      transition: all 0.2s;
     }
 
-    .week-btn:hover {
-      background: var(--gray-100);
-    }
-
-    .week-btn.active {
-      background: var(--green-light);
+    .week-select:focus {
+      outline: none;
       border-color: var(--green);
-      color: var(--green);
     }
 
     .table-wrapper {
@@ -300,7 +288,13 @@
 
         <div class="filter-group">
           <label>Weeks:</label>
-          <div class="week-toggles" id="weekToggles"></div>
+          <select class="week-select" id="weekSelect">
+            <option value="1">Last week</option>
+            <option value="3" selected>Last 3 weeks</option>
+            <option value="6">Last 6 weeks</option>
+            <option value="12">Last 12 weeks</option>
+            <option value="all">All weeks</option>
+          </select>
         </div>
       </div>
       <div class="stats-bar">
@@ -334,7 +328,7 @@
 
     // DOM elements
     const searchInput = document.getElementById('search');
-    const weekToggles = document.getElementById('weekToggles');
+    const weekSelect = document.getElementById('weekSelect');
     const tableHead = document.getElementById('tableHead');
     const tableBody = document.getElementById('tableBody');
     const loading = document.getElementById('loading');
@@ -346,6 +340,7 @@
       .then(csv => {
         parseCSV(csv);
         loading.style.display = 'none';
+        updateVisibleWeeks();
         renderTable();
       })
       .catch(err => {
@@ -390,33 +385,25 @@
           weeks.push(match[1]);
         }
       });
-
-      // Show last 3 weeks by default
-      const defaultWeeks = weeks.slice(-3);
-      visibleWeeks = new Set(defaultWeeks);
-
-      buildWeekToggles();
     }
 
-    function buildWeekToggles() {
-      weekToggles.innerHTML = '';
-      weeks.forEach(week => {
-        const btn = document.createElement('button');
-        btn.className = 'week-btn' + (visibleWeeks.has(week) ? ' active' : '');
-        btn.textContent = week;
-        btn.addEventListener('click', () => {
-          if (visibleWeeks.has(week)) {
-            visibleWeeks.delete(week);
-            btn.classList.remove('active');
-          } else {
-            visibleWeeks.add(week);
-            btn.classList.add('active');
-          }
-          renderTable();
-        });
-        weekToggles.appendChild(btn);
-      });
+    function updateVisibleWeeks() {
+      const selection = weekSelect.value;
+      
+      if (selection === 'all') {
+        visibleWeeks = new Set(weeks);
+      } else {
+        const count = parseInt(selection);
+        const lastWeeks = weeks.slice(-count);
+        visibleWeeks = new Set(lastWeeks);
+      }
     }
+
+    // Week select change
+    weekSelect.addEventListener('change', () => {
+      updateVisibleWeeks();
+      renderTable();
+    });
 
     // Get status based on latest visible week
     function getVisibleStatus(row) {
