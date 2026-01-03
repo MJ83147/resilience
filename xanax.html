@@ -180,22 +180,19 @@
       font-weight: 500;
     }
 
-    tr:nth-child(even) td:nth-child(1) {
-      background: var(--gray-100);
-    }
-
-    tr:nth-child(even) td {
-      background: var(--gray-100);
-    }
-
     /* Week group headers */
     .week-header {
       text-align: center;
-      border-left: 2px solid var(--gray-300);
+      border-left: 3px solid var(--green);
     }
 
     .week-cell {
-      border-left: 2px solid var(--gray-300);
+      border-left: 3px solid var(--green);
+    }
+
+    /* Center all data columns except Member */
+    td:not(:first-child), th:not(:first-child) {
+      text-align: center;
     }
 
     /* Avg cell coloring */
@@ -222,14 +219,12 @@
       color: var(--green);
       font-weight: 600;
       white-space: normal;
-      text-align: center;
     }
 
     .status-behind {
       color: var(--red);
       font-weight: 600;
       white-space: normal;
-      text-align: center;
     }
 
     .loading {
@@ -444,7 +439,7 @@
         headerHTML += `<th onclick="sortBy('${week} Avg')">${week} Avg</th>`;
       });
 
-      headerHTML += '<th onclick="sortBy(\'VisibleStatus\')">Status</th>';
+      headerHTML += '<th class="week-header" onclick="sortBy(\'VisibleStatus\')">Status</th>';
       headerHTML += '</tr>';
       tableHead.innerHTML = headerHTML;
 
@@ -525,7 +520,7 @@
         const od = row['VisibleOD'];
         const statusClass = status === 'Behind' ? 'status-behind' : 'status-ok';
         const odDisplay = od.toLowerCase() === 'yes' ? '<br><span style="font-size: 11px;">(OD)</span>' : '';
-        bodyHTML += `<td class="${statusClass}">${status}${odDisplay}</td>`;
+        bodyHTML += `<td class="week-cell ${statusClass}">${status}${odDisplay}</td>`;
 
         bodyHTML += '</tr>';
       });
