@@ -233,11 +233,15 @@
     .status-ok {
       color: var(--green);
       font-weight: 600;
+      white-space: normal;
+      text-align: center;
     }
 
     .status-behind {
       color: var(--red);
       font-weight: 600;
+      white-space: normal;
+      text-align: center;
     }
 
     .loading {
@@ -414,21 +418,46 @@
       });
     }
 
+    // Get status based on latest visible week
+    function getVisibleStatus(row) {
+      // Get visible weeks in order (latest first)
+      const visibleWeeksOrdered = weeks.filter(w => visibleWeeks.has(w)).reverse();
+      
+      for (const week of visibleWeeksOrdered) {
+        const avg = row[`${week} Avg`];
+        const avgNum = parseFloat(avg);
+        if (!isNaN(avgNum)) {
+          return avgNum >= 2 ? '✓' : 'Behind';
+        }
+      }
+      return '—';
+    }
+
+    // Get OD status based on latest visible week
+    function getVisibleOD(row) {
+      const visibleWeeksOrdered = weeks.filter(w => visibleWeeks.has(w)).reverse();
+      for (const week of visibleWeeksOrdered) {
+        const od = row[`${week} OD`];
+        if (od && od !== '—') {
+          return od;
+        }
+      }
+      return 'No';
+    }
+
     function renderTable() {
       // Build headers
       let headerHTML = '<tr>';
       headerHTML += '<th onclick="sortBy(\'Member\')">Member</th>';
-      headerHTML += '<th onclick="sortBy(\'Days\')">Days</th>';
 
-      // Week columns
+      // Week columns (Total and Avg only)
       weeks.forEach(week => {
         if (!visibleWeeks.has(week)) return;
         headerHTML += `<th class="week-header" onclick="sortBy('${week} Total')">${week} Total</th>`;
         headerHTML += `<th onclick="sortBy('${week} Avg')">${week} Avg</th>`;
-        headerHTML += `<th onclick="sortBy('${week} OD')">${week} OD</th>`;
       });
 
-      headerHTML += '<th onclick="sortBy(\'Status\')">Status</th>';
+      headerHTML += '<th onclick="sortBy(\'VisibleStatus\')">Status</th>';
       headerHTML += '</tr>';
       tableHead.innerHTML = headerHTML;
 
@@ -436,11 +465,17 @@
       if (sortCol) {
         const ths = tableHead.querySelectorAll('th');
         ths.forEach(th => {
-          if (th.textContent === sortCol || th.textContent === sortCol.replace(/ (Total|Avg|OD)$/, ' $1')) {
+          if (th.textContent === sortCol || th.textContent === sortCol.replace(/ (Total|Avg)$/, ' $1')) {
             th.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
           }
         });
       }
+
+      // Add visible status and OD to each row for filtering/sorting
+      rawData.forEach(row => {
+        row['VisibleStatus'] = getVisibleStatus(row);
+        row['VisibleOD'] = getVisibleOD(row);
+      });
 
       // Filter data
       let filtered = rawData.filter(row => {
@@ -448,9 +483,9 @@
         if (searchTerm && !row['Member']?.toLowerCase().includes(searchTerm.toLowerCase())) {
           return false;
         }
-        // Status filter
-        if (currentFilter === 'behind' && row['Status'] !== 'Behind') return false;
-        if (currentFilter === 'ok' && row['Status'] === 'Behind') return false;
+        // Status filter based on visible status
+        if (currentFilter === 'behind' && row['VisibleStatus'] !== 'Behind') return false;
+        if (currentFilter === 'ok' && row['VisibleStatus'] === 'Behind') return false;
         return true;
       });
 
@@ -480,14 +515,12 @@
       filtered.forEach(row => {
         bodyHTML += '<tr>';
         bodyHTML += `<td>${row['Member'] || ''}</td>`;
-        bodyHTML += `<td>${row['Days'] || ''}</td>`;
 
         weeks.forEach(week => {
           if (!visibleWeeks.has(week)) return;
 
           const total = row[`${week} Total`] || '';
           const avg = row[`${week} Avg`] || '';
-          const od = row[`${week} OD`] || '';
 
           bodyHTML += `<td class="week-cell">${total}</td>`;
 
@@ -498,26 +531,24 @@
             avgClass = avgNum >= 2 ? 'avg-ahead' : 'avg-behind';
           }
           bodyHTML += `<td class="${avgClass}">${avg}</td>`;
-
-          // OD styling
-          const odClass = od.toLowerCase() === 'yes' ? 'od-yes' : '';
-          bodyHTML += `<td class="${odClass}">${od}</td>`;
         });
 
-        // Status
-        const status = row['Status'] || '';
+        // Status with OD underneath
+        const status = row['VisibleStatus'];
+        const od = row['VisibleOD'];
         const statusClass = status === 'Behind' ? 'status-behind' : 'status-ok';
-        bodyHTML += `<td class="${statusClass}">${status}</td>`;
+        const odClass = od.toLowerCase() === 'yes' ? 'od-yes' : '';
+        bodyHTML += `<td class="${statusClass}">${status}<br><span class="${odClass}" style="font-size: 11px;">(OD: ${od})</span></td>`;
 
         bodyHTML += '</tr>';
       });
 
       tableBody.innerHTML = bodyHTML;
 
-      // Update stats
+      // Update stats based on visible status
       const total = rawData.length;
-      const behind = rawData.filter(r => r['Status'] === 'Behind').length;
-      const ok = total - behind;
+      const behind = rawData.filter(r => r['VisibleStatus'] === 'Behind').length;
+      const ok = rawData.filter(r => r['VisibleStatus'] === '✓').length;
 
       document.getElementById('totalCount').textContent = total;
       document.getElementById('okCount').textContent = ok;
