@@ -50,10 +50,46 @@
       margin-bottom: 16px;
     }
 
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
     .header h1 {
       color: var(--green);
       font-size: 24px;
-      margin-bottom: 16px;
+    }
+
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 6px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      transition: all 0.2s;
+    }
+
+    .nav-link:hover {
+      background: var(--gray-100);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .new-badge {
+      background: var(--green);
+      color: var(--white);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
     }
 
     .controls {
@@ -270,7 +306,13 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>Xanax Tracker</h1>
+      <div class="header-top">
+        <h1>Xanax Tracker</h1>
+        <a href="energy.html" class="nav-link">
+          Energy Monitor
+          <span class="new-badge">New</span>
+        </a>
+      </div>
       <div class="controls">
         <input type="text" class="search-box" id="search" placeholder="Search member...">
         
