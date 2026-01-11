@@ -1,525 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Torn Ranked War Analyzer</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resilience Dashboard</title>
   <style>
     :root {
-      --text: #1A1A1A;
-      --background: #FFFFFF;
-      --muted: #F6F6F6;
-      --border: #ECECEC;
-      --primary: #7CB9A8;
-      --stealth: #FFEB99;
-      --my-faction: #B7D7E8;
-      --opponent: #FFA5A5;
+      --green: #2E7D32;
+      --green-light: #E8F5E9;
+      --text: #212121;
+      --text-light: #757575;
+      --white: #FFFFFF;
+      --gray-100: #F5F5F5;
+      --gray-200: #EEEEEE;
+      --gray-300: #E0E0E0;
+      --radius: 8px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.1);
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
-    
+
     * {
-      box-sizing: border-box;
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--background);
-      color: var(--text);
-      line-height: 1.5;
-      font-size: 15px;
+
+    html, body {
+      min-height: 100%;
+      font-family: var(--font);
+      background: var(--gray-100);
     }
-    
+
     .container {
-      width: 95%;
+      max-width: 900px;
       margin: 0 auto;
-      padding: 1.5rem 1rem;
+      padding: 40px 20px;
     }
-    
-    h2 {
-      font-weight: 500;
-      margin-bottom: 1.5rem;
-      color: var(--text);
-      font-size: 1.5rem;
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
     }
-    
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      font-size: 0.9rem;
+
+    .header h1 {
+      color: var(--green);
+      font-size: 32px;
+      margin-bottom: 8px;
     }
-    
-    textarea, select {
-      width: 100%;
-      padding: 0.6rem;
-      margin-bottom: 1rem;
-      background-color: var(--background);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      font-size: 0.9rem;
-      transition: border 0.2s;
+
+    .header p {
+      color: var(--text-light);
+      font-size: 16px;
     }
-    
-    textarea:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
     }
-    
-    button {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 0.6rem 1rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: opacity 0.2s;
-      margin-right: 0.75rem;
-      margin-bottom: 1rem;
-    }
-    
-    button:hover {
-      opacity: 0.9;
-    }
-    
-    #warSelector {
-      background-color: var(--muted);
-      padding: 1rem;
-      border-radius: 4px;
-      margin-bottom: 1.5rem;
-      display: none;
-    }
-    
-    /* Tab styling */
-    .tab-container {
-      margin-top: 1rem;
-    }
-    
-    .tab-buttons {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 0;
-    }
-    
-    .tab-buttons button {
-      background: transparent;
-      color: var(--text);
-      border-radius: 0;
-      border-bottom: 2px solid transparent;
-      padding: 0.6rem 1rem;
-      margin: 0 0.5rem 0 0;
+
+    .tool-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
       transition: all 0.2s;
+      border: 2px solid transparent;
     }
-    
-    .tab-buttons button:hover {
-      background: transparent;
-      color: var(--primary);
-      opacity: 1;
+
+    .tool-card:hover {
+      border-color: var(--green);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-    
-    .tab-buttons button.active {
-      color: var(--primary);
-      border-bottom: 2px solid var(--primary);
-      font-weight: 500;
+
+    .tool-card h2 {
+      color: var(--text);
+      font-size: 20px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    
-    .tab-section {
-      display: none;
-      background-color: var(--background);
-      height: 75vh;
+
+    .tool-card p {
+      color: var(--text-light);
+      font-size: 14px;
+      line-height: 1.5;
     }
-    
-    .tab-section.active {
-      display: block;
+
+    .new-badge {
+      background: var(--green);
+      color: var(--white);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
     }
-    
-    /* Table styling */
-    #tableWrapper {
-      height: 100%;
-      overflow: auto;
-      border: 1px solid var(--border);
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 24px 16px;
+      }
+
+      .header h1 {
+        font-size: 26px;
+      }
+    }
+
+    .faction-overview {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .overview-loading {
+      color: var(--text-light);
+      text-align: center;
+    }
+
+    .overview-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .overview-header img {
+      width: 48px;
+      height: 48px;
+    }
+
+    .overview-header h2 {
+      font-size: 22px;
+      color: var(--text);
+    }
+
+    .overview-header .tag {
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 8px;
       border-radius: 4px;
     }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
+
+    .overview-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
     }
-    
-    thead th {
-      position: sticky;
-      top: 0;
-      background: var(--muted);
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 600;
       color: var(--text);
-      padding: 0.75rem 0.6rem;
-      text-align: left;
-      z-index: 2;
-      font-weight: 500;
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
     }
-    
-    thead th:hover {
-      background-color: var(--border);
+
+    .stat-value.highlight {
+      color: var(--green);
     }
-    
-    tbody tr {
-      border-bottom: 1px solid var(--border);
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 4px;
     }
-    
-    tbody tr:nth-child(even) {
-      background-color: var(--muted);
-    }
-    
-    tbody tr:hover {
-      background-color: var(--border);
-    }
-    
-    td {
-      padding: 0.6rem;
-      vertical-align: top;
-    }
-    
-    /* Custom classes */
-    .highlight {
-      background-color: var(--muted);
-    }
-    
-    .stealth-defence {
-      background-color: var(--stealth);
-      font-weight: 500;
-    }
-    
-    .my-faction-faction {
-      background-color: var(--my-faction);
-      font-weight: 500;
-    }
-    
-    .opponent-faction-faction {
-      background-color: var(--opponent);
-      font-weight: 500;
-    }
-    
-    .blank-attacker {
-      background-color: var(--stealth) !important;
-    }
-    
-    /* Action buttons */
-    .action-buttons {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-      .container {
-        width: 100%;
-        padding: 1rem 0.5rem;
-      }
-      
-      .tab-section {
-        height: 65vh;
-      }
-      
-      button {
-        padding: 0.5rem 0.75rem;
-      }
+
+    .members-fraction {
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--text-light);
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Torn Ranked War Analyzer</h2>
-    
-    <div class="setup-section">
-      <label for="apiKey">API Key:</label>
-      <textarea id="apiKey" rows="2" placeholder="Paste your Torn API key here"></textarea>
-      <button onclick="loadRankedWars()">Load Ranked Wars</button>
+    <div class="header">
+      <h1>Resilience Dashboard</h1>
+      <p>Faction tracking tools</p>
     </div>
-    
-    <div id="warSelector">
-      <label for="warDropdown">Select a Ranked War:</label>
-      <select id="warDropdown"></select>
-      <div class="action-buttons">
-        <button onclick="loadAttackLogs()">Load Attacks</button>
-        <button onclick="exportToCSV()">Export to CSV</button>
-      </div>
+
+    <div class="faction-overview" id="factionOverview">
+      <div class="overview-loading">Loading faction data...</div>
     </div>
-    
-    <div class="tab-container">
-      <div class="tab-buttons">
-        <button id="logTabBtn" class="active" onclick="showTab('logTab', 'logTabBtn')">Attack Log</button>
-        <button id="summaryTabBtn" onclick="showTab('summaryTab', 'summaryTabBtn')">Grouped Summary</button>
-      </div>
-      
-      <div id="logTab" class="tab-section active">
-        <div id="tableWrapper">
-          <div id="tableContainer"></div>
-        </div>
-      </div>
-      
-      <div id="summaryTab" class="tab-section">
-        <div id="tableWrapper">
-          <div id="summaryTable"></div>
-        </div>
-      </div>
+
+    <div class="tools-grid">
+      <a href="xanax.html" class="tool-card">
+        <h2>Xanax Tracker</h2>
+        <p>Track weekly Xanax usage across faction members. See who's on track and who's falling behind.</p>
+      </a>
+
+      <a href="energy.html" class="tool-card">
+        <h2>Energy Monitor <span class="new-badge">New</span></h2>
+        <p>Monitor how much energy each faction member is using in the gym.</p>
+      </a>
+
+      <a href="war.html" class="tool-card">
+        <h2>War Tracker</h2>
+        <p>Track med outs for each war.</p>
+      </a>
     </div>
   </div>
-
-  <script>
-    let apiKey = "";
-    let faction1 = null;
-    let faction2 = null;
-
-    function showTab(tabId, btnId) {
-      // Hide all tabs and remove active class from buttons
-      document.querySelectorAll('.tab-section').forEach(tab => tab.classList.remove('active'));
-      document.querySelectorAll('.tab-buttons button').forEach(btn => btn.classList.remove('active'));
-      
-      // Show selected tab and activate button
-      document.getElementById(tabId).classList.add('active');
-      document.getElementById(btnId).classList.add('active');
-    }
-
-    async function loadRankedWars() {
-      apiKey = document.getElementById("apiKey").value.trim();
-      if (!apiKey) {
-        alert("Please enter your API key");
-        return;
-      }
-      
-      try {
-        const res = await fetch(`https://api.torn.com/v2/faction?selections=rankedwars&key=${apiKey}`);
-        const data = await res.json();
-        
-        if (data.error) {
-          alert(`API Error: ${data.error.error}`);
-          return;
-        }
-        
-        const wars = data.rankedwars.filter(w => w.end && w.factions?.length === 2).sort((a, b) => b.end - a.end).slice(0, 4);
-        const dropdown = document.getElementById("warDropdown");
-        dropdown.innerHTML = "";
-        
-        wars.forEach(w => {
-          const opt = document.createElement("option");
-          opt.value = JSON.stringify(w);
-          opt.textContent = `${w.factions[0].name} vs ${w.factions[1].name}`;
-          dropdown.appendChild(opt);
-        });
-        
-        document.getElementById("warSelector").style.display = "block";
-      } catch (err) {
-        console.error("Error loading wars:", err);
-        alert("Error loading wars. Check your API key and try again.");
-      }
-    }
-
-    async function loadAttackLogs() {
-      try {
-        const warData = document.getElementById("warDropdown").value;
-        if (!warData) {
-          alert("Please select a war first");
-          return;
-        }
-        
-        const war = JSON.parse(warData);
-        faction1 = war.factions[0].id;
-        faction2 = war.factions[1].id;
-        
-        // Show loading indicator
-        document.getElementById("tableContainer").innerHTML = "<div style='text-align:center;padding:2rem;'>Loading attack logs...</div>";
-        document.getElementById("summaryTable").innerHTML = "<div style='text-align:center;padding:2rem;'>Loading summary data...</div>";
-        
-        let url = `https://api.torn.com/v2/faction/attacks?from=${war.start}&to=${war.end}&limit=100&sort=DESC`;
-        const headers = { 'Authorization': `ApiKey ${apiKey}` };
-        let attacks = [];
-        
-        while (url) {
-          const res = await fetch(url, { headers });
-          const data = await res.json();
-          
-          if (data.error) {
-            alert(`API Error: ${data.error.error}`);
-            return;
-          }
-          
-          attacks = attacks.concat(data.attacks.filter(a => a.is_ranked_war));
-          url = data._metadata?.links?.prev || null;
-        }
-        
-        renderTable(attacks);
-        renderSummary(attacks);
-      } catch (err) {
-        console.error("Error loading attack logs:", err);
-        alert("Error loading attack logs. Please try again.");
-      }
-    }
-
-function renderSummary(attacks) {
-  const counts = {};
-  const BONUS_CHAIN_NUMBERS = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000];
-  
-  attacks.forEach(a => {
-    const defender = a.defender;
-    const attacker = a.attacker;
-    const isResilienceDefender = defender?.faction?.name === "Resilience";
-    const isResilienceAttacker = attacker?.faction?.name === "Resilience";
-
-    // DEFENSIVE: Count times Resilience was defended
-    if (a.is_ranked_war && isResilienceDefender) {
-      const name = defender.name || "Unknown";
-      if (!counts[name]) counts[name] = { totalDefends: 0 };
-      counts[name].totalDefends++;
-    }
-
-    // OFFENSIVE: Track outgoing attacks and respect
-    if (a.is_ranked_war && isResilienceAttacker && attacker?.name) {
-      const name = attacker.name;
-      if (!counts[name]) counts[name] = {};
-      
-      if (!counts[name].totalOutgoing) {
-        counts[name].totalOutgoing = 0;
-        counts[name].netRespectSum = 0;
-        counts[name].netRespectCount = 0;
-      }
-      
-      counts[name].totalOutgoing++;
-      
-      const respectGain = a.respect_gain || 0;
-      const respectLoss = a.respect_loss || 0;
-      const chainNumber = a.chain;
-      
-      // Only add to average if NOT a bonus chain hit AND has respect gain
-      const isBonusHit = BONUS_CHAIN_NUMBERS.includes(chainNumber);
-      if (!isBonusHit && respectGain > 0) {
-        counts[name].netRespectSum += (respectGain - respectLoss);
-        counts[name].netRespectCount++;
-      }
-    }
-  });
-
-  const table = document.createElement("table");
-  table.innerHTML = `<thead>
-    <tr>
-      <th>Resilience Member</th>
-      <th>Total Outgoing Attacks</th>
-      <th>Total Defends</th>
-      <th>Avg Net Respect</th>
-    </tr>
-  </thead>`;
-
-  const tbody = document.createElement("tbody");
-  Object.entries(counts)
-    .sort((a, b) => (b[1].totalDefends || 0) - (a[1].totalDefends || 0))
-    .forEach(([name, data]) => {
-      const avgNet = data.netRespectCount ? (data.netRespectSum / data.netRespectCount).toFixed(2) : "-";
-      
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${name}</td>
-        <td>${data.totalOutgoing || 0}</td>
-        <td>${data.totalDefends || 0}</td>
-        <td>${avgNet}</td>
-      `;
-      tbody.appendChild(row);
-    });
-
-  table.appendChild(tbody);
-  document.getElementById("summaryTable").innerHTML = "";
-  document.getElementById("summaryTable").appendChild(table);
-}
-    function renderTable(attacks) {
-      const headers = ["Started", "Ended", "Attack ID", "Attack Code", "Attacker Name", "Attacker Level", "Attacker Faction Name",
-                       "Attacker Faction ID", "Defender Name", "Defender Level", "Defender Faction Name", "Defender Faction ID",
-                       "Result", "Respect Gain", "Respect Loss", "Chain", "Modifiers: Chain", "Interrupted", "Stealthed", "Is Ranked War"];
-      
-      const table = document.createElement("table");
-      const thead = document.createElement("thead");
-      const hrow = document.createElement("tr");
-      
-      headers.forEach(h => {
-        const th = document.createElement("th");
-        th.textContent = h;
-        th.setAttribute('title', h); // Add tooltip for narrow columns
-        hrow.appendChild(th);
-      });
-      
-      thead.appendChild(hrow);
-      table.appendChild(thead);
-
-      const tbody = document.createElement("tbody");
-      attacks.forEach(a => {
-        const row = document.createElement("tr");
-        if (!a.attacker?.name) row.classList.add("blank-attacker");
-        
-        const attackerFactionClass = a.attacker?.faction?.id === faction1 ? "my-faction-faction" :
-                                     a.attacker?.faction?.id === faction2 ? "opponent-faction-faction" : "";
-        
-        const defenderFactionClass = a.defender?.faction?.id === faction1 ? "my-faction-faction" :
-                                     a.defender?.faction?.id === faction2 ? "opponent-faction-faction" : "";
-        
-        const chainMod = a.modifiers?.chain ?? "";
-        
-        const cells = [
-          new Date(a.started * 1000).toLocaleString(),
-          new Date(a.ended * 1000).toLocaleString(),
-          a.id, a.code,
-          a.attacker?.name || "STEALTHED", a.attacker?.level || "",
-          { val: a.attacker?.faction?.name || "", cls: attackerFactionClass }, a.attacker?.faction?.id || "",
-          a.defender?.name || "", a.defender?.level || "",
-          { val: a.defender?.faction?.name || "", cls: defenderFactionClass }, a.defender?.faction?.id || "",
-          a.result, a.respect_gain?.toFixed(2) || 0, a.respect_loss?.toFixed(2) || 0, a.chain || "",
-          chainMod,
-          a.is_interrupted ? "Yes" : "No", a.is_stealthed ? "Yes" : "No", a.is_ranked_war ? "Yes" : "No"
-        ];
-        
-        cells.forEach(cell => {
-          const td = document.createElement("td");
-          if (typeof cell === 'object') {
-            td.textContent = cell.val;
-            if (cell.cls) td.className = cell.cls;
-          } else td.textContent = cell;
-          row.appendChild(td);
-        });
-        
-        tbody.appendChild(row);
-      });
-
-      table.appendChild(tbody);
-      document.getElementById("tableContainer").innerHTML = "";
-      document.getElementById("tableContainer").appendChild(table);
-    }
-
-    function exportToCSV() {
-      const exportTable = (selector, filename) => {
-        const rows = Array.from(document.querySelectorAll(`${selector} table tr`));
-        const csv = rows.map(row =>
-          Array.from(row.children).map(cell =>
-            `"${cell.textContent.replace(/"/g, '""')}"`
-          ).join(",")
-        ).join("\n");
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-      };
-
-      const currentTab = document.querySelector('.tab-section.active').id;
-      
-      if (currentTab === 'logTab') {
-        exportTable("#logTab", "ranked_war_attacks.csv");
-      } else {
-        exportTable("#summaryTab", "resilience_defence_summary.csv");
-      }
-    }
-  </script>
 </body>
+<script>
+  const API_KEY = 'POW66la7QjNjI97z';
+  const API_URL = 'https://api.torn.com/v2/faction/basic';
+
+  async function loadFactionData() {
+    const container = document.getElementById('factionOverview');
+    
+    try {
+      const response = await fetch(API_URL, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `ApiKey ${API_KEY}`
+        }
+      });
+      
+      const data = await response.json();
+      const faction = data.basic;
+      
+      container.innerHTML = `
+        <div class="overview-header">
+          <h2>${faction.name}</h2>
+          <span class="tag">${faction.tag}</span>
+        </div>
+        <div class="overview-stats">
+          <div class="stat-item">
+            <div class="stat-value highlight">${faction.members}<span class="members-fraction">/${faction.capacity}</span></div>
+            <div class="stat-label">Members</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${faction.respect.toLocaleString()}</div>
+            <div class="stat-label">Respect</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${faction.rank.name}</div>
+            <div class="stat-label">Div ${faction.rank.division}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${faction.rank.wins}</div>
+            <div class="stat-label">Ranked Wins</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${faction.best_chain.toLocaleString()}</div>
+            <div class="stat-label">Best Chain</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${faction.days_old.toLocaleString()}</div>
+            <div class="stat-label">Days Old</div>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      container.innerHTML = `<div class="overview-loading">Failed to load faction data</div>`;
+    }
+  }
+
+  loadFactionData();
+</script>
 </html>
