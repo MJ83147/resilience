@@ -1,0 +1,51 @@
+:root {
+  --green: #2E7D32;
+  --green-light: #E8F5E9;
+  --red: #C62828;
+  --red-light: #FFEBEE;
+  --text: #212121;
+  --text-light: #757575;
+  --white: #FFFFFF;
+  --gray-100: #F5F5F5;
+  --gray-200: #EEEEEE;
+  --gray-300: #E0E0E0;
+  --shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+[data-theme="dark"] {
+  --green: #4CAF50;
+  --green-light: #1B3D1F;
+  --red: #EF5350;
+  --red-light: #3D1F1F;
+  --text: #E0E0E0;
+  --text-light: #9E9E9E;
+  --white: #1E1E1E;
+  --gray-100: #121212;
+  --gray-200: #2C2C2C;
+  --gray-300: #3D3D3D;
+  --shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 100;
+  transition: all 0.2s;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.theme-toggle:hover {
+  border-color: var(--green);
+}
