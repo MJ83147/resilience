@@ -32,13 +32,11 @@
 
   <div class="container">
     <div class="header">
-      <h2>War Tracker</h2>
-    </div>
-
-    <div class="setup-section">
-      <label for="apiKey">API Key:</label>
-      <textarea id="apiKey" rows="2" placeholder="Paste your Torn API key here"></textarea>
-      <button onclick="loadRankedWars()">Load Ranked Wars</button>
+      <h1>War Tracker</h1>
+      <div class="controls">
+        <input type="password" class="search-box" id="apiKey" placeholder="Enter API key..." style="flex: 1; min-width: 300px;">
+        <button class="filter-btn" onclick="loadRankedWars()">Load Ranked Wars</button>
+      </div>
     </div>
     
     <div id="warSelector">
