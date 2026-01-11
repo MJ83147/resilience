@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gym Tracker</title>
+  <style>
+    :root {
+      --green: #2E7D32;
+      --green-light: #E8F5E9;
+      --red: #C62828;
+      --red-light: #FFEBEE;
+      --text: #212121;
+      --text-light: #757575;
+      --white: #FFFFFF;
+      --gray-100: #F5F5F5;
+      --gray-200: #EEEEEE;
+      --gray-300: #E0E0E0;
+      --radius: 8px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.1);
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: var(--gray-100);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background: var(--white);
+      padding: 16px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      color: var(--green);
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      font-size: 14px;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: var(--green);
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .filter-group label {
+      font-size: 14px;
+      color: var(--text-light);
+    }
+
+    .filter-btn {
+      padding: 8px 14px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      background: var(--white);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      background: var(--gray-100);
+    }
+
+    .filter-btn.active {
+      background: var(--green-light);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .week-select, .min-input {
+      padding: 8px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      background: var(--white);
+      font-size: 14px;
+    }
+
+    .week-select:focus, .min-input:focus {
+      outline: none;
+      border-color: var(--green);
+    }
+
+    .min-input {
+      width: 100px;
+    }
+
+    .table-wrapper {
+      flex: 1;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-200);
+      white-space: nowrap;
+    }
+
+    th {
+      background: var(--gray-100);
+      font-weight: 600;
+      color: var(--text);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    th:hover {
+      background: var(--gray-200);
+    }
+
+    th.sorted-asc::after {
+      content: " ▲";
+      font-size: 10px;
+    }
+
+    th.sorted-desc::after {
+      content: " ▼";
+      font-size: 10px;
+    }
+
+    th:nth-child(1), td:nth-child(1) {
+      position: sticky;
+      left: 0;
+      z-index: 11;
+      background: var(--gray-100);
+    }
+
+    td:nth-child(1) {
+      background: var(--white);
+      font-weight: 500;
+    }
+
+    .week-header {
+      text-align: center;
+      border-left: 3px solid var(--green);
+    }
+
+    .week-cell {
+      border-left: 3px solid var(--green);
+    }
+
+    td:not(:first-child), th:not(:first-child) {
+      text-align: center;
+    }
+
+    .cell-hit {
+      background: var(--green-light);
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .cell-miss {
+      background: var(--red-light);
+      color: var(--red);
+      font-weight: 600;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-light);
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--gray-200);
+      font-size: 14px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-count {
+      font-weight: 600;
+    }
+
+    .stat-count.green { color: var(--green); }
+    .stat-count.red { color: var(--red); }
+
+    @media (max-width: 768px) {
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .filter-group {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Gym Tracker</h1>
+      <div class="controls">
+        <input type="text" class="search-box" id="search" placeholder="Search member...">
+        
+        <div class="filter-group">
+          <label>Status:</label>
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="miss">Below Min</button>
+          <button class="filter-btn" data-filter="hit">Hit Min</button>
+        </div>
+
+        <div class="filter-group">
+          <label>Weeks:</label>
+          <select class="week-select" id="weekSelect">
+            <option value="1">Last week</option>
+            <option value="3" selected>Last 3 weeks</option>
+            <option value="6">Last 6 weeks</option>
+            <option value="12">Last 12 weeks</option>
+            <option value="all">All weeks</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Min Energy:</label>
+          <input type="number" class="min-input" id="minEnergy" value="0" min="0">
+        </div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat">Total: <span class="stat-count" id="totalCount">0</span></div>
+        <div class="stat">Hit Min: <span class="stat-count green" id="hitCount">0</span></div>
+        <div class="stat">Below Min: <span class="stat-count red" id="missCount">0</span></div>
+        <div class="stat">Showing: <span class="stat-count" id="showingCount">0</span></div>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="dataTable">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="loading" id="loading">Loading data...</div>
+    </div>
+  </div>
+
+  <script>
+    // UPDATE THIS URL after publishing your Weekly Deltas sheet as CSV
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQPU-ScBFwwLu_bMIgrhrA4EwScgrFv8XbK7d-BnCInHrKa0jbM1DbTXHZG8QlsD2vVn9iFI_BbNFLI/pub?gid=878473474&single=true&output=csv';
+
+    let rawData = [];
+    let headers = [];
+    let weeks = [];
+    let visibleWeeks = new Set();
+    let currentFilter = 'all';
+    let searchTerm = '';
+    let sortCol = null;
+    let sortAsc = true;
+    let minEnergy = 0;
+
+    const searchInput = document.getElementById('search');
+    const weekSelect = document.getElementById('weekSelect');
+    const minEnergyInput = document.getElementById('minEnergy');
+    const tableHead = document.getElementById('tableHead');
+    const tableBody = document.getElementById('tableBody');
+    const loading = document.getElementById('loading');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+
+    fetch(CSV_URL)
+      .then(r => r.text())
+      .then(csv => {
+        parseCSV(csv);
+        loading.style.display = 'none';
+        updateVisibleWeeks();
+        renderTable();
+      })
+      .catch(err => {
+        loading.textContent = 'Error loading data: ' + err.message;
+      });
+
+    function parseCSV(csv) {
+      const rows = csv.trim().split('\n').map(r => {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let char of r) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      });
+
+      headers = rows[0];
+      rawData = rows.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => {
+          obj[h] = row[i] || '';
+        });
+        return obj;
+      });
+
+      // Extract weeks from headers (look for "DD MMM Energy" pattern)
+      weeks = [];
+      const seen = new Set();
+      headers.forEach(h => {
+        const match = h.match(/^(\d+\s+\w+)\s+Energy$/);
+        if (match && !seen.has(match[1])) {
+          weeks.push(match[1]);
+          seen.add(match[1]);
+        }
+      });
+    }
+
+    function updateVisibleWeeks() {
+      const selection = weekSelect.value;
+      
+      if (selection === 'all') {
+        visibleWeeks = new Set(weeks);
+      } else {
+        const count = parseInt(selection);
+        const lastWeeks = weeks.slice(-count);
+        visibleWeeks = new Set(lastWeeks);
+      }
+    }
+
+    weekSelect.addEventListener('change', () => {
+      updateVisibleWeeks();
+      renderTable();
+    });
+
+    minEnergyInput.addEventListener('input', e => {
+      minEnergy = parseInt(e.target.value) || 0;
+      renderTable();
+    });
+
+    function getLatestEnergy(row) {
+      const visibleWeeksOrdered = weeks.filter(w => visibleWeeks.has(w)).reverse();
+      
+      for (const week of visibleWeeksOrdered) {
+        const energy = row[`${week} Energy`];
+        const energyNum = parseInt(energy);
+        if (!isNaN(energyNum) && energy !== '-') {
+          return energyNum;
+        }
+      }
+      return null;
+    }
+
+    function getStatus(row) {
+      const latestEnergy = getLatestEnergy(row);
+      if (latestEnergy === null) return 'none';
+      return latestEnergy >= minEnergy ? 'hit' : 'miss';
+    }
+
+    function renderTable() {
+      let headerHTML = '<tr>';
+      headerHTML += '<th onclick="sortBy(\'Username\')">Member</th>';
+
+      weeks.forEach(week => {
+        if (!visibleWeeks.has(week)) return;
+        headerHTML += `<th class="week-header" onclick="sortBy('${week} Energy')">${week} Energy</th>`;
+        headerHTML += `<th onclick="sortBy('${week} Trains')">${week} Trains</th>`;
+      });
+
+      headerHTML += '</tr>';
+      tableHead.innerHTML = headerHTML;
+
+      if (sortCol) {
+        const ths = tableHead.querySelectorAll('th');
+        ths.forEach(th => {
+          const thText = th.textContent.trim();
+          if (thText === sortCol || thText === 'Member' && sortCol === 'Username') {
+            th.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+          }
+        });
+      }
+
+      rawData.forEach(row => {
+        row['_status'] = getStatus(row);
+        row['_latestEnergy'] = getLatestEnergy(row);
+      });
+
+      let filtered = rawData.filter(row => {
+        if (searchTerm && !row['Username']?.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+        if (currentFilter === 'miss' && row['_status'] !== 'miss') return false;
+        if (currentFilter === 'hit' && row['_status'] !== 'hit') return false;
+        return true;
+      });
+
+      if (sortCol) {
+        filtered.sort((a, b) => {
+          let aVal = sortCol === 'Username' ? a['Username'] : a[sortCol];
+          let bVal = sortCol === 'Username' ? b['Username'] : b[sortCol];
+
+          if (aVal === '-') aVal = '';
+          if (bVal === '-') bVal = '';
+
+          const aNum = parseFloat(aVal);
+          const bNum = parseFloat(bVal);
+
+          if (!isNaN(aNum) && !isNaN(bNum)) {
+            return sortAsc ? aNum - bNum : bNum - aNum;
+          }
+
+          aVal = aVal || '';
+          bVal = bVal || '';
+
+          return sortAsc 
+            ? aVal.localeCompare(bVal, undefined, { numeric: true })
+            : bVal.localeCompare(aVal, undefined, { numeric: true });
+        });
+      }
+
+      let bodyHTML = '';
+      filtered.forEach(row => {
+        bodyHTML += '<tr>';
+        bodyHTML += `<td>${row['Username'] || ''}</td>`;
+
+        weeks.forEach(week => {
+          if (!visibleWeeks.has(week)) return;
+
+          const energy = row[`${week} Energy`] || '-';
+          const trains = row[`${week} Trains`] || '-';
+
+          let energyClass = 'week-cell';
+          const energyNum = parseInt(energy);
+          if (!isNaN(energyNum) && energy !== '-' && minEnergy > 0) {
+            energyClass += energyNum >= minEnergy ? ' cell-hit' : ' cell-miss';
+          }
+
+          bodyHTML += `<td class="${energyClass}">${energy}</td>`;
+          bodyHTML += `<td>${trains}</td>`;
+        });
+
+        bodyHTML += '</tr>';
+      });
+
+      tableBody.innerHTML = bodyHTML;
+
+      const total = rawData.length;
+      const hit = rawData.filter(r => r['_status'] === 'hit').length;
+      const miss = rawData.filter(r => r['_status'] === 'miss').length;
+
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('hitCount').textContent = hit;
+      document.getElementById('missCount').textContent = miss;
+      document.getElementById('showingCount').textContent = filtered.length;
+    }
+
+    function sortBy(col) {
+      if (sortCol === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortCol = col;
+        sortAsc = true;
+      }
+      renderTable();
+    }
+
+    searchInput.addEventListener('input', e => {
+      searchTerm = e.target.value;
+      renderTable();
+    });
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderTable();
+      });
+    });
+  </script>
+</body>
+</html>
