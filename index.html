@@ -4,196 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resilience Dashboard</title>
-  <link rel="stylesheet" href="theme.css">
-
-  <style>
-    :root {
-      --green: #2E7D32;
-      --green-light: #E8F5E9;
-      --text: #212121;
-      --text-light: #757575;
-      --white: #FFFFFF;
-      --gray-100: #F5F5F5;
-      --gray-200: #EEEEEE;
-      --gray-300: #E0E0E0;
-      --radius: 8px;
-      --shadow: 0 2px 8px rgba(0,0,0,0.1);
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      min-height: 100%;
-      font-family: var(--font);
-      background: var(--gray-100);
-      overflow-x: hidden;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    .header h1 {
-      color: var(--green);
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-
-    .header p {
-      color: var(--text-light);
-      font-size: 16px;
-    }
-
-    .tools-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-    }
-
-    .tool-card {
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 24px;
-      text-decoration: none;
-      color: inherit;
-      transition: all 0.2s;
-      border: 2px solid transparent;
-    }
-
-    .tool-card:hover {
-      border-color: var(--green);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-
-    .tool-card h2 {
-      color: var(--text);
-      font-size: 20px;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .tool-card p {
-      color: var(--text-light);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .new-badge {
-      background: var(--green);
-      color: var(--white);
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 4px;
-      text-transform: uppercase;
-    }
-
-    @media (max-width: 600px) {
-      .container {
-        padding: 24px 16px;
-      }
-
-      .header h1 {
-        font-size: 26px;
-      }
-    }
-
-    .faction-overview {
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 24px;
-      margin-bottom: 24px;
-    }
-
-    .overview-loading {
-      color: var(--text-light);
-      text-align: center;
-    }
-
-    .overview-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--gray-200);
-    }
-
-    .overview-header img {
-      width: 48px;
-      height: 48px;
-    }
-
-    .overview-header h2 {
-      font-size: 22px;
-      color: var(--text);
-    }
-
-    .overview-header .tag {
-      background: var(--green-light);
-      color: var(--green);
-      font-size: 12px;
-      font-weight: 600;
-      padding: 4px 8px;
-      border-radius: 4px;
-    }
-
-    .overview-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 16px;
-    }
-
-    .stat-item {
-      text-align: center;
-    }
-
-    .stat-value {
-      font-size: 24px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .stat-value.highlight {
-      color: var(--green);
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: var(--text-light);
-      margin-top: 4px;
-    }
-
-    .members-fraction {
-      font-size: 16px;
-      font-weight: 400;
-      color: var(--text-light);
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>Resilience Dashboard</h1>
+  <div class="container container--narrow">
+    <div class="header" style="background: transparent; box-shadow: none; text-align: center;">
+      <h1 style="font-size: 32px; margin-bottom: 8px;">Resilience Dashboard</h1>
       <p>Faction tracking tools</p>
     </div>
 
@@ -219,65 +35,62 @@
     </div>
   </div>
 
-</body>
-<script>
-  const API_KEY = 'POW66la7QjNjI97z';
-  const API_URL = 'https://api.torn.com/v2/faction/basic';
+  <script>
+    var API_KEY = 'POW66la7QjNjI97z';
+    var API_URL = 'https://api.torn.com/v2/faction/basic';
 
-  async function loadFactionData() {
-    const container = document.getElementById('factionOverview');
-    
-    try {
-      const response = await fetch(API_URL, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `ApiKey ${API_KEY}`
-        }
-      });
+    async function loadFactionData() {
+      var container = document.getElementById('factionOverview');
       
-      const data = await response.json();
-      const faction = data.basic;
-      
-      container.innerHTML = `
-        <div class="overview-header">
-          <h2>${faction.name}</h2>
-          <span class="tag">${faction.tag}</span>
-        </div>
-        <div class="overview-stats">
-          <div class="stat-item">
-            <div class="stat-value highlight">${faction.members}<span class="members-fraction">/${faction.capacity}</span></div>
-            <div class="stat-label">Members</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${faction.respect.toLocaleString()}</div>
-            <div class="stat-label">Respect</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${faction.rank.name}</div>
-            <div class="stat-label">Div ${faction.rank.division}</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${faction.rank.wins}</div>
-            <div class="stat-label">Ranked Wins</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${faction.best_chain.toLocaleString()}</div>
-            <div class="stat-label">Best Chain</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${faction.days_old.toLocaleString()}</div>
-            <div class="stat-label">Days Old</div>
-          </div>
-        </div>
-      `;
-    } catch (error) {
-      container.innerHTML = `<div class="overview-loading">Failed to load faction data</div>`;
+      try {
+        var response = await fetch(API_URL, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'ApiKey ' + API_KEY
+          }
+        });
+        
+        var data = await response.json();
+        var faction = data.basic;
+        
+        container.innerHTML = 
+          '<div class="overview-header">' +
+            '<h2>' + faction.name + '</h2>' +
+            '<span class="tag">' + faction.tag + '</span>' +
+          '</div>' +
+          '<div class="overview-stats">' +
+            '<div class="stat-item">' +
+              '<div class="stat-value highlight">' + faction.members + '<span class="members-fraction">/' + faction.capacity + '</span></div>' +
+              '<div class="stat-label">Members</div>' +
+            '</div>' +
+            '<div class="stat-item">' +
+              '<div class="stat-value">' + faction.respect.toLocaleString() + '</div>' +
+              '<div class="stat-label">Respect</div>' +
+            '</div>' +
+            '<div class="stat-item">' +
+              '<div class="stat-value">' + faction.rank.name + '</div>' +
+              '<div class="stat-label">Div ' + faction.rank.division + '</div>' +
+            '</div>' +
+            '<div class="stat-item">' +
+              '<div class="stat-value">' + faction.rank.wins + '</div>' +
+              '<div class="stat-label">Ranked Wins</div>' +
+            '</div>' +
+            '<div class="stat-item">' +
+              '<div class="stat-value">' + faction.best_chain.toLocaleString() + '</div>' +
+              '<div class="stat-label">Best Chain</div>' +
+            '</div>' +
+            '<div class="stat-item">' +
+              '<div class="stat-value">' + faction.days_old.toLocaleString() + '</div>' +
+              '<div class="stat-label">Days Old</div>' +
+            '</div>' +
+          '</div>';
+      } catch (error) {
+        container.innerHTML = '<div class="overview-loading">Failed to load faction data</div>';
+      }
     }
-  }
 
-  loadFactionData();
-</script>
-    <script src="theme.js"></script>
-
+    loadFactionData();
+  </script>
+  <script src="theme.js"></script>
 </body>
 </html>
