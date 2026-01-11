@@ -5,238 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Torn Ranked War Analyzer</title>
   <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="styles.css">
 
   <style>
-    :root {
-      --text: #1A1A1A;
-      --background: #FFFFFF;
-      --muted: #F6F6F6;
-      --border: #ECECEC;
-      --primary: #7CB9A8;
-      --stealth: #FFEB99;
-      --my-faction: #B7D7E8;
-      --opponent: #FFA5A5;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--background);
-      color: var(--text);
-      line-height: 1.5;
-      font-size: 15px;
-    }
-    
-    .container {
-      width: 95%;
-      margin: 0 auto;
-      padding: 1.5rem 1rem;
-    }
-    
-    h2 {
-      font-weight: 500;
-      margin-bottom: 1.5rem;
-      color: var(--text);
-      font-size: 1.5rem;
-    }
-    
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      font-size: 0.9rem;
-    }
-    
-    textarea, select {
-      width: 100%;
-      padding: 0.6rem;
-      margin-bottom: 1rem;
-      background-color: var(--background);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      font-size: 0.9rem;
-      transition: border 0.2s;
-    }
-    
-    textarea:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-    
-    button {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 0.6rem 1rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: opacity 0.2s;
-      margin-right: 0.75rem;
-      margin-bottom: 1rem;
-    }
-    
-    button:hover {
-      opacity: 0.9;
+    .setup-section {
+      background: var(--gray-100);
+      padding: 16px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
     }
     
     #warSelector {
-      background-color: var(--muted);
-      padding: 1rem;
-      border-radius: 4px;
-      margin-bottom: 1.5rem;
+      background-color: var(--gray-100);
+      padding: 16px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
       display: none;
     }
     
-    /* Tab styling */
-    .tab-container {
-      margin-top: 1rem;
-    }
-    
-    .tab-buttons {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 0;
-    }
-    
-    .tab-buttons button {
-      background: transparent;
-      color: var(--text);
-      border-radius: 0;
-      border-bottom: 2px solid transparent;
-      padding: 0.6rem 1rem;
-      margin: 0 0.5rem 0 0;
-      transition: all 0.2s;
-    }
-    
-    .tab-buttons button:hover {
-      background: transparent;
-      color: var(--primary);
-      opacity: 1;
-    }
-    
-    .tab-buttons button.active {
-      color: var(--primary);
-      border-bottom: 2px solid var(--primary);
-      font-weight: 500;
-    }
-    
-    .tab-section {
-      display: none;
-      background-color: var(--background);
-      height: 75vh;
-    }
-    
-    .tab-section.active {
-      display: block;
-    }
-    
-    /* Table styling */
-    #tableWrapper {
-      height: 100%;
-      overflow: auto;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-    
-    thead th {
-      position: sticky;
-      top: 0;
-      background: var(--muted);
-      color: var(--text);
-      padding: 0.75rem 0.6rem;
-      text-align: left;
-      z-index: 2;
-      font-weight: 500;
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-    }
-    
-    thead th:hover {
-      background-color: var(--border);
-    }
-    
-    tbody tr {
-      border-bottom: 1px solid var(--border);
-    }
-    
-    tbody tr:nth-child(even) {
-      background-color: var(--muted);
-    }
-    
-    tbody tr:hover {
-      background-color: var(--border);
-    }
-    
-    td {
-      padding: 0.6rem;
-      vertical-align: top;
-    }
-    
-    /* Custom classes */
-    .highlight {
-      background-color: var(--muted);
-    }
-    
-    .stealth-defence {
-      background-color: var(--stealth);
-      font-weight: 500;
-    }
-    
-    .my-faction-faction {
-      background-color: var(--my-faction);
-      font-weight: 500;
-    }
-    
-    .opponent-faction-faction {
-      background-color: var(--opponent);
-      font-weight: 500;
-    }
-    
-    .blank-attacker {
-      background-color: var(--stealth) !important;
-    }
-    
-    /* Action buttons */
-    .action-buttons {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-      .container {
-        width: 100%;
-        padding: 1rem 0.5rem;
-      }
-      
-      .tab-section {
-        height: 65vh;
-      }
-      
-      button {
-        padding: 0.5rem 0.75rem;
-      }
-    }
   </style>
 </head>
 <body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">Resilience Dashboard</a>
+  </nav>
+
   <div class="container">
-    <h2>Torn Ranked War Analyzer</h2>
-    
+    <div class="header">
+      <h2>War Tracker</h2>
+    </div>
+
     <div class="setup-section">
       <label for="apiKey">API Key:</label>
       <textarea id="apiKey" rows="2" placeholder="Paste your Torn API key here"></textarea>

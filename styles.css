@@ -117,23 +117,41 @@ html, body {
    Navigation
    ======================================== */
 
+.navbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-300);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-brand {
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--green);
+  text-decoration: none;
+  margin-right: auto;
+}
+
+.nav-brand:hover {
+  color: var(--green);
+  opacity: 0.8;
+}
+
 .nav-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--text);
+  color: var(--text-light);
   text-decoration: none;
   font-size: 14px;
   padding: 6px 12px;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius);
   transition: all 0.2s;
-  background: var(--white);
 }
 
 .nav-link:hover {
-  background: var(--gray-100);
-  border-color: var(--green);
   color: var(--green);
 }
 
@@ -621,27 +639,24 @@ tbody tr:hover {
    ======================================== */
 
 .theme-toggle {
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  background: var(--white);
+  background: transparent;
   border: 1px solid var(--gray-300);
   border-radius: var(--radius);
-  padding: 8px 12px;
+  padding: 6px 12px;
   cursor: pointer;
   font-size: 14px;
   color: var(--text);
-  box-shadow: var(--shadow);
   display: flex;
   align-items: center;
   gap: 6px;
-  z-index: 100;
   transition: all 0.2s;
   font-family: var(--font);
+  margin-left: auto;
 }
 
 .theme-toggle:hover {
   border-color: var(--green);
+  background: var(--gray-100);
 }
 
 /* ========================================

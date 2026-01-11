@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Easter Egg Hunt Leaderboard!</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="styles.css">
   <style>
     /* [unchanged styling – exactly as you had it, including loader styles] */
     :root {
@@ -42,22 +44,27 @@
       flex-direction: column;
     }
 
-    .header {
-      background-color: var(--primary-lightest);
-      padding: 12px 16px;
+    .eggs-header {
+      background: var(--white);
+      padding: 16px;
       border-radius: var(--border-radius);
       margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      flex-shrink: 0;
+    }
+
+    .eggs-header-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-shrink: 0;
+      margin-bottom: 12px;
     }
 
     .page-title {
       margin: 0;
-      color: var(--primary-color);
-      font-size: 22px;
-      font-weight: 700;
+      color: var(--green);
+      font-size: 24px;
+      font-weight: 600;
     }
 
     .refresh-btn {
@@ -292,8 +299,12 @@
   </style>
 </head>
 <body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">Resilience Dashboard</a>
+  </nav>
+
   <div class="container">
-    <div class="header">
+    <div class="eggs-header">
       <h1 class="page-title">Easter Egg Hunt Leaderboard</h1>
       <div style="display: flex; align-items: center; gap: 10px;">
         <button id="refreshBtn" class="refresh-btn">Refresh Data</button>
@@ -430,5 +441,6 @@
     refreshBtn.addEventListener('click', fetchData);
     window.addEventListener('load', fetchData);
   </script>
+  <script src="theme.js"></script>
 </body>
 </html>

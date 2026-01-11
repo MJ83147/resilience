@@ -4,7 +4,18 @@
   btn.className = 'theme-toggle';
   btn.id = 'themeToggle';
   btn.innerHTML = '<span class="theme-icon"></span><span class="theme-label"></span>';
-  document.body.insertBefore(btn, document.body.firstChild);
+
+  // Try to insert in navbar, fallback to header or body if not found
+  const navbar = document.querySelector('.navbar');
+  const header = document.querySelector('.header-top') || document.querySelector('.header');
+
+  if (navbar) {
+    navbar.appendChild(btn);
+  } else if (header) {
+    header.appendChild(btn);
+  } else {
+    document.body.insertBefore(btn, document.body.firstChild);
+  }
 
   const icon = btn.querySelector('.theme-icon');
   const label = btn.querySelector('.theme-label');
