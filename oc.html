@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OC Accountability Dashboard</title>
   <link rel="stylesheet" href="theme.css">
-  
-    <link rel="stylesheet" href="styles.css">
-<style>
+  <style>
     .setup-section {
       background: var(--gray-100);
       padding: 16px;
@@ -496,6 +494,12 @@
       <h2>OC Accountability</h2>
     </div>
 
+    <div class="setup-section" id="setupSection">
+      <label for="apiKey">API Key:</label>
+      <textarea id="apiKey" rows="2" placeholder="Paste your Torn API key here (requires faction access)"></textarea>
+      <button onclick="loadData()">Load OC Data</button>
+    </div>
+
     <div class="dashboard-content" id="dashboardContent">
       <div class="status-bar">
         <span class="faction-name" id="factionName"></span>
@@ -644,9 +648,10 @@
 
   <script>
     const CACHE_KEY = 'oc_dashboard_cache';
+    const API_KEY_STORAGE = 'oc_dashboard_api_key';
     const ITEMS_CACHE_KEY = 'oc_dashboard_items';
 
-    const apiKey = 'POW66la7QjNjI97z';
+    let apiKey = '';
     let crimeExpMembers = [];
     let allMembers = {};
     let ongoingCrimes = [];
@@ -663,19 +668,19 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      const savedKey = localStorage.getItem(API_KEY_STORAGE);
+      if (savedKey) {
+        document.getElementById('apiKey').value = savedKey;
+      }
+
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         const data = JSON.parse(cached);
         const age = Date.now() - data.timestamp;
-        if (age < 3600000) {
+        if (age < 3600000 && savedKey) {
+          apiKey = savedKey;
           loadFromCache(data);
-        } else {
-          // Cache expired, load fresh data
-          loadData();
         }
-      } else {
-        // No cache, load fresh data
-        loadData();
       }
     });
 
@@ -694,6 +699,7 @@
         itemNames = JSON.parse(itemsCache);
       }
 
+      document.getElementById('setupSection').style.display = 'none';
       document.getElementById('dashboardContent').style.display = 'block';
       document.getElementById('factionName').textContent = data.factionName || 'Your Faction';
       updateLastUpdated(data.timestamp, dataRange);
@@ -720,11 +726,17 @@
     }
 
     async function loadData() {
-      const btn = document.querySelector('.refresh-btn');
-      if (btn) {
-        btn.innerHTML = '<span class="loading-spinner"></span>Updating...';
-        btn.disabled = true;
+      apiKey = document.getElementById('apiKey').value.trim();
+      if (!apiKey) {
+        alert('Please enter your API key');
+        return;
       }
+
+      localStorage.setItem(API_KEY_STORAGE, apiKey);
+
+      const btn = document.querySelector('.setup-section button');
+      btn.innerHTML = '<span class="loading-spinner"></span>Loading...';
+      btn.disabled = true;
 
       try {
         const crimeExpRes = await fetch(`https://api.torn.com/v2/faction/?selections=crimeexp&key=${apiKey}`);
@@ -838,28 +850,24 @@
         };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
 
+        document.getElementById('setupSection').style.display = 'none';
         document.getElementById('dashboardContent').style.display = 'block';
         document.getElementById('factionName').textContent = factionName;
         updateLastUpdated(Date.now(), dataRange);
 
         processAndRender();
 
-        if (btn) {
-          btn.innerHTML = 'Refresh';
-          btn.disabled = false;
-        }
-
       } catch (err) {
         console.error('Error loading data:', err);
         alert(`Error: ${err.message}`);
-        if (btn) {
-          btn.innerHTML = 'Refresh';
-          btn.disabled = false;
-        }
+        btn.innerHTML = 'Load OC Data';
+        btn.disabled = false;
       }
     }
 
     async function refreshData() {
+      document.getElementById('setupSection').style.display = 'block';
+      document.getElementById('dashboardContent').style.display = 'none';
       await loadData();
     }
 
@@ -872,6 +880,7 @@
             membersInCrimes.set(slot.user.id, {
               crimeId: crime.id,
               crimeName: crime.name,
+              difficulty: crime.difficulty || crime.level || null,
               position: slot.position,
               passRate: slot.checkpoint_pass_rate,
               itemRequired: slot.item_requirement,
@@ -918,6 +927,7 @@
             id,
             name: allMembers[id]?.name || `Unknown [${id}]`,
             crimeName: data.crimeName,
+            difficulty: data.difficulty,
             itemId: data.itemRequired.id
           });
         }
@@ -933,6 +943,7 @@
             id,
             name: allMembers[id]?.name || `Unknown [${id}]`,
             crimeName: data.crimeName,
+            difficulty: data.difficulty,
             position: data.position,
             passRate: data.passRate
           });
@@ -992,14 +1003,18 @@
         return;
       }
 
-      list.innerHTML = members.map(m => `
-        <li class="issue-item">
-          <span class="member-name">
-            <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
-          </span>
-          <span class="issue-detail warning">${m.crimeName}</span>
-        </li>
-      `).join('');
+      list.innerHTML = members.map(m => {
+        const tierText = m.difficulty ? ` [T${m.difficulty}]` : '';
+        const itemName = itemNames[m.itemId] || `Item #${m.itemId}`;
+        return `
+          <li class="issue-item">
+            <span class="member-name">
+              <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
+            </span>
+            <span class="issue-detail warning">${m.crimeName}${tierText} - ${itemName}</span>
+          </li>
+        `;
+      }).join('');
     }
 
     function renderLowSuccess(members) {
@@ -1014,14 +1029,17 @@
         return;
       }
 
-      list.innerHTML = members.map(m => `
-        <li class="issue-item">
-          <span class="member-name">
-            <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
-          </span>
-          <span class="issue-detail warning">${m.passRate}% - ${m.position} (${m.crimeName})</span>
-        </li>
-      `).join('');
+      list.innerHTML = members.map(m => {
+        const tierText = m.difficulty ? ` [T${m.difficulty}]` : '';
+        return `
+          <li class="issue-item">
+            <span class="member-name">
+              <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
+            </span>
+            <span class="issue-detail warning">${m.passRate}% - ${m.position} (${m.crimeName}${tierText})</span>
+          </li>
+        `;
+      }).join('');
     }
 
     function renderRewards() {
