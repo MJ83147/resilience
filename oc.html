@@ -1219,27 +1219,28 @@
       let totalMoney = 0;
       let totalSuccess = 0;
       let totalFailed = 0;
+      let countedCrimes = 0;
 
       completedCrimes.forEach(crime => {
         const name = crime.name;
-        const isMultiStage = isMultiStageCrime(name);
+        
+        // Completely skip multi-stage crimes - they don't earn money or respect
+        if (isMultiStageCrime(name)) return;
         
         if (!byCrimeType.has(name)) {
-          byCrimeType.set(name, { count: 0, success: 0, failed: 0, respect: 0, money: 0, isMultiStage });
+          byCrimeType.set(name, { count: 0, success: 0, failed: 0, respect: 0, money: 0 });
         }
         const entry = byCrimeType.get(name);
         entry.count++;
+        countedCrimes++;
 
-        // Check success/failure - multi-stage crimes are excluded from success/fail counts
-        if (!isMultiStage) {
-          const isSuccess = crime.rewards && crime.rewards.respect > 0;
-          if (isSuccess) {
-            entry.success++;
-            totalSuccess++;
-          } else {
-            entry.failed++;
-            totalFailed++;
-          }
+        const isSuccess = crime.rewards && crime.rewards.respect > 0;
+        if (isSuccess) {
+          entry.success++;
+          totalSuccess++;
+        } else {
+          entry.failed++;
+          totalFailed++;
         }
 
         if (crime.rewards) {
@@ -1268,7 +1269,7 @@
       document.getElementById('totalMoney').textContent = '$' + formatNumber(totalMoney);
       document.getElementById('factionMoney').textContent = '$' + formatNumber(factionCut);
       document.getElementById('successRate').textContent = successPct + '%';
-      document.getElementById('completedCount').textContent = completedCrimes.length;
+      document.getElementById('completedCount').textContent = countedCrimes;
 
       // Sort by respect descending
       const sorted = Array.from(byCrimeType.entries())
@@ -1281,12 +1282,11 @@
       tbody.innerHTML = sorted.map(([name, data]) => {
         const avgRespect = data.count > 0 ? Math.round(data.respect / data.count) : 0;
         const avgMoney = data.count > 0 ? Math.round(data.money / data.count) : 0;
-        const successDisplay = data.isMultiStage ? '-' : `${data.success}/${data.success + data.failed}`;
         return `
           <tr>
-            <td>${name}${data.isMultiStage ? ' *' : ''}</td>
+            <td>${name}</td>
             <td>${data.count}</td>
-            <td>${successDisplay}</td>
+            <td>${data.success}/${data.success + data.failed}</td>
             <td>${formatNumber(data.respect)}</td>
             <td>${formatNumber(avgRespect)}</td>
             <td>$${formatNumber(data.money)}</td>
@@ -1296,12 +1296,12 @@
       }).join('');
 
       // Add totals row
-      const avgTotalRespect = totalOCs > 0 ? Math.round(totalRespect / completedCrimes.length) : 0;
-      const avgTotalMoney = totalOCs > 0 ? Math.round(totalMoney / completedCrimes.length) : 0;
+      const avgTotalRespect = countedCrimes > 0 ? Math.round(totalRespect / countedCrimes) : 0;
+      const avgTotalMoney = countedCrimes > 0 ? Math.round(totalMoney / countedCrimes) : 0;
       tbody.innerHTML += `
         <tr class="totals-row">
           <td>Total</td>
-          <td>${completedCrimes.length}</td>
+          <td>${countedCrimes}</td>
           <td>${totalSuccess}/${totalOCs}</td>
           <td>${formatNumber(totalRespect)}</td>
           <td>${formatNumber(avgTotalRespect)}</td>
