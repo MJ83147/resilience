@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OC Accountability Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="theme.css">
-    <link rel="stylesheet" href="styles.css">
   <style>
     .setup-section {
       background: var(--gray-100);
@@ -443,6 +443,12 @@
       padding-top: 4px;
     }
 
+    .chart-canvas-container {
+      position: relative;
+      height: 250px;
+      width: 100%;
+    }
+
     .chart-legend {
       display: flex;
       gap: 16px;
@@ -649,23 +655,17 @@
                   <button class="filter-btn" data-metric="money" onclick="switchMetric('money')">Money</button>
                 </div>
               </div>
-              <div class="chart-area" id="metricChartArea"></div>
+              <div class="chart-canvas-container">
+                <canvas id="metricChart"></canvas>
+              </div>
             </div>
 
             <div class="rewards-chart-wrapper">
               <div class="chart-header">
                 <div class="chart-title">Completions Over Time (Last 30 Days)</div>
               </div>
-              <div class="chart-area" id="timelineChartArea"></div>
-              <div class="chart-legend">
-                <div class="legend-item">
-                  <div class="legend-color success"></div>
-                  <span>Success</span>
-                </div>
-                <div class="legend-item">
-                  <div class="legend-color failure"></div>
-                  <span>Failed</span>
-                </div>
+              <div class="chart-canvas-container">
+                <canvas id="timelineChart"></canvas>
               </div>
             </div>
           </div>
@@ -1330,62 +1330,83 @@
       renderTimelineChart();
     }
 
+    let metricChartInstance = null;
+    let timelineChartInstance = null;
+
     function renderMetricChart(data) {
-      const chartArea = document.getElementById('metricChartArea');
+      const ctx = document.getElementById('metricChart').getContext('2d');
+
+      if (metricChartInstance) {
+        metricChartInstance.destroy();
+      }
 
       if (data.length === 0) {
-        chartArea.innerHTML = '<div class="empty-state">No completed crimes to display</div>';
         return;
       }
 
       const isRespect = currentMetric === 'respect';
+      const labels = data.map(([name]) => name);
       const values = data.map(([, d]) => isRespect ? d.respect : d.money);
-      const maxValue = Math.max(...values);
-      const chartHeight = 160;
 
-      // Generate grid lines (5 lines including 0)
-      const gridLines = [];
-      for (let i = 0; i <= 4; i++) {
-        const val = Math.round((maxValue / 4) * (4 - i));
-        const label = isRespect ? formatNumber(val) : '$' + formatNumber(val);
-        gridLines.push({ value: val, label });
-      }
-
-      let html = '<div class="chart-grid">';
-      gridLines.forEach(line => {
-        html += `<div class="grid-line"><span class="y-label">${line.label}</span></div>`;
+      metricChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+            borderColor: 'rgba(34, 197, 94, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw;
+                  return isRespect ? formatNumber(val) + ' respect' : '$' + formatNumber(val);
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { 
+                color: '#9ca3af',
+                font: { size: 10 },
+                maxRotation: 45,
+                minRotation: 45
+              }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(255,255,255,0.1)' },
+              ticks: {
+                color: '#9ca3af',
+                font: { size: 10 },
+                callback: function(value) {
+                  return isRespect ? formatNumber(value) : '$' + formatNumber(value);
+                }
+              }
+            }
+          }
+        }
       });
-      html += '</div>';
-
-      html += '<div class="bar-chart-area">';
-      data.forEach(([name, d]) => {
-        const value = isRespect ? d.respect : d.money;
-        const height = maxValue > 0 ? (value / maxValue) * chartHeight : 0;
-        const displayValue = isRespect ? formatNumber(value) : '$' + formatNumber(value);
-
-        html += `
-          <div class="bar-group">
-            <div class="bar-value">${displayValue}</div>
-            <div class="bar respect" style="height: ${height}px" title="${name}: ${displayValue}"></div>
-          </div>
-        `;
-      });
-      html += '</div>';
-
-      html += '<div class="x-labels">';
-      data.forEach(([name]) => {
-        html += `<div class="x-label" title="${name}">${name}</div>`;
-      });
-      html += '</div>';
-
-      chartArea.innerHTML = html;
     }
 
     function renderTimelineChart() {
-      const chartArea = document.getElementById('timelineChartArea');
+      const ctx = document.getElementById('timelineChart').getContext('2d');
+
+      if (timelineChartInstance) {
+        timelineChartInstance.destroy();
+      }
 
       if (completedCrimes.length === 0) {
-        chartArea.innerHTML = '<div class="empty-state">No completed crimes to display</div>';
         return;
       }
 
@@ -1405,7 +1426,6 @@
       }
 
       completedCrimes.forEach(crime => {
-        // Skip multi-stage crimes
         if (isMultiStageCrime(crime.name)) return;
 
         const crimeDate = new Date(crime.executed_at * 1000);
@@ -1424,56 +1444,78 @@
         }
       });
 
-      const maxCount = Math.max(...days.map(d => d.success + d.failed), 1);
-      const chartHeight = 160;
+      const labels = days.map(d => `${d.date.getDate()}/${d.date.getMonth() + 1}`);
+      const successData = days.map(d => d.success);
+      const failedData = days.map(d => d.failed);
 
-      // Generate grid lines
-      const gridLines = [];
-      const step = Math.ceil(maxCount / 4);
-      for (let i = 0; i <= 4; i++) {
-        const val = step * (4 - i);
-        gridLines.push({ value: val, label: val.toString() });
-      }
-      const adjustedMax = step * 4;
-
-      let html = '<div class="chart-grid">';
-      gridLines.forEach(line => {
-        html += `<div class="grid-line"><span class="y-label">${line.label}</span></div>`;
-      });
-      html += '</div>';
-
-      html += '<div class="timeline-bar-area">';
-      days.forEach(d => {
-        const total = d.success + d.failed;
-        const successHeight = adjustedMax > 0 ? (d.success / adjustedMax) * chartHeight : 0;
-        const failedHeight = adjustedMax > 0 ? (d.failed / adjustedMax) * chartHeight : 0;
-
-        html += '<div class="timeline-bar">';
-        if (total > 0) {
-          html += `<div class="bar-value">${d.success}/${total}</div>`;
-          html += '<div class="timeline-stack">';
-          if (d.failed > 0) {
-            html += `<div class="bar failure" style="height: ${failedHeight}px"></div>`;
+      timelineChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Success',
+              data: successData,
+              backgroundColor: 'rgba(34, 197, 94, 0.8)',
+              borderColor: 'rgba(34, 197, 94, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Failed',
+              data: failedData,
+              backgroundColor: 'rgba(239, 68, 68, 0.8)',
+              borderColor: 'rgba(239, 68, 68, 1)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: { color: '#9ca3af', font: { size: 11 } }
+            },
+            tooltip: {
+              callbacks: {
+                afterTitle: function(context) {
+                  const idx = context[0].dataIndex;
+                  const total = successData[idx] + failedData[idx];
+                  return total > 0 ? `${successData[idx]}/${total} successful` : '';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              grid: { display: false },
+              ticks: { 
+                color: '#9ca3af',
+                font: { size: 9 },
+                maxRotation: 45,
+                minRotation: 45
+              }
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              grid: { color: 'rgba(255,255,255,0.1)' },
+              ticks: {
+                color: '#9ca3af',
+                font: { size: 10 },
+                stepSize: 1,
+                callback: function(value) {
+                  if (Number.isInteger(value)) return value;
+                  return null;
+                }
+              }
+            }
           }
-          if (d.success > 0) {
-            html += `<div class="bar success" style="height: ${successHeight}px"></div>`;
-          }
-          html += '</div>';
         }
-        html += '</div>';
       });
-      html += '</div>';
-
-      html += '<div class="timeline-x-labels">';
-      days.forEach((d, i) => {
-        const dateLabel = `${d.date.getDate()}/${d.date.getMonth() + 1}`;
-        // Show label every 5 days
-        const showLabel = i % 5 === 0 || i === days.length - 1;
-        html += `<div class="timeline-x-label">${showLabel ? dateLabel : ''}</div>`;
-      });
-      html += '</div>';
-
-      chartArea.innerHTML = html;
     }
 
     function formatTimeAgo(timestamp) {
