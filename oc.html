@@ -197,22 +197,39 @@
 
     .charts-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 16px;
     }
 
-    @media (max-width: 1000px) {
-      .rewards-row,
-      .charts-row {
+    @media (max-width: 1200px) {
+      .rewards-row {
         grid-template-columns: 1fr;
       }
+    }
+
+    .rewards-chart-wrapper {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .chart-canvas-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+      min-width: 0;
     }
 
     .rewards-table-wrapper {
       background: var(--white);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      overflow: hidden;
+      overflow-x: auto;
     }
 
     .section-title {
@@ -237,15 +254,6 @@
     .rewards-table-wrapper th:first-child,
     .rewards-table-wrapper td:first-child {
       text-align: left;
-    }
-
-    .rewards-chart-wrapper {
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
     }
 
     .chart-title {
@@ -442,12 +450,6 @@
       color: var(--text-light);
       text-align: center;
       padding-top: 4px;
-    }
-
-    .chart-canvas-container {
-      position: relative;
-      height: 250px;
-      width: 100%;
     }
 
     .chart-legend {
@@ -1363,6 +1365,11 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: {
+            padding: {
+              bottom: 20
+            }
+          },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -1379,9 +1386,9 @@
               grid: { display: false },
               ticks: { 
                 color: '#9ca3af',
-                font: { size: 10 },
-                maxRotation: 45,
-                minRotation: 45
+                font: { size: 9 },
+                maxRotation: 60,
+                minRotation: 60
               }
             },
             y: {
