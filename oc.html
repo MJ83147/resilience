@@ -270,31 +270,177 @@
       font-size: 11px;
     }
 
-    .chart-with-axis {
-      display: flex;
+    .chart-area {
       flex: 1;
-      min-height: 200px;
+      min-height: 220px;
+      position: relative;
     }
 
-    .y-axis {
-      width: 45px;
+    .chart-grid {
+      position: absolute;
+      top: 0;
+      left: 50px;
+      right: 0;
+      bottom: 30px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 20px 4px 50px 0;
-      text-align: right;
-      font-size: 9px;
-      color: var(--text-light);
     }
 
-    .y-axis-label {
-      line-height: 1;
-    }
-
-    .chart-container {
-      flex: 1;
-      min-height: 200px;
+    .grid-line {
+      border-top: 1px solid var(--gray-200);
       position: relative;
+      height: 0;
+    }
+
+    .grid-line:last-child {
+      border-top: 1px solid var(--gray-300);
+    }
+
+    .y-label {
+      position: absolute;
+      right: calc(100% + 8px);
+      top: -6px;
+      font-size: 10px;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+
+    .bar-chart-area {
+      position: absolute;
+      top: 0;
+      left: 50px;
+      right: 0;
+      bottom: 30px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-around;
+      gap: 4px;
+      padding: 0 10px;
+    }
+
+    .bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 50px;
+    }
+
+    .bar-value {
+      font-size: 9px;
+      color: var(--text);
+      font-weight: 600;
+      margin-bottom: 2px;
+      white-space: nowrap;
+    }
+
+    .bar {
+      width: 70%;
+      min-height: 2px;
+      transition: height 0.3s ease;
+      border-radius: 2px 2px 0 0;
+    }
+
+    .bar.respect {
+      background: var(--green);
+    }
+
+    .bar.money {
+      background: var(--red);
+    }
+
+    .x-labels {
+      position: absolute;
+      left: 50px;
+      right: 0;
+      bottom: 0;
+      height: 30px;
+      display: flex;
+      justify-content: space-around;
+      padding: 0 10px;
+    }
+
+    .x-label {
+      flex: 1;
+      max-width: 50px;
+      font-size: 8px;
+      color: var(--text-light);
+      text-align: center;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding-top: 4px;
+    }
+
+    /* Timeline chart */
+    .timeline-bar-area {
+      position: absolute;
+      top: 0;
+      left: 50px;
+      right: 0;
+      bottom: 30px;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      padding: 0 4px;
+    }
+
+    .timeline-bar {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .timeline-bar .bar-value {
+      font-size: 8px;
+    }
+
+    .timeline-stack {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .timeline-stack .bar {
+      width: 100%;
+      border-radius: 0;
+    }
+
+    .timeline-stack .bar:first-child {
+      border-radius: 2px 2px 0 0;
+    }
+
+    .timeline-stack .bar.success {
+      background: var(--green);
+    }
+
+    .timeline-stack .bar.failure {
+      background: var(--red);
+    }
+
+    .timeline-x-labels {
+      position: absolute;
+      left: 50px;
+      right: 0;
+      bottom: 0;
+      height: 30px;
+      display: flex;
+      gap: 2px;
+      padding: 0 4px;
+    }
+
+    .timeline-x-label {
+      flex: 1;
+      font-size: 8px;
+      color: var(--text-light);
+      text-align: center;
+      padding-top: 4px;
     }
 
     .chart-legend {
@@ -328,124 +474,6 @@
       background: var(--red);
     }
 
-    .bar-chart {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-around;
-      gap: 2px;
-      height: 100%;
-      padding: 20px 4px 50px 4px;
-    }
-
-    .bar-group {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100%;
-      justify-content: flex-end;
-      min-width: 0;
-      max-width: 50px;
-    }
-
-    .bar-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-    }
-
-    .bar-value {
-      font-size: 9px;
-      color: var(--text);
-      font-weight: 600;
-      margin-bottom: 2px;
-      white-space: nowrap;
-    }
-
-    .bar {
-      width: 80%;
-      max-width: 30px;
-      min-height: 2px;
-      transition: height 0.3s ease;
-      border-radius: 2px 2px 0 0;
-    }
-
-    .bar.respect {
-      background: var(--green);
-    }
-
-    .bar.money {
-      background: var(--red);
-    }
-
-    .bar-label {
-      font-size: 8px;
-      color: var(--text-light);
-      text-align: center;
-      margin-top: 4px;
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      transform: rotate(180deg);
-      max-height: 45px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* Timeline chart */
-    .timeline-chart {
-      display: flex;
-      align-items: flex-end;
-      gap: 2px;
-      height: 100%;
-      padding: 20px 4px 30px 4px;
-    }
-
-    .timeline-bar {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      min-width: 0;
-    }
-
-    .timeline-bar .bar-value {
-      font-size: 8px;
-    }
-
-    .timeline-stack {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .timeline-stack .bar {
-      width: 100%;
-      max-width: none;
-      border-radius: 0;
-    }
-
-    .timeline-stack .bar:first-child {
-      border-radius: 2px 2px 0 0;
-    }
-
-    .timeline-stack .bar.success {
-      background: var(--green);
-    }
-
-    .timeline-stack .bar.failure {
-      background: var(--red);
-    }
-
-    .timeline-label {
-      font-size: 7px;
-      color: var(--text-light);
-      margin-top: 2px;
-      white-space: nowrap;
-    }
-
     .totals-row {
       font-weight: 600;
       background: var(--gray-100);
@@ -453,12 +481,18 @@
 
     .summary-cards {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 12px;
       margin-bottom: 16px;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 800px) {
+      .summary-cards {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 500px) {
       .summary-cards {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -496,9 +530,8 @@
     </div>
 
     <div class="setup-section" id="setupSection">
-      <label for="apiKey">API Key:</label>
-      <textarea id="apiKey" rows="2" placeholder="Paste your Torn API key here (requires faction access)"></textarea>
-      <button onclick="loadData()">Load OC Data</button>
+      <div id="loadingMessage"><span class="loading-spinner"></span> Loading OC data...</div>
+      <div id="errorMessage" style="display: none; color: var(--red);"></div>
     </div>
 
     <div class="dashboard-content" id="dashboardContent">
@@ -538,7 +571,7 @@
 
             <div class="issue-section">
               <div class="issue-header">
-                <span>Low Success (&lt;70%)</span>
+                <span>Below CPR Threshold</span>
                 <span class="issue-count" id="lowSuccessCount">0</span>
               </div>
               <ul class="issue-list" id="lowSuccessList">
@@ -557,6 +590,10 @@
             <div class="summary-card">
               <div class="summary-value" id="totalMoney">$0</div>
               <div class="summary-label">Total Money</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-value" id="factionMoney">$0</div>
+              <div class="summary-label">Faction Cut (20%)</div>
             </div>
             <div class="summary-card">
               <div class="summary-value" id="successRate">0%</div>
@@ -612,24 +649,14 @@
                   <button class="filter-btn" data-metric="money" onclick="switchMetric('money')">Money</button>
                 </div>
               </div>
-              <div class="chart-with-axis">
-                <div class="y-axis" id="metricYAxis"></div>
-                <div class="chart-container">
-                  <div class="bar-chart" id="metricChart"></div>
-                </div>
-              </div>
+              <div class="chart-area" id="metricChartArea"></div>
             </div>
 
             <div class="rewards-chart-wrapper">
               <div class="chart-header">
                 <div class="chart-title">Completions Over Time (Last 30 Days)</div>
               </div>
-              <div class="chart-with-axis">
-                <div class="y-axis" id="timelineYAxis"></div>
-                <div class="chart-container">
-                  <div class="timeline-chart" id="timelineChart"></div>
-                </div>
-              </div>
+              <div class="chart-area" id="timelineChartArea"></div>
               <div class="chart-legend">
                 <div class="legend-item">
                   <div class="legend-color success"></div>
@@ -647,10 +674,141 @@
     </div>
   </div>
 
+  <script src="config.js"></script>
   <script>
     const CACHE_KEY = 'oc_dashboard_cache';
-    const API_KEY_STORAGE = 'oc_dashboard_api_key';
     const ITEMS_CACHE_KEY = 'oc_dashboard_items';
+    
+    // Get API key from config.js
+    let apiKey = '';
+    try {
+      if (typeof CONFIG !== 'undefined' && CONFIG.apiKey) {
+        apiKey = CONFIG.apiKey;
+      }
+    } catch (e) {
+      console.error('Could not load API key from config.js');
+    }
+
+    // Multi-stage crimes to exclude from success/failure calculations
+    const MULTI_STAGE_CRIMES = [
+      'stacking the deck',
+      'no reserve',
+      'manifest cruelty',
+      'gone fission'
+    ];
+
+    // CPR Requirements from userscript
+    const CPR_REQUIREMENTS = {
+      "blast from the past": {
+        "picklock #1": 60,
+        "hacker": 60,
+        "engineer": 62,
+        "bomber": 62,
+        "muscle": 62,
+        "picklock #2": 50
+      },
+      "stacking the deck": {
+        "hacker": 60,
+        "imitator": 60,
+        "cat burglar": 60,
+        "driver": 55
+      },
+      "ace in the hole": {
+        "hacker": 60,
+        "driver": 55,
+        "muscle #1": 60,
+        "imitator": 60,
+        "muscle #2": 60
+      },
+      "break the bank": {
+        "robber": 60,
+        "muscle #1": 60,
+        "thief #1": 50,
+        "muscle #2": 60,
+        "muscle #3": 62,
+        "thief #2": 62
+      },
+      "clinical precision": {
+        "assassin": 60,
+        "cat burglar": 65,
+        "cleaner": 65,
+        "imitator": 65
+      },
+      "stage fright": {
+        "sniper": 60,
+        "enforcer": 60,
+        "lookout": 60,
+        "muscle #1": 10,
+        "muscle #2": 10,
+        "muscle #3": 10
+      },
+      "gaslight the way": {
+        "imitator #1": 60,
+        "imitator #2": 60,
+        "imitator #3": 60,
+        "looter #1": 60,
+        "looter #2": 5,
+        "looter #3": 60
+      },
+      "bidding war": {
+        "robber #1": 50,
+        "robber #2": 60,
+        "robber #3": 60,
+        "bomber #1": 50,
+        "bomber #2": 60,
+        "driver": 60
+      },
+      "honey trap": { "_default": 60 },
+      "leave no trace": { "_default": 60 },
+      "snow blind": { "_default": 60 },
+      "pet project": { "_default": 30 },
+      "cash me if you can": { "_default": 30 },
+      "smoke and wing mirrors": { "_default": 30 },
+      "market forces": { "_default": 30 },
+      "mob mentality": { "_default": 30 },
+      "best of the lot": { "_default": 30 },
+      "no reserve": { "_default": 60 },
+      "sneaky git grab": { "_default": 60 }
+    };
+
+    function getCPRThreshold(crimeName, position, positionNumber) {
+      const crimeKey = crimeName.toLowerCase();
+      const crimeReqs = CPR_REQUIREMENTS[crimeKey];
+      
+      if (!crimeReqs) {
+        return 70; // Default fallback
+      }
+      
+      // Check for default
+      if (crimeReqs._default !== undefined) {
+        return crimeReqs._default;
+      }
+      
+      // Build position key (e.g., "muscle #2")
+      const posLower = position.toLowerCase();
+      const posWithNumber = `${posLower} #${positionNumber}`;
+      
+      // Try position with number first
+      if (crimeReqs[posWithNumber] !== undefined) {
+        return crimeReqs[posWithNumber];
+      }
+      
+      // Try just position name (for unique positions)
+      if (crimeReqs[posLower] !== undefined) {
+        return crimeReqs[posLower];
+      }
+      
+      // Try position #1 as fallback for first occurrence
+      if (positionNumber === 1 && crimeReqs[`${posLower} #1`] !== undefined) {
+        return crimeReqs[`${posLower} #1`];
+      }
+      
+      return 70; // Default fallback
+    }
+
+    function isMultiStageCrime(crimeName) {
+      return MULTI_STAGE_CRIMES.includes(crimeName.toLowerCase());
+    }
 
     let apiKey = '';
     let crimeExpMembers = [];
@@ -669,20 +827,25 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      const savedKey = localStorage.getItem(API_KEY_STORAGE);
-      if (savedKey) {
-        document.getElementById('apiKey').value = savedKey;
+      if (!apiKey) {
+        document.getElementById('loadingMessage').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'block';
+        document.getElementById('errorMessage').textContent = 'Error: Missing config.js or API key. Create a config.js file with: const CONFIG = { apiKey: "your-key-here" };';
+        return;
       }
 
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         const data = JSON.parse(cached);
         const age = Date.now() - data.timestamp;
-        if (age < 3600000 && savedKey) {
-          apiKey = savedKey;
+        if (age < 3600000) {
           loadFromCache(data);
+          return;
         }
       }
+      
+      // Auto-load fresh data
+      loadData();
     });
 
     let dataRange = { earliest: null, latest: null, crimeCount: 0 };
@@ -694,7 +857,6 @@
       completedCrimes = data.completedCrimes;
       dataRange = data.dataRange || { earliest: null, latest: null, crimeCount: 0 };
 
-      // Load item names from separate cache
       const itemsCache = localStorage.getItem(ITEMS_CACHE_KEY);
       if (itemsCache) {
         itemNames = JSON.parse(itemsCache);
@@ -727,17 +889,15 @@
     }
 
     async function loadData() {
-      apiKey = document.getElementById('apiKey').value.trim();
       if (!apiKey) {
-        alert('Please enter your API key');
+        document.getElementById('loadingMessage').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'block';
+        document.getElementById('errorMessage').textContent = 'Error: No API key configured.';
         return;
       }
 
-      localStorage.setItem(API_KEY_STORAGE, apiKey);
-
-      const btn = document.querySelector('.setup-section button');
-      btn.innerHTML = '<span class="loading-spinner"></span>Loading...';
-      btn.disabled = true;
+      document.getElementById('loadingMessage').style.display = 'block';
+      document.getElementById('errorMessage').style.display = 'none';
 
       try {
         const crimeExpRes = await fetch(`https://api.torn.com/v2/faction/?selections=crimeexp&key=${apiKey}`);
@@ -759,7 +919,6 @@
         allMembers = basicData.members || {};
         const factionName = basicData.name || 'Your Faction';
 
-        // Paginate crimes to get more history (up to 30 days or 500 crimes)
         let allCrimes = [];
         let offset = 0;
         const maxOffset = 500;
@@ -779,7 +938,6 @@
 
           allCrimes = allCrimes.concat(crimes);
 
-          // Track oldest crime fetched
           crimes.forEach(c => {
             if (c.executed_at && c.executed_at < oldestFetched) {
               oldestFetched = c.executed_at;
@@ -789,19 +947,15 @@
             }
           });
 
-          // Stop if we've gone back far enough
           if (oldestFetched < thirtyDaysAgo) break;
 
           offset += crimes.length;
-
-          // Small delay to avoid rate limiting
           await new Promise(r => setTimeout(r, 100));
         }
 
         ongoingCrimes = allCrimes.filter(c => c.executed_at === null && c.status !== 'Expired');
         completedCrimes = allCrimes.filter(c => c.executed_at !== null);
 
-        // Calculate date range
         let earliestDate = null;
         let latestDate = null;
         completedCrimes.forEach(c => {
@@ -815,7 +969,6 @@
           crimeCount: allCrimes.length
         };
 
-        // Fetch item names for any items we received OR are required for ongoing crimes
         const itemIds = new Set();
         completedCrimes.forEach(crime => {
           if (crime.rewards?.items) {
@@ -867,15 +1020,17 @@
 
       } catch (err) {
         console.error('Error loading data:', err);
-        alert(`Error: ${err.message}`);
-        btn.innerHTML = 'Load OC Data';
-        btn.disabled = false;
+        document.getElementById('loadingMessage').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'block';
+        document.getElementById('errorMessage').textContent = `Error: ${err.message}`;
       }
     }
 
     async function refreshData() {
       document.getElementById('setupSection').style.display = 'block';
       document.getElementById('dashboardContent').style.display = 'none';
+      document.getElementById('loadingMessage').style.display = 'block';
+      document.getElementById('errorMessage').style.display = 'none';
       await loadData();
     }
 
@@ -890,6 +1045,7 @@
               crimeName: crime.name,
               difficulty: crime.difficulty || crime.level || null,
               position: slot.position,
+              positionNumber: slot.position_number || 1,
               passRate: slot.checkpoint_pass_rate,
               itemRequired: slot.item_requirement,
               joinedAt: slot.user.joined_at
@@ -943,21 +1099,26 @@
 
       renderMissingItems(missingItems);
 
-      // 3. Low success rate (<70%)
+      // 3. Below CPR threshold (using per-crime/position thresholds)
       const lowSuccess = [];
       membersInCrimes.forEach((data, id) => {
-        if (data.passRate !== null && data.passRate < 70) {
-          lowSuccess.push({
-            id,
-            name: allMembers[id]?.name || `Unknown [${id}]`,
-            crimeName: data.crimeName,
-            difficulty: data.difficulty,
-            position: data.position,
-            passRate: data.passRate
-          });
+        if (data.passRate !== null) {
+          const threshold = getCPRThreshold(data.crimeName, data.position, data.positionNumber);
+          if (data.passRate < threshold) {
+            lowSuccess.push({
+              id,
+              name: allMembers[id]?.name || `Unknown [${id}]`,
+              crimeName: data.crimeName,
+              difficulty: data.difficulty,
+              position: data.position,
+              positionNumber: data.positionNumber,
+              passRate: data.passRate,
+              threshold: threshold
+            });
+          }
         }
       });
-      lowSuccess.sort((a, b) => a.passRate - b.passRate);
+      lowSuccess.sort((a, b) => (a.passRate - a.threshold) - (b.passRate - b.threshold));
 
       renderLowSuccess(lowSuccess);
 
@@ -1033,25 +1194,25 @@
       countEl.classList.toggle('ok', members.length === 0);
 
       if (members.length === 0) {
-        list.innerHTML = '<li class="empty-state">No low success rates</li>';
+        list.innerHTML = '<li class="empty-state">No one below CPR threshold</li>';
         return;
       }
 
       list.innerHTML = members.map(m => {
         const tierText = m.difficulty ? ` [T${m.difficulty}]` : '';
+        const posText = m.positionNumber > 1 ? `${m.position} #${m.positionNumber}` : m.position;
         return `
           <li class="issue-item">
             <span class="member-name">
               <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
             </span>
-            <span class="issue-detail warning">${m.passRate}% - ${m.position} (${m.crimeName}${tierText})</span>
+            <span class="issue-detail warning">${m.passRate}% / ${m.threshold}% - ${posText} (${m.crimeName}${tierText})</span>
           </li>
         `;
       }).join('');
     }
 
     function renderRewards() {
-      // Aggregate by crime type
       const byCrimeType = new Map();
       const itemCounts = new Map();
       let totalRespect = 0;
@@ -1061,20 +1222,24 @@
 
       completedCrimes.forEach(crime => {
         const name = crime.name;
+        const isMultiStage = isMultiStageCrime(name);
+        
         if (!byCrimeType.has(name)) {
-          byCrimeType.set(name, { count: 0, success: 0, failed: 0, respect: 0, money: 0 });
+          byCrimeType.set(name, { count: 0, success: 0, failed: 0, respect: 0, money: 0, isMultiStage });
         }
         const entry = byCrimeType.get(name);
         entry.count++;
 
-        // Check success/failure based on whether rewards exist and respect > 0
-        const isSuccess = crime.rewards && crime.rewards.respect > 0;
-        if (isSuccess) {
-          entry.success++;
-          totalSuccess++;
-        } else {
-          entry.failed++;
-          totalFailed++;
+        // Check success/failure - multi-stage crimes are excluded from success/fail counts
+        if (!isMultiStage) {
+          const isSuccess = crime.rewards && crime.rewards.respect > 0;
+          if (isSuccess) {
+            entry.success++;
+            totalSuccess++;
+          } else {
+            entry.failed++;
+            totalFailed++;
+          }
         }
 
         if (crime.rewards) {
@@ -1096,10 +1261,12 @@
 
       const totalOCs = totalSuccess + totalFailed;
       const successPct = totalOCs > 0 ? Math.round((totalSuccess / totalOCs) * 100) : 0;
+      const factionCut = Math.round(totalMoney * 0.2);
 
       // Update summary cards
       document.getElementById('totalRespect').textContent = formatNumber(totalRespect);
       document.getElementById('totalMoney').textContent = '$' + formatNumber(totalMoney);
+      document.getElementById('factionMoney').textContent = '$' + formatNumber(factionCut);
       document.getElementById('successRate').textContent = successPct + '%';
       document.getElementById('completedCount').textContent = completedCrimes.length;
 
@@ -1107,7 +1274,6 @@
       const sorted = Array.from(byCrimeType.entries())
         .sort((a, b) => b[1].respect - a[1].respect);
 
-      // Store for chart switching
       chartData = sorted;
 
       // Render crime type table
@@ -1115,11 +1281,12 @@
       tbody.innerHTML = sorted.map(([name, data]) => {
         const avgRespect = data.count > 0 ? Math.round(data.respect / data.count) : 0;
         const avgMoney = data.count > 0 ? Math.round(data.money / data.count) : 0;
+        const successDisplay = data.isMultiStage ? '-' : `${data.success}/${data.success + data.failed}`;
         return `
           <tr>
-            <td>${name}</td>
+            <td>${name}${data.isMultiStage ? ' *' : ''}</td>
             <td>${data.count}</td>
-            <td>${data.success}/${data.count}</td>
+            <td>${successDisplay}</td>
             <td>${formatNumber(data.respect)}</td>
             <td>${formatNumber(avgRespect)}</td>
             <td>$${formatNumber(data.money)}</td>
@@ -1129,8 +1296,8 @@
       }).join('');
 
       // Add totals row
-      const avgTotalRespect = totalOCs > 0 ? Math.round(totalRespect / totalOCs) : 0;
-      const avgTotalMoney = totalOCs > 0 ? Math.round(totalMoney / totalOCs) : 0;
+      const avgTotalRespect = totalOCs > 0 ? Math.round(totalRespect / completedCrimes.length) : 0;
+      const avgTotalMoney = totalOCs > 0 ? Math.round(totalMoney / completedCrimes.length) : 0;
       tbody.innerHTML += `
         <tr class="totals-row">
           <td>Total</td>
@@ -1165,55 +1332,65 @@
     }
 
     function renderMetricChart(data) {
-      const chart = document.getElementById('metricChart');
-      const yAxis = document.getElementById('metricYAxis');
+      const chartArea = document.getElementById('metricChartArea');
 
       if (data.length === 0) {
-        chart.innerHTML = '<div class="empty-state">No completed crimes to display</div>';
-        yAxis.innerHTML = '';
+        chartArea.innerHTML = '<div class="empty-state">No completed crimes to display</div>';
         return;
       }
 
       const isRespect = currentMetric === 'respect';
       const values = data.map(([, d]) => isRespect ? d.respect : d.money);
       const maxValue = Math.max(...values);
+      const chartHeight = 160;
 
-      // Generate Y-axis labels
-      const yLabels = [];
-      for (let i = 4; i >= 0; i--) {
-        const val = Math.round((maxValue / 4) * i);
-        yLabels.push(isRespect ? formatNumber(val) : '$' + formatNumber(val));
+      // Generate grid lines (5 lines including 0)
+      const gridLines = [];
+      for (let i = 0; i <= 4; i++) {
+        const val = Math.round((maxValue / 4) * (4 - i));
+        const label = isRespect ? formatNumber(val) : '$' + formatNumber(val);
+        gridLines.push({ value: val, label });
       }
-      yAxis.innerHTML = yLabels.map(l => `<div class="y-axis-label">${l}</div>`).join('');
 
-      chart.innerHTML = data.map(([name, d]) => {
+      let html = '<div class="chart-grid">';
+      gridLines.forEach(line => {
+        html += `<div class="grid-line"><span class="y-label">${line.label}</span></div>`;
+      });
+      html += '</div>';
+
+      html += '<div class="bar-chart-area">';
+      data.forEach(([name, d]) => {
         const value = isRespect ? d.respect : d.money;
-        const height = maxValue > 0 ? (value / maxValue) * 150 : 0;
+        const height = maxValue > 0 ? (value / maxValue) * chartHeight : 0;
         const displayValue = isRespect ? formatNumber(value) : '$' + formatNumber(value);
 
-        return `
+        html += `
           <div class="bar-group">
-            <div class="bar-wrapper">
-              <div class="bar-value">${displayValue}</div>
-              <div class="bar respect" style="height: ${height}px" title="${name}: ${displayValue}"></div>
-            </div>
-            <div class="bar-label" title="${name}">${name}</div>
+            <div class="bar-value">${displayValue}</div>
+            <div class="bar respect" style="height: ${height}px" title="${name}: ${displayValue}"></div>
           </div>
         `;
-      }).join('');
+      });
+      html += '</div>';
+
+      html += '<div class="x-labels">';
+      data.forEach(([name]) => {
+        html += `<div class="x-label" title="${name}">${name}</div>`;
+      });
+      html += '</div>';
+
+      chartArea.innerHTML = html;
     }
 
     function renderTimelineChart() {
-      const chart = document.getElementById('timelineChart');
-      const yAxis = document.getElementById('timelineYAxis');
+      const chartArea = document.getElementById('timelineChartArea');
 
       if (completedCrimes.length === 0) {
-        chart.innerHTML = '<div class="empty-state">No completed crimes to display</div>';
-        yAxis.innerHTML = '';
+        chartArea.innerHTML = '<div class="empty-state">No completed crimes to display</div>';
         return;
       }
 
-      // Group by day for last 30 days
+      // Group by day for last 30 days - exclude multi-stage crimes
       const now = Date.now();
       const dayMs = 24 * 60 * 60 * 1000;
       const days = [];
@@ -1229,6 +1406,9 @@
       }
 
       completedCrimes.forEach(crime => {
+        // Skip multi-stage crimes
+        if (isMultiStageCrime(crime.name)) return;
+
         const crimeDate = new Date(crime.executed_at * 1000);
         crimeDate.setHours(0, 0, 0, 0);
         const crimeTime = crimeDate.getTime();
@@ -1246,41 +1426,55 @@
       });
 
       const maxCount = Math.max(...days.map(d => d.success + d.failed), 1);
+      const chartHeight = 160;
 
-      // Generate Y-axis labels
-      const yLabels = [];
-      for (let i = 4; i >= 0; i--) {
-        yLabels.push(Math.round((maxCount / 4) * i).toString());
+      // Generate grid lines
+      const gridLines = [];
+      const step = Math.ceil(maxCount / 4);
+      for (let i = 0; i <= 4; i++) {
+        const val = step * (4 - i);
+        gridLines.push({ value: val, label: val.toString() });
       }
-      yAxis.innerHTML = yLabels.map(l => `<div class="y-axis-label">${l}</div>`).join('');
+      const adjustedMax = step * 4;
 
-      chart.innerHTML = days.map((d, i) => {
+      let html = '<div class="chart-grid">';
+      gridLines.forEach(line => {
+        html += `<div class="grid-line"><span class="y-label">${line.label}</span></div>`;
+      });
+      html += '</div>';
+
+      html += '<div class="timeline-bar-area">';
+      days.forEach(d => {
         const total = d.success + d.failed;
-        const successHeight = maxCount > 0 ? (d.success / maxCount) * 150 : 0;
-        const failedHeight = maxCount > 0 ? (d.failed / maxCount) * 150 : 0;
-        const showLabel = i % 5 === 0 || i === days.length - 1;
-        const dateLabel = `${d.date.getDate()}/${d.date.getMonth() + 1}`;
+        const successHeight = adjustedMax > 0 ? (d.success / adjustedMax) * chartHeight : 0;
+        const failedHeight = adjustedMax > 0 ? (d.failed / adjustedMax) * chartHeight : 0;
 
-        if (total === 0) {
-          return `
-            <div class="timeline-bar">
-              <div class="timeline-stack" style="height: 0"></div>
-              ${showLabel ? `<div class="timeline-label">${dateLabel}</div>` : '<div class="timeline-label"></div>'}
-            </div>
-          `;
+        html += '<div class="timeline-bar">';
+        if (total > 0) {
+          html += `<div class="bar-value">${d.success}/${total}</div>`;
+          html += '<div class="timeline-stack">';
+          if (d.failed > 0) {
+            html += `<div class="bar failure" style="height: ${failedHeight}px"></div>`;
+          }
+          if (d.success > 0) {
+            html += `<div class="bar success" style="height: ${successHeight}px"></div>`;
+          }
+          html += '</div>';
         }
+        html += '</div>';
+      });
+      html += '</div>';
 
-        return `
-          <div class="timeline-bar">
-            <div class="bar-value">${total}</div>
-            <div class="timeline-stack" title="${dateLabel}: ${d.success} success, ${d.failed} failed">
-              ${d.failed > 0 ? `<div class="bar failure" style="height: ${failedHeight}px"></div>` : ''}
-              ${d.success > 0 ? `<div class="bar success" style="height: ${successHeight}px"></div>` : ''}
-            </div>
-            ${showLabel ? `<div class="timeline-label">${dateLabel}</div>` : '<div class="timeline-label"></div>'}
-          </div>
-        `;
-      }).join('');
+      html += '<div class="timeline-x-labels">';
+      days.forEach((d, i) => {
+        const dateLabel = `${d.date.getDate()}/${d.date.getMonth() + 1}`;
+        // Show label every 5 days
+        const showLabel = i % 5 === 0 || i === days.length - 1;
+        html += `<div class="timeline-x-label">${showLabel ? dateLabel : ''}</div>`;
+      });
+      html += '</div>';
+
+      chartArea.innerHTML = html;
     }
 
     function formatTimeAgo(timestamp) {
