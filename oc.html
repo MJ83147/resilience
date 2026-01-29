@@ -18,7 +18,24 @@
     .dashboard-content {
       display: none;
     }
+.message-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--gray-200);
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
 
+.message-btn:hover {
+  background: var(--green);
+  color: var(--white);
+}
     .status-bar {
       display: flex;
       align-items: center;
