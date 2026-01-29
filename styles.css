@@ -1,7 +1,701 @@
 /* ========================================
    Resilience Dashboard - Shared Styles
    ======================================== */
+/* ========================================
+   Resilience Dashboard - Shared Styles
+   ======================================== */
 
+/* Theme Variables - Light Mode */
+:root {
+  --green: #2E7D32;
+  --green-light: #E8F5E9;
+  --red: #C62828;
+  --red-light: #FFEBEE;
+  --text: #212121;
+  --text-light: #757575;
+  --white: #FFFFFF;
+  --gray-100: #F5F5F5;
+  --gray-200: #EEEEEE;
+  --gray-300: #E0E0E0;
+  --radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.1);
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --stealth: #FFEB99;
+  --my-faction: #B7D7E8;
+  --opponent: #FFA5A5;
+}
+
+/* Theme Variables - Dark Mode */
+[data-theme="dark"] {
+  --green: #4CAF50;
+  --green-light: #1B3D1F;
+  --red: #EF5350;
+  --red-light: #3D1F1F;
+  --text: #E0E0E0;
+  --text-light: #9E9E9E;
+  --white: #1E1E1E;
+  --gray-100: #121212;
+  --gray-200: #2C2C2C;
+  --gray-300: #3D3D3D;
+  --shadow: 0 2px 8px rgba(0,0,0,0.3);
+  --stealth: #5C5428;
+  --my-faction: #2A4A5C;
+  --opponent: #5C2A2A;
+}
+
+/* ========================================
+   Reset & Base
+   ======================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  min-height: 100%;
+  font-family: var(--font);
+  background: var(--gray-100);
+  color: var(--text);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ========================================
+   Layout
+   ======================================== */
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.container--narrow {
+  max-width: 900px;
+}
+
+/* ========================================
+   Header
+   ======================================== */
+
+.header {
+  background: var(--white);
+  padding: 16px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.header h1 {
+  color: var(--green);
+  font-size: 24px;
+}
+
+.header h2 {
+  color: var(--green);
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.header p {
+  color: var(--text-light);
+  font-size: 16px;
+}
+
+/* ========================================
+   Navigation
+   ======================================== */
+
+.navbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-300);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-brand {
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--green);
+  text-decoration: none;
+  margin-right: auto;
+}
+
+.nav-brand:hover {
+  color: var(--green);
+  opacity: 0.8;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-light);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 6px 12px;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  color: var(--green);
+}
+
+.new-badge {
+  background: var(--green);
+  color: var(--white);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* ========================================
+   Controls & Forms
+   ======================================== */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 14px;
+  background: var(--white);
+  color: var(--text);
+}
+
+.search-box:focus {
+  outline: none;
+  border-color: var(--green);
+}
+
+.filter-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-group label {
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+.filter-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  background: var(--white);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background: var(--gray-100);
+}
+
+.filter-btn.active {
+  background: var(--green-light);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.week-select,
+.min-input,
+select {
+  padding: 8px 12px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  background: var(--white);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.week-select:focus,
+.min-input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--green);
+}
+
+.min-input {
+  width: 100px;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  background: var(--white);
+  color: var(--text);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: var(--font);
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--green);
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* ========================================
+   Buttons
+   ======================================== */
+
+button,
+.btn {
+  background: var(--green);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: var(--font);
+}
+
+button:hover,
+.btn:hover {
+  opacity: 0.9;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ========================================
+   Stats Bar
+   ======================================== */
+
+.stats-bar {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gray-200);
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-count {
+  font-weight: 600;
+}
+
+.stat-count.green { color: var(--green); }
+.stat-count.red { color: var(--red); }
+
+/* ========================================
+   Tables
+   ======================================== */
+
+.table-wrapper {
+  flex: 1;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-200);
+  white-space: nowrap;
+}
+
+th {
+  background: var(--gray-100);
+  font-weight: 600;
+  color: var(--text);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  cursor: pointer;
+}
+
+th:hover {
+  background: var(--gray-200);
+}
+
+th.sorted-asc::after {
+  content: " ▲";
+  font-size: 10px;
+}
+
+th.sorted-desc::after {
+  content: " ▼";
+  font-size: 10px;
+}
+
+/* Sticky first column */
+th:nth-child(1), td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  background: var(--gray-100);
+}
+
+td:nth-child(1) {
+  background: var(--white);
+  font-weight: 500;
+}
+
+/* Center data columns except first */
+td:not(:first-child), th:not(:first-child) {
+  text-align: center;
+}
+
+/* Week separators */
+.week-header {
+  text-align: center;
+  border-left: 3px solid var(--green);
+}
+
+.week-cell {
+  border-left: 3px solid var(--green);
+}
+
+/* Cell states */
+.avg-ahead,
+.cell-hit {
+  background: var(--green-light);
+  color: var(--green);
+  font-weight: 600;
+}
+
+.avg-behind,
+.cell-miss {
+  background: var(--red-light);
+  color: var(--red);
+  font-weight: 600;
+}
+
+.status-ok {
+  color: var(--green);
+  font-weight: 600;
+  white-space: normal;
+}
+
+.status-behind {
+  color: var(--red);
+  font-weight: 600;
+  white-space: normal;
+}
+
+.od-yes {
+  color: var(--red);
+  font-weight: 600;
+}
+
+/* War tracker specific cells */
+.stealth-defence,
+.blank-attacker {
+  background: var(--stealth) !important;
+  font-weight: 500;
+}
+
+.my-faction-faction {
+  background: var(--my-faction);
+  font-weight: 500;
+}
+
+.opponent-faction-faction {
+  background: var(--opponent);
+  font-weight: 500;
+}
+
+tbody tr:nth-child(even) {
+  background: var(--gray-100);
+}
+
+tbody tr:hover {
+  background: var(--gray-200);
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-light);
+}
+
+/* ========================================
+   Tabs
+   ======================================== */
+
+.tab-container {
+  margin-top: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-buttons {
+  display: flex;
+  border-bottom: 1px solid var(--gray-300);
+  margin-bottom: 0;
+  gap: 4px;
+}
+
+.tab-buttons button {
+  background: transparent;
+  color: var(--text);
+  border-radius: 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 16px;
+  margin: 0;
+  transition: all 0.2s;
+}
+
+.tab-buttons button:hover {
+  background: transparent;
+  color: var(--green);
+  opacity: 1;
+}
+
+.tab-buttons button.active {
+  color: var(--green);
+  border-bottom: 2px solid var(--green);
+  font-weight: 500;
+}
+
+.tab-section {
+  display: none;
+  flex: 1;
+}
+
+.tab-section.active {
+  display: block;
+}
+
+/* ========================================
+   Dashboard Hub - Tool Cards
+   ======================================== */
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 20px;
+}
+
+.tool-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.tool-card:hover {
+  border-color: var(--green);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.tool-card h2 {
+  color: var(--text);
+  font-size: 20px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-card p {
+  color: var(--text-light);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ========================================
+   Dashboard Hub - Faction Overview
+   ======================================== */
+
+.faction-overview {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.overview-loading {
+  color: var(--text-light);
+  text-align: center;
+}
+
+.overview-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.overview-header h2 {
+  font-size: 22px;
+  color: var(--text);
+  margin-bottom: 0;
+}
+
+.overview-header .tag {
+  background: var(--green-light);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.overview-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+  gap: 16px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.stat-value.highlight {
+  color: var(--green);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+.members-fraction {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-light);
+}
+
+/* ========================================
+   Theme Toggle
+   ======================================== */
+
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  font-family: var(--font);
+  margin-left: auto;
+}
+
+.theme-toggle:hover {
+  border-color: var(--green);
+  background: var(--gray-100);
+}
+
+/* ========================================
+   Responsive
+   ======================================== */
+
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    flex-wrap: wrap;
+  }
+
+  .header h1 {
+    font-size: 20px;
+  }
+
+  .stats-bar {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
 /* Theme Variables - Light Mode */
 :root {
   --green: #2E7D32;
