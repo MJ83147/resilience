@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tampermonkey Scripts - Resilience Dashboard</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ========================================
+   Scripts Page
+   ======================================== */
+
+.scripts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 16px;
+}
+
+.script-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.script-card:hover {
+  border-color: var(--green);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.script-card h2 {
+  color: var(--text);
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.script-card p {
+  color: var(--text-light);
+  font-size: 13px;
+  line-height: 1.4;
+}
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">Resilience Dashboard</a>
+  </nav>
+
+  <div class="container container--narrow">
+    <div class="header">
+      <h1>Tampermonkey Scripts</h1>
+      <p>Useful userscripts for Torn. Click to install from Greasy Fork.</p>
+    </div>
+
+    <div class="scripts-grid">
+      <a href="https://greasyfork.org/en/scripts/553922-torn-display-case-market-share-calculator" target="_blank" class="script-card">
+        <h2>Display Case Market Share Calculator</h2>
+        <p>Calculate market share value of items in your display case.</p>
+      </a>
+
+      <a href="https://greasyfork.org/en/scripts/558734-hide-chat-messages-from-users-by-xid" target="_blank" class="script-card">
+        <h2>Hide Chat Messages by XID</h2>
+        <p>Hide chat messages from specific users by their XID.</p>
+      </a>
+
+      <a href="https://greasyfork.org/en/scripts/560551-torn-join-fight-warning" target="_blank" class="script-card">
+        <h2>Join Fight Warning</h2>
+        <p>Shows a warning before joining a fight.</p>
+      </a>
+
+      <a href="https://greasyfork.org/en/scripts/563523-torn-poker-notes" target="_blank" class="script-card">
+        <h2>Poker Notes</h2>
+        <p>Add notes to players at the poker table.</p>
+      </a>
+
+      <a href="https://greasyfork.org/en/scripts/553306-torn-weapon-bonus-on-new-line" target="_blank" class="script-card">
+        <h2>Weapon Bonus on New Line</h2>
+        <p>Displays weapon bonuses on a separate line for easier reading.</p>
+      </a>
+
+      <a href="https://greasyfork.org/en/scripts/562469-torn-profile-stats-dashboard" target="_blank" class="script-card">
+        <h2>Profile Stats Dashboard</h2>
+        <p>Enhanced stats display on player profiles.</p>
+      </a>
+
+      <a href="https://greasyfork.org/en/scripts/562668-oc-role-display-weights" target="_blank" class="script-card">
+        <h2>OC Role Display Weights</h2>
+        <p>Shows role weights for organized crimes.</p>
+      </a>
+
+      <a href="https://greasyfork.org/en/scripts/562813-torn-user-list-stats" target="_blank" class="script-card">
+        <h2>User List Stats</h2>
+        <p>Display additional stats in user lists.</p>
+      </a>
+    </div>
+  </div>
+
+  <script src="theme.js"></script>
+</body>
+</html>
