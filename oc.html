@@ -1128,39 +1128,76 @@
       renderRewards();
     }
 
-    function renderNotInOc(members) {
-      const list = document.getElementById('notInOcList');
-      const countEl = document.getElementById('notInOcCount');
+   function renderNotInOc(members) {
+  const list = document.getElementById('notInOcList');
+  const countEl = document.getElementById('notInOcCount');
 
-      countEl.textContent = members.length;
-      countEl.classList.toggle('ok', members.length === 0);
+  countEl.textContent = members.length;
+  countEl.classList.toggle('ok', members.length === 0);
 
-      if (members.length === 0) {
-        list.innerHTML = '<li class="empty-state">Everyone is in an OC</li>';
-        return;
-      }
+  if (members.length === 0) {
+    list.innerHTML = '<li class="empty-state">Everyone is in an OC</li>';
+    return;
+  }
 
-      list.innerHTML = members.map(m => {
-        let lastOcText;
-        let warningClass = '';
-        
-        if (m.lastOc) {
-          lastOcText = formatTimeAgo(m.lastOc);
-        } else {
-          lastOcText = 'Not in fetched data';
-          warningClass = 'warning';
-        }
-
-        return `
-          <li class="issue-item">
-            <span class="member-name">
-              <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
-            </span>
-            <span class="issue-detail ${warningClass}">${lastOcText}</span>
-          </li>
-        `;
-      }).join('');
+  list.innerHTML = members.map(m => {
+    let lastOcText;
+    let warningClass = '';
+    
+    if (m.lastOc) {
+      lastOcText = formatTimeAgo(m.lastOc);
+    } else {
+      lastOcText = 'Not in fetched data';
+      warningClass = 'warning';
     }
+
+    const subject = encodeURIComponent('OC Reminder');
+    const body = encodeURIComponent(`Hey ${m.name}, you're not currently in an OC. Please join one when you get a chance.`);
+    const messageUrl = `https://www.torn.com/messages.php#/p=compose&XID=${m.id}&subject=${subject}&body=${body}`;
+
+    return `
+      <li class="issue-item">
+        <span class="member-name">
+          <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
+        </span>
+        <span class="issue-detail ${warningClass}">${lastOcText}</span>
+        <a href="${messageUrl}" target="_blank" class="message-btn" title="Send message">✉</a>
+      </li>
+    `;
+  }).join('');
+}
+
+function renderLowSuccess(members) {
+  const list = document.getElementById('lowSuccessList');
+  const countEl = document.getElementById('lowSuccessCount');
+
+  countEl.textContent = members.length;
+  countEl.classList.toggle('ok', members.length === 0);
+
+  if (members.length === 0) {
+    list.innerHTML = '<li class="empty-state">No one below CPR threshold</li>';
+    return;
+  }
+
+  list.innerHTML = members.map(m => {
+    const tierText = m.difficulty ? ` [T${m.difficulty}]` : '';
+    const posText = m.positionNumber > 1 ? `${m.position} #${m.positionNumber}` : m.position;
+    
+    const subject = encodeURIComponent('CPR Notice');
+    const body = encodeURIComponent(`Hey ${m.name}, your CPR for ${posText} in ${m.crimeName} is ${m.passRate}% which is below the ${m.threshold}% minimum. Please work on getting this up.`);
+    const messageUrl = `https://www.torn.com/messages.php#/p=compose&XID=${m.id}&subject=${subject}&body=${body}`;
+
+    return `
+      <li class="issue-item">
+        <span class="member-name">
+          <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
+        </span>
+        <span class="issue-detail warning">${m.passRate}% / ${m.threshold}% - ${posText} (${m.crimeName}${tierText})</span>
+        <a href="${messageUrl}" target="_blank" class="message-btn" title="Send message">✉</a>
+      </li>
+    `;
+  }).join('');
+}
 
     function renderMissingItems(members) {
       const list = document.getElementById('missingItemsList');
@@ -1188,31 +1225,7 @@
       }).join('');
     }
 
-    function renderLowSuccess(members) {
-      const list = document.getElementById('lowSuccessList');
-      const countEl = document.getElementById('lowSuccessCount');
-
-      countEl.textContent = members.length;
-      countEl.classList.toggle('ok', members.length === 0);
-
-      if (members.length === 0) {
-        list.innerHTML = '<li class="empty-state">No one below CPR threshold</li>';
-        return;
-      }
-
-      list.innerHTML = members.map(m => {
-        const tierText = m.difficulty ? ` [T${m.difficulty}]` : '';
-        const posText = m.positionNumber > 1 ? `${m.position} #${m.positionNumber}` : m.position;
-        return `
-          <li class="issue-item">
-            <span class="member-name">
-              <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
-            </span>
-            <span class="issue-detail warning">${m.passRate}% / ${m.threshold}% - ${posText} (${m.crimeName}${tierText})</span>
-          </li>
-        `;
-      }).join('');
-    }
+   
 
     function renderRewards() {
       const byCrimeType = new Map();
