@@ -20,25 +20,52 @@
     }
 
 
-    .toast {
+  .toast {
   position: fixed;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--gray-300);
+  background: var(--white);
   color: var(--text);
-  padding: 12px 20px;
+  padding: 16px 20px;
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
   z-index: 9999;
-  animation: fadeInOut 2.5s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-@keyframes fadeInOut {
-  0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
-  15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  85% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+.toast p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.toast-btn {
+  background: var(--green);
+  color: var(--white);
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.toast-btn:hover {
+  opacity: 0.9;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.toast-close:hover {
+  color: var(--text);
 }
 .message-btn {
   display: inline-flex;
@@ -1169,21 +1196,24 @@
       renderRewards();
     }
 
- function copyMessage(event, text, url) {
+function copyMessage(event, text, url) {
   event.preventDefault();
   
   navigator.clipboard.writeText(text).then(() => {
+    // Remove any existing toast
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+    
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.textContent = 'Message copied - paste in the body';
+    toast.innerHTML = `
+      <p>Message copied to clipboard</p>
+      <a href="${url}" target="_blank" class="toast-btn">Open Torn Message</a>
+      <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+    `;
     document.body.appendChild(toast);
-    
-    setTimeout(() => {
-      window.open(url, '_blank');
-    }, 800);
   }).catch(err => {
     console.error('Failed to copy:', err);
-    window.open(url, '_blank');
   });
 }
 function renderNotInOc(members) {
