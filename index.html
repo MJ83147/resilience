@@ -48,6 +48,12 @@ var BASIC_URL = 'https://api.torn.com/v2/faction/basic';
 var BALANCE_URL = 'https://api.torn.com/v2/faction/balance';
 var INVENTORY_URL = 'https://api.torn.com/v2/faction?selections=armor,weapons,temporary,medical,drugs,cesium,utilities,boosters';
 
+function sumQuantity(items) {
+  if (!items || !Array.isArray(items)) return 0;
+  return items.reduce(function(sum, item) {
+    return sum + (item.quantity || 0);
+  }, 0);
+}
 async function loadFactionData() {
   var container = document.getElementById('factionOverview');
   
