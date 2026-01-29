@@ -43,68 +43,73 @@
   </div>
   
   <script>
-    var API_KEY = 'POW66la7QjNjI97z';
-    var BASIC_URL = 'https://api.torn.com/v2/faction/basic';
-    var INVENTORY_URL = 'https://api.torn.com/v2/faction?selections=armor,weapons,temporary,medical,drugs,cesium,utilities,boosters';
+   var API_KEY = 'POW66la7QjNjI97z';
+var BASIC_URL = 'https://api.torn.com/v2/faction/basic';
+var BALANCE_URL = 'https://api.torn.com/v2/faction/balance';
+var INVENTORY_URL = 'https://api.torn.com/v2/faction?selections=armor,weapons,temporary,medical,drugs,cesium,utilities,boosters';
+
+async function loadFactionData() {
+  var container = document.getElementById('factionOverview');
+  
+  try {
+    var [basicResponse, balanceResponse] = await Promise.all([
+      fetch(BASIC_URL, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'ApiKey ' + API_KEY
+        }
+      }),
+      fetch(BALANCE_URL, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'ApiKey ' + API_KEY
+        }
+      })
+    ]);
     
-    function sumQuantity(items) {
-      if (!items || !Array.isArray(items)) return 0;
-      return items.reduce(function(sum, item) {
-        return sum + (item.quantity || 0);
-      }, 0);
-    }
+    var basicData = await basicResponse.json();
+    var balanceData = await balanceResponse.json();
     
-    async function loadFactionData() {
-      var container = document.getElementById('factionOverview');
-      
-      try {
-        var response = await fetch(BASIC_URL, {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': 'ApiKey ' + API_KEY
-          }
-        });
-        
-        var data = await response.json();
-        var faction = data.basic;
-        
-        container.innerHTML = 
-          '<div class="overview-section">' +
-            '<h2 class="overview-title">' +
-              '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' +
-              ' Summary' +
-            '</h2>' +
-            '<div class="overview-stats">' +
-              '<div class="stat-card">' +
-                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>' +
-                '<div class="stat-content"><div class="stat-label">Members</div><div class="stat-value">' + faction.members + '<span class="stat-sub">/' + faction.capacity + '</span></div></div>' +
-              '</div>' +
-              '<div class="stat-card">' +
-                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>' +
-                '<div class="stat-content"><div class="stat-label">Respect</div><div class="stat-value">' + faction.respect.toLocaleString() + '</div></div>' +
-              '</div>' +
-              '<div class="stat-card">' +
-                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>' +
-                '<div class="stat-content"><div class="stat-label">Days Old</div><div class="stat-value">' + faction.days_old.toLocaleString() + '</div></div>' +
-              '</div>' +
-              '<div class="stat-card">' +
-                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>' +
-                '<div class="stat-content"><div class="stat-label">Points</div><div class="stat-value">' + (faction.points || 0).toLocaleString() + '</div></div>' +
-              '</div>' +
-              '<div class="stat-card">' +
-                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>' +
-                '<div class="stat-content"><div class="stat-label">Money</div><div class="stat-value">$' + (faction.money || 0).toLocaleString() + '</div></div>' +
-              '</div>' +
-              '<div class="stat-card">' +
-                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>' +
-                '<div class="stat-content"><div class="stat-label">Best Chain</div><div class="stat-value">' + faction.best_chain.toLocaleString() + '</div></div>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-      } catch (error) {
-        container.innerHTML = '<div class="overview-loading">Failed to load faction data</div>';
-      }
-    }
+    var faction = basicData.basic;
+    var balance = balanceData.balance?.faction || {};
+    
+    container.innerHTML = 
+      '<div class="overview-section">' +
+        '<h2 class="overview-title">' +
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' +
+          ' Summary' +
+        '</h2>' +
+        '<div class="overview-stats">' +
+          '<div class="stat-card">' +
+            '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>' +
+            '<div class="stat-content"><div class="stat-label">Members</div><div class="stat-value">' + faction.members + '<span class="stat-sub">/' + faction.capacity + '</span></div></div>' +
+          '</div>' +
+          '<div class="stat-card">' +
+            '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>' +
+            '<div class="stat-content"><div class="stat-label">Respect</div><div class="stat-value">' + faction.respect.toLocaleString() + '</div></div>' +
+          '</div>' +
+          '<div class="stat-card">' +
+            '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>' +
+            '<div class="stat-content"><div class="stat-label">Days Old</div><div class="stat-value">' + faction.days_old.toLocaleString() + '</div></div>' +
+          '</div>' +
+          '<div class="stat-card">' +
+            '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>' +
+            '<div class="stat-content"><div class="stat-label">Points</div><div class="stat-value">' + (balance.points || 0).toLocaleString() + '</div></div>' +
+          '</div>' +
+          '<div class="stat-card">' +
+            '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>' +
+            '<div class="stat-content"><div class="stat-label">Money</div><div class="stat-value">$' + (balance.money || 0).toLocaleString() + '</div></div>' +
+          '</div>' +
+          '<div class="stat-card">' +
+            '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>' +
+            '<div class="stat-content"><div class="stat-label">Best Chain</div><div class="stat-value">' + faction.best_chain.toLocaleString() + '</div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  } catch (error) {
+    container.innerHTML = '<div class="overview-loading">Failed to load faction data</div>';
+  }
+}
     
     async function loadInventoryData() {
       var container = document.getElementById('inventoryOverview');
