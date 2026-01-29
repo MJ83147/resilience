@@ -1147,7 +1147,7 @@
       renderRewards();
     }
 
-   function renderNotInOc(members) {
+  function renderNotInOc(members) {
   const list = document.getElementById('notInOcList');
   const countEl = document.getElementById('notInOcCount');
 
@@ -1170,9 +1170,8 @@
       warningClass = 'warning';
     }
 
-    const subject = encodeURIComponent('OC Reminder');
-    const body = encodeURIComponent(`Hey ${m.name}, you're not currently in an OC. Please join one when you get a chance.`);
-    const messageUrl = `https://www.torn.com/messages.php#/p=compose&XID=${m.id}&subject=${subject}&body=${body}`;
+    const messageUrl = `https://www.torn.com/messages.php#/p=compose&XID=${m.id}`;
+    const messageText = `Hey ${m.name}, you're not currently in an OC. Please join one when you get a chance.`;
 
     return `
       <li class="issue-item">
@@ -1180,7 +1179,7 @@
           <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
         </span>
         <span class="issue-detail ${warningClass}">${lastOcText}</span>
-        <a href="${messageUrl}" target="_blank" class="message-btn" title="Send message">✉</a>
+        <a href="${messageUrl}" target="_blank" class="message-btn" title="Send message" onclick="copyMessage('${messageText.replace(/'/g, "\\'")}')">✉</a>
       </li>
     `;
   }).join('');
@@ -1202,9 +1201,8 @@ function renderLowSuccess(members) {
     const tierText = m.difficulty ? ` [T${m.difficulty}]` : '';
     const posText = m.positionNumber > 1 ? `${m.position} #${m.positionNumber}` : m.position;
     
-    const subject = encodeURIComponent('CPR Notice');
-    const body = encodeURIComponent(`Hey ${m.name}, your CPR for ${posText} in ${m.crimeName} is ${m.passRate}% which is below the ${m.threshold}% minimum. Please work on getting this up.`);
-    const messageUrl = `https://www.torn.com/messages.php#/p=compose&XID=${m.id}&subject=${subject}&body=${body}`;
+    const messageUrl = `https://www.torn.com/messages.php#/p=compose&XID=${m.id}`;
+    const messageText = `Hey ${m.name}, your CPR for ${posText} in ${m.crimeName} is ${m.passRate}% which is below the ${m.threshold}% minimum. Please work on getting this up.`;
 
     return `
       <li class="issue-item">
@@ -1212,10 +1210,19 @@ function renderLowSuccess(members) {
           <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
         </span>
         <span class="issue-detail warning">${m.passRate}% / ${m.threshold}% - ${posText} (${m.crimeName}${tierText})</span>
-        <a href="${messageUrl}" target="_blank" class="message-btn" title="Send message">✉</a>
+        <a href="${messageUrl}" target="_blank" class="message-btn" title="Send message" onclick="copyMessage('${messageText.replace(/'/g, "\\'")}')">✉</a>
       </li>
     `;
   }).join('');
+}
+
+function copyMessage(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    // Optional: show a quick toast/notification
+    console.log('Message copied to clipboard');
+  }).catch(err => {
+    console.error('Failed to copy:', err);
+  });
 }
 
     function renderMissingItems(members) {
