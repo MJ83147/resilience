@@ -13,43 +13,52 @@
       <h1 style="font-size: 32px; margin-bottom: 8px;">Resilience Dashboard</h1>
       <p>Faction tracking tools</p>
     </div>
-
+    
     <div class="faction-overview" id="factionOverview">
       <div class="overview-loading">Loading faction data...</div>
     </div>
-
+    
+    <div class="inventory-overview" id="inventoryOverview">
+      <div class="overview-loading">Loading inventory...</div>
+    </div>
+    
     <div class="tools-grid">
       <a href="xanax.html" class="tool-card">
         <h2>Xanax Tracker</h2>
         <p>Track weekly Xanax usage across faction members. See who's on track and who's falling behind.</p>
       </a>
-
       <a href="energy.html" class="tool-card">
         <h2>Energy Monitor <span class="new-badge">New</span></h2>
         <p>Monitor how much energy each faction member is using in the gym.</p>
       </a>
-
       <a href="war.html" class="tool-card">
         <h2>War Tracker</h2>
         <p>Track med outs for each war.</p>
       </a>
-
       <a href="oc.html" class="tool-card">
         <h2>OC Tracker</h2>
         <p>Track organized crime participation and readiness.</p>
       </a>
     </div>
   </div>
-
+  
   <script>
     var API_KEY = 'POW66la7QjNjI97z';
-    var API_URL = 'https://api.torn.com/v2/faction/basic';
-
+    var BASIC_URL = 'https://api.torn.com/v2/faction/basic';
+    var INVENTORY_URL = 'https://api.torn.com/v2/faction?selections=armor,weapons,temporary,medical,drugs,cesium,utilities,boosters';
+    
+    function sumQuantity(items) {
+      if (!items || !Array.isArray(items)) return 0;
+      return items.reduce(function(sum, item) {
+        return sum + (item.quantity || 0);
+      }, 0);
+    }
+    
     async function loadFactionData() {
       var container = document.getElementById('factionOverview');
       
       try {
-        var response = await fetch(API_URL, {
+        var response = await fetch(BASIC_URL, {
           headers: {
             'Accept': 'application/json',
             'Authorization': 'ApiKey ' + API_KEY
@@ -60,42 +69,113 @@
         var faction = data.basic;
         
         container.innerHTML = 
-          '<div class="overview-header">' +
-            '<h2>' + faction.name + '</h2>' +
-            '<span class="tag">' + faction.tag + '</span>' +
-          '</div>' +
-          '<div class="overview-stats">' +
-            '<div class="stat-item">' +
-              '<div class="stat-value highlight">' + faction.members + '<span class="members-fraction">/' + faction.capacity + '</span></div>' +
-              '<div class="stat-label">Members</div>' +
-            '</div>' +
-            '<div class="stat-item">' +
-              '<div class="stat-value">' + faction.respect.toLocaleString() + '</div>' +
-              '<div class="stat-label">Respect</div>' +
-            '</div>' +
-            '<div class="stat-item">' +
-              '<div class="stat-value">' + faction.rank.name + '</div>' +
-              '<div class="stat-label">Div ' + faction.rank.division + '</div>' +
-            '</div>' +
-            '<div class="stat-item">' +
-              '<div class="stat-value">' + faction.rank.wins + '</div>' +
-              '<div class="stat-label">Ranked Wins</div>' +
-            '</div>' +
-            '<div class="stat-item">' +
-              '<div class="stat-value">' + faction.best_chain.toLocaleString() + '</div>' +
-              '<div class="stat-label">Best Chain</div>' +
-            '</div>' +
-            '<div class="stat-item">' +
-              '<div class="stat-value">' + faction.days_old.toLocaleString() + '</div>' +
-              '<div class="stat-label">Days Old</div>' +
+          '<div class="overview-section">' +
+            '<h2 class="overview-title">' +
+              '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' +
+              ' Summary' +
+            '</h2>' +
+            '<div class="overview-stats">' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Members</div><div class="stat-value">' + faction.members + '<span class="stat-sub">/' + faction.capacity + '</span></div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Respect</div><div class="stat-value">' + faction.respect.toLocaleString() + '</div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Days Old</div><div class="stat-value">' + faction.days_old.toLocaleString() + '</div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Points</div><div class="stat-value">' + (faction.points || 0).toLocaleString() + '</div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Money</div><div class="stat-value">$' + (faction.money || 0).toLocaleString() + '</div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Best Chain</div><div class="stat-value">' + faction.best_chain.toLocaleString() + '</div></div>' +
+              '</div>' +
             '</div>' +
           '</div>';
       } catch (error) {
         container.innerHTML = '<div class="overview-loading">Failed to load faction data</div>';
       }
     }
-
+    
+    async function loadInventoryData() {
+      var container = document.getElementById('inventoryOverview');
+      
+      try {
+        var response = await fetch(INVENTORY_URL, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'ApiKey ' + API_KEY
+          }
+        });
+        
+        var data = await response.json();
+        
+        var armorCount = sumQuantity(data.armor);
+        var weaponsCount = sumQuantity(data.weapons);
+        var temporaryCount = sumQuantity(data.temporary);
+        var medicalCount = sumQuantity(data.medical);
+        var drugsCount = sumQuantity(data.drugs);
+        var cesiumCount = sumQuantity(data.cesium);
+        var utilitiesCount = sumQuantity(data.utilities);
+        var boostersCount = sumQuantity(data.boosters);
+        
+        container.innerHTML = 
+          '<div class="overview-section">' +
+            '<h2 class="overview-title">' +
+              '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
+              ' Armory' +
+            '</h2>' +
+            '<div class="overview-stats">' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Armor</div><div class="stat-value">' + armorCount.toLocaleString() + '</div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Weapons</div><div class="stat-value">' + weaponsCount.toLocaleString() + '</div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Temporary</div><div class="stat-value">' + temporaryCount.toLocaleString() + '</div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Medical</div><div class="stat-value">' + medicalCount.toLocaleString() + '</div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Drugs</div><div class="stat-value">' + drugsCount.toLocaleString() + '</div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Cesium</div><div class="stat-value">' + cesiumCount.toLocaleString() + '</div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Utilities</div><div class="stat-value">' + utilitiesCount.toLocaleString() + '</div></div>' +
+              '</div>' +
+              '<div class="stat-card">' +
+                '<div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>' +
+                '<div class="stat-content"><div class="stat-label">Boosters</div><div class="stat-value">' + boostersCount.toLocaleString() + '</div></div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+      } catch (error) {
+        container.innerHTML = '<div class="overview-loading">Failed to load inventory data</div>';
+      }
+    }
+    
     loadFactionData();
+    loadInventoryData();
   </script>
   <script src="theme.js"></script>
 </body>
