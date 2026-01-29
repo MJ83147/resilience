@@ -1216,7 +1216,95 @@ tbody tr:hover {
 /* ========================================
    Dashboard Hub - Tool Cards
    ======================================== */
+/* ========================================
+   Homepage Summary & Armory Cards
+   ======================================== */
 
+.overview-section {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.overview-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  margin: 0 0 20px 0;
+  color: var(--text);
+}
+
+.overview-title svg {
+  color: var(--green);
+}
+
+.overview-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--gray-100);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--green);
+}
+
+.stat-icon {
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  background: var(--green-light);
+  border-radius: 8px;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stat-card .stat-label {
+  font-size: 12px;
+  color: var(--text-light);
+  text-align: left;
+  margin-top: 0;
+}
+
+.stat-card .stat-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+}
+
+.stat-sub {
+  font-size: 14px;
+  color: var(--text-light);
+  font-weight: 400;
+}
+
+/* Inventory Overview */
+.inventory-overview {
+  margin-bottom: 20px;
+}
+
+/* Widen the container for the homepage */
+.container--narrow {
+  max-width: 1100px;
+}
 .tools-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
