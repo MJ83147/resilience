@@ -36,8 +36,8 @@
         </div>
 
         <div class="filter-group">
-          <label>Min Energy:</label>
-          <input type="number" class="min-input" id="minEnergy" value="0" min="0">
+          <label>Min Daily Energy:</label>
+          <input type="number" class="min-input" id="minEnergy" value="800" min="0">
         </div>
       </div>
       <div class="stats-bar">
@@ -63,12 +63,13 @@
     var rawData = [];
     var headers = [];
     var weeks = [];
+    var weekDays = {};
     var visibleWeeks = new Set();
     var currentFilter = 'all';
     var searchTerm = '';
     var sortCol = null;
     var sortAsc = true;
-    var minEnergy = 0;
+    var minEnergy = 800;
 
     var searchInput = document.getElementById('search');
     var weekSelect = document.getElementById('weekSelect');
@@ -78,11 +79,47 @@
     var loading = document.getElementById('loading');
     var filterBtns = document.querySelectorAll('.filter-btn');
 
+    function parseWeekDate(weekStr) {
+      var parts = weekStr.split(' ');
+      var day = parseInt(parts[0]);
+      var monthStr = parts[1];
+      var months = {
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+      };
+      var month = months[monthStr];
+      var year = new Date().getFullYear();
+      return new Date(year, month, day);
+    }
+
+    function calculateWeekDays() {
+      for (var i = 0; i < weeks.length; i++) {
+        if (i === 0) {
+          weekDays[weeks[i]] = 7;
+        } else {
+          var prevDate = parseWeekDate(weeks[i - 1]);
+          var currDate = parseWeekDate(weeks[i]);
+          var diffTime = Math.abs(currDate - prevDate);
+          var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          weekDays[weeks[i]] = diffDays;
+        }
+      }
+    }
+
+    function hasData(week) {
+      return rawData.some(function(row) {
+        var energy = row[week + ' Energy'];
+        return energy && energy !== '-' && energy !== '';
+      });
+    }
+
     fetch(CSV_URL)
       .then(function(r) { return r.text(); })
       .then(function(csv) {
         parseCSV(csv);
         loading.style.display = 'none';
+        calculateWeekDays();
+        weeks = weeks.filter(hasData);
         updateVisibleWeeks();
         renderTable();
       })
@@ -153,22 +190,29 @@
       renderTable();
     });
 
-    function getLatestEnergy(row) {
+    function getDailyAverage(energy, week) {
+      var energyNum = parseInt(energy);
+      if (isNaN(energyNum) || energy === '-') return null;
+      var days = weekDays[week] || 7;
+      return Math.round(energyNum / days);
+    }
+
+    function getLatestDailyEnergy(row) {
       var visibleWeeksOrdered = weeks.filter(function(w) { return visibleWeeks.has(w); }).reverse();
       
       for (var i = 0; i < visibleWeeksOrdered.length; i++) {
         var week = visibleWeeksOrdered[i];
         var energy = row[week + ' Energy'];
-        var energyNum = parseInt(energy);
-        if (!isNaN(energyNum) && energy !== '-') {
-          return energyNum;
+        var dailyAvg = getDailyAverage(energy, week);
+        if (dailyAvg !== null) {
+          return dailyAvg;
         }
       }
       return null;
     }
 
     function getStatus(row) {
-      var latestEnergy = getLatestEnergy(row);
+      var latestEnergy = getLatestDailyEnergy(row);
       if (latestEnergy === null) return 'none';
       return latestEnergy >= minEnergy ? 'hit' : 'miss';
     }
@@ -179,7 +223,7 @@
 
       weeks.forEach(function(week) {
         if (!visibleWeeks.has(week)) return;
-        headerHTML += '<th class="week-header" onclick="sortBy(\'' + week + ' Energy\')">' + week + ' Energy</th>';
+        headerHTML += '<th class="week-header" onclick="sortBy(\'' + week + ' Energy\')">' + week + ' Avg/Day</th>';
         headerHTML += '<th onclick="sortBy(\'' + week + ' Trains\')">' + week + ' Trains</th>';
       });
 
@@ -198,7 +242,7 @@
 
       rawData.forEach(function(row) {
         row['_status'] = getStatus(row);
-        row['_latestEnergy'] = getLatestEnergy(row);
+        row['_latestEnergy'] = getLatestDailyEnergy(row);
       });
 
       var filtered = rawData.filter(function(row) {
@@ -244,14 +288,15 @@
 
           var energy = row[week + ' Energy'] || '-';
           var trains = row[week + ' Trains'] || '-';
+          var dailyAvg = getDailyAverage(energy, week);
+          var displayEnergy = dailyAvg !== null ? dailyAvg : '-';
 
           var energyClass = 'week-cell';
-          var energyNum = parseInt(energy);
-          if (!isNaN(energyNum) && energy !== '-' && minEnergy > 0) {
-            energyClass += energyNum >= minEnergy ? ' cell-hit' : ' cell-miss';
+          if (dailyAvg !== null && minEnergy > 0) {
+            energyClass += dailyAvg >= minEnergy ? ' cell-hit' : ' cell-miss';
           }
 
-          bodyHTML += '<td class="' + energyClass + '">' + energy + '</td>';
+          bodyHTML += '<td class="' + energyClass + '">' + displayEnergy + '</td>';
           bodyHTML += '<td>' + trains + '</td>';
         });
 
