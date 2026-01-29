@@ -1169,7 +1169,24 @@
       renderRewards();
     }
 
-  function renderNotInOc(members) {
+ function copyMessage(event, text, url) {
+  event.preventDefault();
+  
+  navigator.clipboard.writeText(text).then(() => {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = 'Message copied - paste in the body';
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      window.open(url, '_blank');
+    }, 800);
+  }).catch(err => {
+    console.error('Failed to copy:', err);
+    window.open(url, '_blank');
+  });
+}
+function renderNotInOc(members) {
   const list = document.getElementById('notInOcList');
   const countEl = document.getElementById('notInOcCount');
 
@@ -1201,7 +1218,7 @@
           <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
         </span>
         <span class="issue-detail ${warningClass}">${lastOcText}</span>
-        <a href="${messageUrl}" target="_blank" class="message-btn" title="Send message" onclick="copyMessage('${messageText.replace(/'/g, "\\'")}')">✉</a>
+        <button class="message-btn" title="Send message" onclick="copyMessage(event, '${messageText.replace(/'/g, "\\'")}', '${messageUrl}')">✉</button>
       </li>
     `;
   }).join('');
@@ -1232,24 +1249,11 @@ function renderLowSuccess(members) {
           <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
         </span>
         <span class="issue-detail warning">${m.passRate}% / ${m.threshold}% - ${posText} (${m.crimeName}${tierText})</span>
-        <a href="${messageUrl}" target="_blank" class="message-btn" title="Send message" onclick="copyMessage('${messageText.replace(/'/g, "\\'")}')">✉</a>
+        <button class="message-btn" title="Send message" onclick="copyMessage(event, '${messageText.replace(/'/g, "\\'")}', '${messageUrl}')">✉</button>
       </li>
     `;
   }).join('');
 }
-
-function copyMessage(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = 'Message copied - paste in the body';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
-  }).catch(err => {
-    console.error('Failed to copy:', err);
-  });
-}
-
     function renderMissingItems(members) {
       const list = document.getElementById('missingItemsList');
       const countEl = document.getElementById('missingItemsCount');
