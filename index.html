@@ -1,11 +1,114 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resilience Dashboard</title>
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Homepage Summary & Armory Cards */
+    .faction-overview,
+    .inventory-overview {
+      margin-bottom: 20px;
+    }
+
+    .overview-section {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .overview-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      margin: 0 0 16px 0;
+      color: var(--text);
+    }
+
+    .overview-title svg {
+      color: var(--green);
+    }
+
+    .overview-stats {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 1200px) {
+      .overview-stats {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    @media (max-width: 800px) {
+      .overview-stats {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 500px) {
+      .overview-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: var(--gray-100);
+      border-radius: var(--radius);
+    }
+
+    .stat-icon {
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      background: var(--green-light);
+      border-radius: 6px;
+    }
+
+    .stat-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .stat-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .stat-card .stat-label {
+      font-size: 11px;
+      color: var(--text-light);
+      text-align: left;
+      margin-top: 0;
+    }
+
+    .stat-card .stat-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .stat-sub {
+      font-size: 12px;
+      color: var(--text-light);
+      font-weight: 400;
+    }
+  </style>
 </head>
 <body>
   <div class="container container--narrow">
