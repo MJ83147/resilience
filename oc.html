@@ -1240,8 +1240,11 @@ function renderLowSuccess(members) {
 
 function copyMessage(text) {
   navigator.clipboard.writeText(text).then(() => {
-    // Optional: show a quick toast/notification
-    console.log('Message copied to clipboard');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = 'Message copied - paste in the body';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
   }).catch(err => {
     console.error('Failed to copy:', err);
   });
