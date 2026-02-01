@@ -464,6 +464,13 @@
     }
 
     /* Details Tab Styles */
+    .details-filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
     .details-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -744,6 +751,16 @@
         </div>
 
         <div id="detailsTab" class="tab-section">
+          <div class="details-filters">
+            <button class="filter-btn active" data-tier="all" onclick="filterDetailsByTier('all')">All</button>
+            <button class="filter-btn" data-tier="1" onclick="filterDetailsByTier('1')">T1</button>
+            <button class="filter-btn" data-tier="2" onclick="filterDetailsByTier('2')">T2</button>
+            <button class="filter-btn" data-tier="3" onclick="filterDetailsByTier('3')">T3</button>
+            <button class="filter-btn" data-tier="4" onclick="filterDetailsByTier('4')">T4</button>
+            <button class="filter-btn" data-tier="5" onclick="filterDetailsByTier('5')">T5</button>
+            <button class="filter-btn" data-tier="6" onclick="filterDetailsByTier('6')">T6</button>
+            <button class="filter-btn" data-tier="7" onclick="filterDetailsByTier('7')">T7</button>
+          </div>
           <div class="details-grid" id="detailsCards">
             <div class="empty-state">Loading crime details...</div>
           </div>
