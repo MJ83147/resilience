@@ -6,7 +6,7 @@
   <title>OC Accountability Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="theme.css">
-    <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css">
   <style>
     .setup-section {
       background: var(--gray-100);
@@ -19,73 +19,73 @@
       display: none;
     }
 
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--white);
+      color: var(--text);
+      padding: 16px 20px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-  .toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--white);
-  color: var(--text);
-  padding: 16px 20px;
-  border-radius: var(--radius);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+    .toast p {
+      margin: 0;
+      font-size: 14px;
+    }
 
-.toast p {
-  margin: 0;
-  font-size: 14px;
-}
+    .toast-btn {
+      background: var(--green);
+      color: var(--white);
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
 
-.toast-btn {
-  background: var(--green);
-  color: var(--white);
-  padding: 8px 14px;
-  border-radius: var(--radius);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-}
+    .toast-btn:hover {
+      opacity: 0.9;
+    }
 
-.toast-btn:hover {
-  opacity: 0.9;
-}
+    .toast-close {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 4px;
+    }
 
-.toast-close {
-  background: none;
-  border: none;
-  color: var(--text-light);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 0 4px;
-}
+    .toast-close:hover {
+      color: var(--text);
+    }
 
-.toast-close:hover {
-  color: var(--text);
-}
-.message-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  background: var(--gray-200);
-  border-radius: 4px;
-  text-decoration: none;
-  font-size: 13px;
-  flex-shrink: 0;
-  transition: all 0.2s;
-  color: var(--text);
-}
+    .message-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      background: var(--gray-200);
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 13px;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      color: var(--text);
+    }
 
-.message-btn:hover {
-  background: var(--green);
-  color: var(--white);
-}
+    .message-btn:hover {
+      background: var(--green);
+      color: var(--white);
+    }
 
     .status-bar {
       display: flex;
@@ -324,6 +324,41 @@
       text-align: left;
     }
 
+    /* Sortable table headers */
+    .rewards-table-wrapper th[data-sort] {
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      padding-right: 18px;
+    }
+
+    .rewards-table-wrapper th[data-sort]:hover {
+      background: var(--gray-200);
+    }
+
+    .rewards-table-wrapper th[data-sort]::after {
+      content: '';
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 4px solid transparent;
+      border-top-color: var(--text-light);
+      opacity: 0.3;
+    }
+
+    .rewards-table-wrapper th.sort-desc::after {
+      border-top-color: var(--green);
+      opacity: 1;
+    }
+
+    .rewards-table-wrapper th.sort-asc::after {
+      border-top-color: transparent;
+      border-bottom-color: var(--green);
+      opacity: 1;
+      transform: translateY(-80%);
+    }
+
     .chart-title {
       font-weight: 600;
       font-size: 13px;
@@ -351,173 +386,6 @@
       flex: 1;
       min-height: 220px;
       position: relative;
-    }
-
-    .chart-grid {
-      position: absolute;
-      top: 0;
-      left: 50px;
-      right: 0;
-      bottom: 30px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .grid-line {
-      border-top: 1px solid var(--gray-200);
-      position: relative;
-      height: 0;
-    }
-
-    .grid-line:last-child {
-      border-top: 1px solid var(--gray-300);
-    }
-
-    .y-label {
-      position: absolute;
-      right: calc(100% + 8px);
-      top: -6px;
-      font-size: 10px;
-      color: var(--text-light);
-      white-space: nowrap;
-    }
-
-    .bar-chart-area {
-      position: absolute;
-      top: 0;
-      left: 50px;
-      right: 0;
-      bottom: 30px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-around;
-      gap: 4px;
-      padding: 0 10px;
-    }
-
-    .bar-group {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      max-width: 50px;
-    }
-
-    .bar-value {
-      font-size: 9px;
-      color: var(--text);
-      font-weight: 600;
-      margin-bottom: 2px;
-      white-space: nowrap;
-    }
-
-    .bar {
-      width: 70%;
-      min-height: 2px;
-      transition: height 0.3s ease;
-      border-radius: 2px 2px 0 0;
-    }
-
-    .bar.respect {
-      background: var(--green);
-    }
-
-    .bar.money {
-      background: var(--red);
-    }
-
-    .x-labels {
-      position: absolute;
-      left: 50px;
-      right: 0;
-      bottom: 0;
-      height: 30px;
-      display: flex;
-      justify-content: space-around;
-      padding: 0 10px;
-    }
-
-    .x-label {
-      flex: 1;
-      max-width: 50px;
-      font-size: 8px;
-      color: var(--text-light);
-      text-align: center;
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      transform: rotate(180deg);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      padding-top: 4px;
-    }
-
-    /* Timeline chart */
-    .timeline-bar-area {
-      position: absolute;
-      top: 0;
-      left: 50px;
-      right: 0;
-      bottom: 30px;
-      display: flex;
-      align-items: flex-end;
-      gap: 2px;
-      padding: 0 4px;
-    }
-
-    .timeline-bar {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-width: 0;
-    }
-
-    .timeline-bar .bar-value {
-      font-size: 8px;
-    }
-
-    .timeline-stack {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .timeline-stack .bar {
-      width: 100%;
-      border-radius: 0;
-    }
-
-    .timeline-stack .bar:first-child {
-      border-radius: 2px 2px 0 0;
-    }
-
-    .timeline-stack .bar.success {
-      background: var(--green);
-    }
-
-    .timeline-stack .bar.failure {
-      background: var(--red);
-    }
-
-    .timeline-x-labels {
-      position: absolute;
-      left: 50px;
-      right: 0;
-      bottom: 0;
-      height: 30px;
-      display: flex;
-      gap: 2px;
-      padding: 0 4px;
-    }
-
-    .timeline-x-label {
-      flex: 1;
-      font-size: 8px;
-      color: var(--text-light);
-      text-align: center;
-      padding-top: 4px;
     }
 
     .chart-legend {
@@ -594,6 +462,138 @@
       color: var(--text-light);
       margin-top: 2px;
     }
+
+    /* Details Tab Styles */
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .detail-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .detail-card-header {
+      background: var(--gray-100);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .detail-card-title {
+      font-weight: 600;
+      font-size: 14px;
+      flex: 1;
+    }
+
+    .detail-card-tier {
+      background: var(--green);
+      color: var(--white);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .multi-stage-tag {
+      background: var(--gray-300);
+      color: var(--text);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+    }
+
+    .detail-card-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--gray-200);
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .detail-stat {
+      background: var(--white);
+      padding: 12px 8px;
+      text-align: center;
+    }
+
+    .detail-stat-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--green);
+      display: block;
+    }
+
+    .detail-stat-label {
+      font-size: 10px;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .detail-card-members {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--gray-200);
+    }
+
+    .detail-member-list {
+      background: var(--white);
+      padding: 10px 12px;
+    }
+
+    .detail-member-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-light);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .detail-member-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+      font-size: 12px;
+    }
+
+    .detail-member-rank {
+      color: var(--text-light);
+      width: 16px;
+    }
+
+    .detail-member-name {
+      flex: 1;
+      color: var(--text);
+      text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .detail-member-name:hover {
+      color: var(--green);
+    }
+
+    .detail-member-value {
+      font-weight: 600;
+      color: var(--green);
+    }
+
+    .detail-member-empty {
+      font-size: 11px;
+      color: var(--text-light);
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -622,6 +622,7 @@
         <div class="tab-buttons">
           <button id="issuesTabBtn" class="active" onclick="showTab('issuesTab', 'issuesTabBtn')">Issues</button>
           <button id="rewardsTabBtn" onclick="showTab('rewardsTab', 'rewardsTabBtn')">Rewards</button>
+          <button id="detailsTabBtn" onclick="showTab('detailsTab', 'detailsTabBtn')">Details</button>
         </div>
 
         <div id="issuesTab" class="tab-section active">
@@ -688,13 +689,13 @@
               <table id="rewardsTable">
                 <thead>
                   <tr>
-                    <th>Crime Type</th>
-                    <th>Done</th>
-                    <th>Success</th>
-                    <th>Respect</th>
-                    <th>Avg</th>
-                    <th>Money</th>
-                    <th>Avg</th>
+                    <th data-sort="name" onclick="sortRewardsTable('name')">Crime Type</th>
+                    <th data-sort="count" onclick="sortRewardsTable('count')">Done</th>
+                    <th data-sort="success" onclick="sortRewardsTable('success')">Success</th>
+                    <th data-sort="respect" onclick="sortRewardsTable('respect')">Respect</th>
+                    <th data-sort="avgRespect" onclick="sortRewardsTable('avgRespect')">Avg</th>
+                    <th data-sort="money" onclick="sortRewardsTable('money')">Money</th>
+                    <th data-sort="avgMoney" onclick="sortRewardsTable('avgMoney')">Avg</th>
                   </tr>
                 </thead>
                 <tbody id="rewardsTableBody">
@@ -741,913 +742,18 @@
             </div>
           </div>
         </div>
+
+        <div id="detailsTab" class="tab-section">
+          <div class="details-grid" id="detailsCards">
+            <div class="empty-state">Loading crime details...</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <script src="config.js"></script>
-  <script>
-    const CACHE_KEY = 'oc_dashboard_cache';
-    const ITEMS_CACHE_KEY = 'oc_dashboard_items';
-    
-    // Get API key from config.js
-    let apiKey = '';
-    try {
-      if (typeof CONFIG !== 'undefined' && CONFIG.apiKey) {
-        apiKey = CONFIG.apiKey;
-      }
-    } catch (e) {
-      console.error('Could not load API key from config.js');
-    }
-
-    // Multi-stage crimes to exclude from success/failure calculations
-    const MULTI_STAGE_CRIMES = [
-      'stacking the deck',
-      'no reserve',
-      'manifest cruelty',
-      'gone fission'
-    ];
-
-    // CPR Requirements from userscript
-    const CPR_REQUIREMENTS = {
-      "blast from the past": {
-        "picklock #1": 60,
-        "hacker": 60,
-        "engineer": 62,
-        "bomber": 62,
-        "muscle": 62,
-        "picklock #2": 50
-      },
-      "stacking the deck": {
-        "hacker": 60,
-        "imitator": 60,
-        "cat burglar": 60,
-        "driver": 55
-      },
-      "ace in the hole": {
-        "hacker": 60,
-        "driver": 55,
-        "muscle #1": 60,
-        "imitator": 60,
-        "muscle #2": 60
-      },
-      "break the bank": {
-        "robber": 60,
-        "muscle #1": 60,
-        "thief #1": 50,
-        "muscle #2": 60,
-        "muscle #3": 62,
-        "thief #2": 62
-      },
-      "clinical precision": {
-        "assassin": 60,
-        "cat burglar": 65,
-        "cleaner": 65,
-        "imitator": 65
-      },
-      "stage fright": {
-        "sniper": 60,
-        "enforcer": 60,
-        "lookout": 60,
-        "muscle #1": 10,
-        "muscle #2": 10,
-        "muscle #3": 10
-      },
-      "gaslight the way": {
-        "imitator #1": 60,
-        "imitator #2": 60,
-        "imitator #3": 60,
-        "looter #1": 60,
-        "looter #2": 5,
-        "looter #3": 60
-      },
-      "bidding war": {
-        "robber #1": 50,
-        "robber #2": 60,
-        "robber #3": 60,
-        "bomber #1": 50,
-        "bomber #2": 60,
-        "driver": 60
-      },
-      "honey trap": { "_default": 60 },
-      "leave no trace": { "_default": 60 },
-      "snow blind": { "_default": 60 },
-      "pet project": { "_default": 30 },
-      "cash me if you can": { "_default": 30 },
-      "smoke and wing mirrors": { "_default": 30 },
-      "market forces": { "_default": 30 },
-      "mob mentality": { "_default": 30 },
-      "best of the lot": { "_default": 30 },
-      "no reserve": { "_default": 60 },
-      "sneaky git grab": { "_default": 60 }
-    };
-
-    function getCPRThreshold(crimeName, position, positionNumber) {
-      const crimeKey = crimeName.toLowerCase();
-      const crimeReqs = CPR_REQUIREMENTS[crimeKey];
-      
-      if (!crimeReqs) {
-        return 70; // Default fallback
-      }
-      
-      // Check for default
-      if (crimeReqs._default !== undefined) {
-        return crimeReqs._default;
-      }
-      
-      // Build position key (e.g., "muscle #2")
-      const posLower = position.toLowerCase();
-      const posWithNumber = `${posLower} #${positionNumber}`;
-      
-      // Try position with number first
-      if (crimeReqs[posWithNumber] !== undefined) {
-        return crimeReqs[posWithNumber];
-      }
-      
-      // Try just position name (for unique positions)
-      if (crimeReqs[posLower] !== undefined) {
-        return crimeReqs[posLower];
-      }
-      
-      // Try position #1 as fallback for first occurrence
-      if (positionNumber === 1 && crimeReqs[`${posLower} #1`] !== undefined) {
-        return crimeReqs[`${posLower} #1`];
-      }
-      
-      return 70; // Default fallback
-    }
-
-    function isMultiStageCrime(crimeName) {
-      return MULTI_STAGE_CRIMES.includes(crimeName.toLowerCase());
-    }
-
-    let crimeExpMembers = [];
-    let allMembers = {};
-    let ongoingCrimes = [];
-    let completedCrimes = [];
-    let itemNames = {};
-    let currentMetric = 'respect';
-    let chartData = [];
-
-    function showTab(tabId, btnId) {
-      document.querySelectorAll('.tab-section').forEach(tab => tab.classList.remove('active'));
-      document.querySelectorAll('.tab-buttons button').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      document.getElementById(btnId).classList.add('active');
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!apiKey) {
-        document.getElementById('loadingMessage').style.display = 'none';
-        document.getElementById('errorMessage').style.display = 'block';
-        document.getElementById('errorMessage').textContent = 'Error: Missing config.js or API key. Create a config.js file with: const CONFIG = { apiKey: "your-key-here" };';
-        return;
-      }
-
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const data = JSON.parse(cached);
-        const age = Date.now() - data.timestamp;
-        if (age < 3600000) {
-          loadFromCache(data);
-          return;
-        }
-      }
-      
-      // Auto-load fresh data
-      loadData();
-    });
-
-    let dataRange = { earliest: null, latest: null, crimeCount: 0 };
-
-    function loadFromCache(data) {
-      crimeExpMembers = data.crimeExpMembers;
-      allMembers = data.allMembers;
-      ongoingCrimes = data.ongoingCrimes;
-      completedCrimes = data.completedCrimes;
-      dataRange = data.dataRange || { earliest: null, latest: null, crimeCount: 0 };
-
-      const itemsCache = localStorage.getItem(ITEMS_CACHE_KEY);
-      if (itemsCache) {
-        itemNames = JSON.parse(itemsCache);
-      }
-
-      document.getElementById('setupSection').style.display = 'none';
-      document.getElementById('dashboardContent').style.display = 'block';
-      document.getElementById('factionName').textContent = data.factionName || 'Your Faction';
-      updateLastUpdated(data.timestamp, dataRange);
-
-      processAndRender();
-    }
-
-    function updateLastUpdated(timestamp, range) {
-      let text = `Updated: ${new Date(timestamp).toLocaleString()}`;
-      if (range && range.earliest && range.latest) {
-        const earliest = new Date(range.earliest * 1000).toLocaleDateString();
-        const latest = new Date(range.latest * 1000).toLocaleDateString();
-        text += ` | Data: ${earliest} - ${latest} (${range.crimeCount} crimes)`;
-      }
-      document.getElementById('lastUpdated').textContent = text;
-    }
-
-    function switchMetric(metric) {
-      currentMetric = metric;
-      document.querySelectorAll('.chart-filters .filter-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.metric === metric);
-      });
-      renderMetricChart(chartData);
-    }
-
-    async function loadData() {
-      if (!apiKey) {
-        document.getElementById('loadingMessage').style.display = 'none';
-        document.getElementById('errorMessage').style.display = 'block';
-        document.getElementById('errorMessage').textContent = 'Error: No API key configured.';
-        return;
-      }
-
-      document.getElementById('loadingMessage').style.display = 'block';
-      document.getElementById('errorMessage').style.display = 'none';
-
-      try {
-        const crimeExpRes = await fetch(`https://api.torn.com/v2/faction/?selections=crimeexp&key=${apiKey}`);
-        const crimeExpData = await crimeExpRes.json();
-
-        if (crimeExpData.error) {
-          throw new Error(crimeExpData.error.error);
-        }
-
-        crimeExpMembers = crimeExpData.crimeexp || [];
-
-        const basicRes = await fetch(`https://api.torn.com/faction/?selections=basic&key=${apiKey}`);
-        const basicData = await basicRes.json();
-
-        if (basicData.error) {
-          throw new Error(basicData.error.error);
-        }
-
-        allMembers = basicData.members || {};
-        const factionName = basicData.name || 'Your Faction';
-
-        let allCrimes = [];
-        let offset = 0;
-        const maxOffset = 500;
-        const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 60 * 60);
-        let oldestFetched = Date.now() / 1000;
-
-        while (offset < maxOffset) {
-          const crimesRes = await fetch(`https://api.torn.com/v2/faction/crimes?key=${apiKey}&offset=${offset}`);
-          const crimesData = await crimesRes.json();
-
-          if (crimesData.error) {
-            throw new Error(crimesData.error.error);
-          }
-
-          const crimes = crimesData.crimes || [];
-          if (crimes.length === 0) break;
-
-          allCrimes = allCrimes.concat(crimes);
-
-          crimes.forEach(c => {
-            if (c.executed_at && c.executed_at < oldestFetched) {
-              oldestFetched = c.executed_at;
-            }
-            if (c.created_at && c.created_at < oldestFetched) {
-              oldestFetched = c.created_at;
-            }
-          });
-
-          if (oldestFetched < thirtyDaysAgo) break;
-
-          offset += crimes.length;
-          await new Promise(r => setTimeout(r, 100));
-        }
-
-        ongoingCrimes = allCrimes.filter(c => c.executed_at === null && c.status !== 'Expired');
-        completedCrimes = allCrimes.filter(c => c.executed_at !== null);
-
-        let earliestDate = null;
-        let latestDate = null;
-        completedCrimes.forEach(c => {
-          if (!earliestDate || c.executed_at < earliestDate) earliestDate = c.executed_at;
-          if (!latestDate || c.executed_at > latestDate) latestDate = c.executed_at;
-        });
-
-        const dataRange = {
-          earliest: earliestDate,
-          latest: latestDate,
-          crimeCount: allCrimes.length
-        };
-
-        const itemIds = new Set();
-        completedCrimes.forEach(crime => {
-          if (crime.rewards?.items) {
-            crime.rewards.items.forEach(item => itemIds.add(item.id));
-          }
-        });
-        ongoingCrimes.forEach(crime => {
-          crime.slots.forEach(slot => {
-            if (slot.item_requirement?.id) {
-              itemIds.add(slot.item_requirement.id);
-            }
-          });
-        });
-
-        if (itemIds.size > 0) {
-          try {
-            const itemsRes = await fetch(`https://api.torn.com/torn/?selections=items&key=${apiKey}`);
-            const itemsData = await itemsRes.json();
-            if (itemsData.items) {
-              itemIds.forEach(id => {
-                if (itemsData.items[id]) {
-                  itemNames[id] = itemsData.items[id].name;
-                }
-              });
-              localStorage.setItem(ITEMS_CACHE_KEY, JSON.stringify(itemNames));
-            }
-          } catch (e) {
-            console.warn('Could not fetch item names:', e);
-          }
-        }
-
-        const cacheData = {
-          timestamp: Date.now(),
-          factionName,
-          crimeExpMembers,
-          allMembers,
-          ongoingCrimes,
-          completedCrimes,
-          dataRange
-        };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-
-        document.getElementById('setupSection').style.display = 'none';
-        document.getElementById('dashboardContent').style.display = 'block';
-        document.getElementById('factionName').textContent = factionName;
-        updateLastUpdated(Date.now(), dataRange);
-
-        processAndRender();
-
-      } catch (err) {
-        console.error('Error loading data:', err);
-        document.getElementById('loadingMessage').style.display = 'none';
-        document.getElementById('errorMessage').style.display = 'block';
-        document.getElementById('errorMessage').textContent = `Error: ${err.message}`;
-      }
-    }
-
-    async function refreshData() {
-      document.getElementById('setupSection').style.display = 'block';
-      document.getElementById('dashboardContent').style.display = 'none';
-      document.getElementById('loadingMessage').style.display = 'block';
-      document.getElementById('errorMessage').style.display = 'none';
-      await loadData();
-    }
-
-    function processAndRender() {
-      const membersInCrimes = new Map();
-
-      ongoingCrimes.forEach(crime => {
-        crime.slots.forEach(slot => {
-          if (slot.user?.id) {
-            membersInCrimes.set(slot.user.id, {
-              crimeId: crime.id,
-              crimeName: crime.name,
-              difficulty: crime.difficulty || crime.level || null,
-              position: slot.position,
-              positionNumber: slot.position_number || 1,
-              passRate: slot.checkpoint_pass_rate,
-              itemRequired: slot.item_requirement,
-              joinedAt: slot.user.joined_at
-            });
-          }
-        });
-      });
-
-      const lastParticipation = new Map();
-      completedCrimes.forEach(crime => {
-        crime.slots.forEach(slot => {
-          if (slot.user?.id) {
-            const existing = lastParticipation.get(slot.user.id);
-            if (!existing || crime.executed_at > existing) {
-              lastParticipation.set(slot.user.id, crime.executed_at);
-            }
-          }
-        });
-      });
-
-      // 1. Not in an OC
-      const notInOc = crimeExpMembers
-        .filter(id => !membersInCrimes.has(id))
-        .map(id => ({
-          id,
-          name: allMembers[id]?.name || `Unknown [${id}]`,
-          lastOc: lastParticipation.get(id) || null
-        }))
-        .sort((a, b) => {
-          if (!a.lastOc && !b.lastOc) return 0;
-          if (!a.lastOc) return -1;
-          if (!b.lastOc) return 1;
-          return a.lastOc - b.lastOc;
-        });
-
-      renderNotInOc(notInOc);
-
-      // 2. Missing items
-      const missingItems = [];
-      membersInCrimes.forEach((data, id) => {
-        if (data.itemRequired && !data.itemRequired.is_available) {
-          missingItems.push({
-            id,
-            name: allMembers[id]?.name || `Unknown [${id}]`,
-            crimeName: data.crimeName,
-            difficulty: data.difficulty,
-            itemId: data.itemRequired.id
-          });
-        }
-      });
-
-      renderMissingItems(missingItems);
-
-      // 3. Below CPR threshold (using per-crime/position thresholds)
-      const lowSuccess = [];
-      membersInCrimes.forEach((data, id) => {
-        if (data.passRate !== null) {
-          const threshold = getCPRThreshold(data.crimeName, data.position, data.positionNumber);
-          if (data.passRate < threshold) {
-            lowSuccess.push({
-              id,
-              name: allMembers[id]?.name || `Unknown [${id}]`,
-              crimeName: data.crimeName,
-              difficulty: data.difficulty,
-              position: data.position,
-              positionNumber: data.positionNumber,
-              passRate: data.passRate,
-              threshold: threshold
-            });
-          }
-        }
-      });
-      lowSuccess.sort((a, b) => (a.passRate - a.threshold) - (b.passRate - b.threshold));
-
-      renderLowSuccess(lowSuccess);
-
-      // 4. Rewards
-      renderRewards();
-    }
-
-function copyMessage(event, text, url) {
-  event.preventDefault();
-  
-  navigator.clipboard.writeText(text).then(() => {
-    // Remove any existing toast
-    const existing = document.querySelector('.toast');
-    if (existing) existing.remove();
-    
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerHTML = `
-      <p>Message copied to clipboard</p>
-      <a href="${url}" target="_blank" class="toast-btn">Open Torn Message</a>
-      <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
-    `;
-    document.body.appendChild(toast);
-  }).catch(err => {
-    console.error('Failed to copy:', err);
-  });
-}
-function renderNotInOc(members) {
-  const list = document.getElementById('notInOcList');
-  const countEl = document.getElementById('notInOcCount');
-
-  countEl.textContent = members.length;
-  countEl.classList.toggle('ok', members.length === 0);
-
-  if (members.length === 0) {
-    list.innerHTML = '<li class="empty-state">Everyone is in an OC</li>';
-    return;
-  }
-
-  list.innerHTML = members.map(m => {
-    let lastOcText;
-    let warningClass = '';
-    
-    if (m.lastOc) {
-      lastOcText = formatTimeAgo(m.lastOc);
-    } else {
-      lastOcText = 'Not in fetched data';
-      warningClass = 'warning';
-    }
-
-    const messageUrl = `https://www.torn.com/messages.php#/p=compose&XID=${m.id}`;
-    const messageText = `Hey ${m.name}, you're not currently in an OC. Please join one when you get a chance.`;
-
-    return `
-      <li class="issue-item">
-        <span class="member-name">
-          <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
-        </span>
-        <span class="issue-detail ${warningClass}">${lastOcText}</span>
-        <button class="message-btn" title="Send message" onclick="copyMessage(event, '${messageText.replace(/'/g, "\\'")}', '${messageUrl}')">✉</button>
-      </li>
-    `;
-  }).join('');
-}
-
-function renderLowSuccess(members) {
-  const list = document.getElementById('lowSuccessList');
-  const countEl = document.getElementById('lowSuccessCount');
-
-  countEl.textContent = members.length;
-  countEl.classList.toggle('ok', members.length === 0);
-
-  if (members.length === 0) {
-    list.innerHTML = '<li class="empty-state">No one below CPR threshold</li>';
-    return;
-  }
-
-  list.innerHTML = members.map(m => {
-    const tierText = m.difficulty ? ` [T${m.difficulty}]` : '';
-    const posText = m.positionNumber > 1 ? `${m.position} #${m.positionNumber}` : m.position;
-    
-    const messageUrl = `https://www.torn.com/messages.php#/p=compose&XID=${m.id}`;
-    const messageText = `Hey ${m.name}, your CPR for ${posText} in ${m.crimeName} is ${m.passRate}% which is below the ${m.threshold}% minimum. Please work on getting this up.`;
-
-    return `
-      <li class="issue-item">
-        <span class="member-name">
-          <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
-        </span>
-        <span class="issue-detail warning">${m.passRate}% / ${m.threshold}% - ${posText} (${m.crimeName}${tierText})</span>
-        <button class="message-btn" title="Send message" onclick="copyMessage(event, '${messageText.replace(/'/g, "\\'")}', '${messageUrl}')">✉</button>
-      </li>
-    `;
-  }).join('');
-}
-    function renderMissingItems(members) {
-      const list = document.getElementById('missingItemsList');
-      const countEl = document.getElementById('missingItemsCount');
-
-      countEl.textContent = members.length;
-      countEl.classList.toggle('ok', members.length === 0);
-
-      if (members.length === 0) {
-        list.innerHTML = '<li class="empty-state">No missing items</li>';
-        return;
-      }
-
-      list.innerHTML = members.map(m => {
-        const tierText = m.difficulty ? ` [T${m.difficulty}]` : '';
-        const itemName = itemNames[m.itemId] || `Item #${m.itemId}`;
-        return `
-          <li class="issue-item">
-            <span class="member-name">
-              <a href="https://www.torn.com/profiles.php?XID=${m.id}" target="_blank">${m.name}</a>
-            </span>
-            <span class="issue-detail warning">${m.crimeName}${tierText} - ${itemName}</span>
-          </li>
-        `;
-      }).join('');
-    }
-
-   
-
-    function renderRewards() {
-      const byCrimeType = new Map();
-      const itemCounts = new Map();
-      let totalRespect = 0;
-      let totalMoney = 0;
-      let totalSuccess = 0;
-      let totalFailed = 0;
-      let countedCrimes = 0;
-
-      completedCrimes.forEach(crime => {
-        const name = crime.name;
-        
-        // Completely skip multi-stage crimes - they don't earn money or respect
-        if (isMultiStageCrime(name)) return;
-        
-        if (!byCrimeType.has(name)) {
-          byCrimeType.set(name, { count: 0, success: 0, failed: 0, respect: 0, money: 0 });
-        }
-        const entry = byCrimeType.get(name);
-        entry.count++;
-        countedCrimes++;
-
-        const isSuccess = crime.rewards && crime.rewards.respect > 0;
-        if (isSuccess) {
-          entry.success++;
-          totalSuccess++;
-        } else {
-          entry.failed++;
-          totalFailed++;
-        }
-
-        if (crime.rewards) {
-          entry.respect += crime.rewards.respect || 0;
-          entry.money += crime.rewards.money || 0;
-          totalRespect += crime.rewards.respect || 0;
-          totalMoney += crime.rewards.money || 0;
-
-          if (crime.rewards.items) {
-            crime.rewards.items.forEach(item => {
-              const qty = item.quantity || 1;
-              const itemId = item.id;
-              const itemName = itemNames[itemId] || `Item #${itemId}`;
-              itemCounts.set(itemName, (itemCounts.get(itemName) || 0) + qty);
-            });
-          }
-        }
-      });
-
-      const totalOCs = totalSuccess + totalFailed;
-      const successPct = totalOCs > 0 ? Math.round((totalSuccess / totalOCs) * 100) : 0;
-      const factionCut = Math.round(totalMoney * 0.2);
-
-      // Update summary cards
-      document.getElementById('totalRespect').textContent = formatNumber(totalRespect);
-      document.getElementById('totalMoney').textContent = '$' + formatNumber(totalMoney);
-      document.getElementById('factionMoney').textContent = '$' + formatNumber(factionCut);
-      document.getElementById('successRate').textContent = successPct + '%';
-      document.getElementById('completedCount').textContent = countedCrimes;
-
-      // Sort by respect descending
-      const sorted = Array.from(byCrimeType.entries())
-        .sort((a, b) => b[1].respect - a[1].respect);
-
-      chartData = sorted;
-
-      // Render crime type table
-      const tbody = document.getElementById('rewardsTableBody');
-      tbody.innerHTML = sorted.map(([name, data]) => {
-        const avgRespect = data.count > 0 ? Math.round(data.respect / data.count) : 0;
-        const avgMoney = data.count > 0 ? Math.round(data.money / data.count) : 0;
-        return `
-          <tr>
-            <td>${name}</td>
-            <td>${data.count}</td>
-            <td>${data.success}/${data.success + data.failed}</td>
-            <td>${formatNumber(data.respect)}</td>
-            <td>${formatNumber(avgRespect)}</td>
-            <td>$${formatNumber(data.money)}</td>
-            <td>$${formatNumber(avgMoney)}</td>
-          </tr>
-        `;
-      }).join('');
-
-      // Add totals row
-      const avgTotalRespect = countedCrimes > 0 ? Math.round(totalRespect / countedCrimes) : 0;
-      const avgTotalMoney = countedCrimes > 0 ? Math.round(totalMoney / countedCrimes) : 0;
-      tbody.innerHTML += `
-        <tr class="totals-row">
-          <td>Total</td>
-          <td>${countedCrimes}</td>
-          <td>${totalSuccess}/${totalOCs}</td>
-          <td>${formatNumber(totalRespect)}</td>
-          <td>${formatNumber(avgTotalRespect)}</td>
-          <td>$${formatNumber(totalMoney)}</td>
-          <td>$${formatNumber(avgTotalMoney)}</td>
-        </tr>
-      `;
-
-      // Render items table
-      const itemsSorted = Array.from(itemCounts.entries())
-        .sort((a, b) => b[1] - a[1]);
-
-      const itemsTbody = document.getElementById('itemsTableBody');
-      if (itemsSorted.length === 0) {
-        itemsTbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--text-light);">No items received</td></tr>';
-      } else {
-        itemsTbody.innerHTML = itemsSorted.map(([name, qty]) => `
-          <tr>
-            <td>${name}</td>
-            <td>${qty}</td>
-          </tr>
-        `).join('');
-      }
-
-      // Render charts
-      renderMetricChart(sorted);
-      renderTimelineChart();
-    }
-
-    let metricChartInstance = null;
-    let timelineChartInstance = null;
-
-    function renderMetricChart(data) {
-      const ctx = document.getElementById('metricChart').getContext('2d');
-
-      if (metricChartInstance) {
-        metricChartInstance.destroy();
-      }
-
-      if (data.length === 0) {
-        return;
-      }
-
-      const isRespect = currentMetric === 'respect';
-      const labels = data.map(([name]) => name);
-      const values = data.map(([, d]) => isRespect ? d.respect : d.money);
-
-      metricChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: values,
-            backgroundColor: 'rgba(34, 197, 94, 0.8)',
-            borderColor: 'rgba(34, 197, 94, 1)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          layout: {
-            padding: {
-              bottom: 20
-            }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const val = context.raw;
-                  return isRespect ? formatNumber(val) + ' respect' : '$' + formatNumber(val);
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: { 
-                color: '#9ca3af',
-                font: { size: 9 },
-                maxRotation: 60,
-                minRotation: 60
-              }
-            },
-            y: {
-              beginAtZero: true,
-              grid: { color: 'rgba(255,255,255,0.1)' },
-              ticks: {
-                color: '#9ca3af',
-                font: { size: 10 },
-                callback: function(value) {
-                  return isRespect ? formatNumber(value) : '$' + formatNumber(value);
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    function renderTimelineChart() {
-      const ctx = document.getElementById('timelineChart').getContext('2d');
-
-      if (timelineChartInstance) {
-        timelineChartInstance.destroy();
-      }
-
-      if (completedCrimes.length === 0) {
-        return;
-      }
-
-      // Group by day for last 30 days - exclude multi-stage crimes
-      const now = Date.now();
-      const dayMs = 24 * 60 * 60 * 1000;
-      const days = [];
-
-      for (let i = 29; i >= 0; i--) {
-        const dayStart = new Date(now - (i * dayMs));
-        dayStart.setHours(0, 0, 0, 0);
-        days.push({
-          date: dayStart,
-          success: 0,
-          failed: 0
-        });
-      }
-
-      completedCrimes.forEach(crime => {
-        if (isMultiStageCrime(crime.name)) return;
-
-        const crimeDate = new Date(crime.executed_at * 1000);
-        crimeDate.setHours(0, 0, 0, 0);
-        const crimeTime = crimeDate.getTime();
-
-        const dayIndex = days.findIndex(d => d.date.getTime() === crimeTime);
-
-        if (dayIndex !== -1) {
-          const isSuccess = crime.rewards && crime.rewards.respect > 0;
-          if (isSuccess) {
-            days[dayIndex].success++;
-          } else {
-            days[dayIndex].failed++;
-          }
-        }
-      });
-
-      const labels = days.map(d => `${d.date.getDate()}/${d.date.getMonth() + 1}`);
-      const successData = days.map(d => d.success);
-      const failedData = days.map(d => d.failed);
-
-      timelineChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Success',
-              data: successData,
-              backgroundColor: 'rgba(34, 197, 94, 0.8)',
-              borderColor: 'rgba(34, 197, 94, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Failed',
-              data: failedData,
-              backgroundColor: 'rgba(239, 68, 68, 0.8)',
-              borderColor: 'rgba(239, 68, 68, 1)',
-              borderWidth: 1
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: true,
-              position: 'bottom',
-              labels: { color: '#9ca3af', font: { size: 11 } }
-            },
-            tooltip: {
-              callbacks: {
-                afterTitle: function(context) {
-                  const idx = context[0].dataIndex;
-                  const total = successData[idx] + failedData[idx];
-                  return total > 0 ? `${successData[idx]}/${total} successful` : '';
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              stacked: true,
-              grid: { display: false },
-              ticks: { 
-                color: '#9ca3af',
-                font: { size: 9 },
-                maxRotation: 45,
-                minRotation: 45
-              }
-            },
-            y: {
-              stacked: true,
-              beginAtZero: true,
-              grid: { color: 'rgba(255,255,255,0.1)' },
-              ticks: {
-                color: '#9ca3af',
-                font: { size: 10 },
-                stepSize: 1,
-                callback: function(value) {
-                  if (Number.isInteger(value)) return value;
-                  return null;
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    function formatTimeAgo(timestamp) {
-      const seconds = Math.floor(Date.now() / 1000) - timestamp;
-      const days = Math.floor(seconds / 86400);
-      const hours = Math.floor((seconds % 86400) / 3600);
-
-      if (days > 0) {
-        return `${days}d ago`;
-      }
-      return `${hours}h ago`;
-    }
-
-    function formatNumber(num) {
-      if (num >= 1000000000) {
-        return (num / 1000000000).toFixed(1) + 'B';
-      }
-      if (num >= 1000000) {
-        return (num / 1000000).toFixed(1) + 'M';
-      }
-      if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'K';
-      }
-      return num.toString();
-    }
-  </script>
+  <script src="oc.js"></script>
   <script src="theme.js"></script>
 </body>
 </html>
