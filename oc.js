@@ -166,6 +166,15 @@ let currentMetric = 'respect';
 let chartData = [];
 let currentSort = { column: 'respect', direction: 'desc' };
 let dataRange = { earliest: null, latest: null, crimeCount: 0 };
+let currentTierFilter = 'all';
+
+function filterDetailsByTier(tier) {
+  currentTierFilter = tier;
+  document.querySelectorAll('.details-filters .filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tier === tier);
+  });
+  renderDetails();
+}
 
 function showTab(tabId, btnId) {
   document.querySelectorAll('.tab-section').forEach(tab => tab.classList.remove('active'));
@@ -721,7 +730,7 @@ function renderRewards() {
     entry.count++;
     countedCrimes++;
 
-    const isSuccess = crime.rewards && crime.rewards.respect > 0;
+    const isSuccess = crime.status === 'Successful';
     if (isSuccess) {
       entry.success++;
       totalSuccess++;
@@ -796,6 +805,7 @@ function renderDetails() {
 
   completedCrimes.forEach(crime => {
     const name = crime.name;
+    const isMultiStage = isMultiStageCrime(name);
     
     if (!byCrimeType.has(name)) {
       byCrimeType.set(name, { 
@@ -804,13 +814,14 @@ function renderDetails() {
         success: 0, 
         failed: 0, 
         money: 0,
-        isMultiStage: isMultiStageCrime(name)
+        isMultiStage: isMultiStage
       });
     }
     const entry = byCrimeType.get(name);
     entry.count++;
 
-    const isSuccess = crime.rewards && crime.rewards.respect > 0;
+    const isSuccess = crime.status === 'Successful';
+    
     if (isSuccess) {
       entry.success++;
     } else {
@@ -846,12 +857,26 @@ function renderDetails() {
   });
 
   // Sort by tier then name
-  const sorted = Array.from(byCrimeType.values()).sort((a, b) => {
+  let sorted = Array.from(byCrimeType.values()).sort((a, b) => {
     const tierA = CRIME_TIERS[a.name.toLowerCase()] || 99;
     const tierB = CRIME_TIERS[b.name.toLowerCase()] || 99;
     if (tierA !== tierB) return tierA - tierB;
     return a.name.localeCompare(b.name);
   });
+
+  // Apply tier filter
+  if (currentTierFilter !== 'all') {
+    const filterTier = parseInt(currentTierFilter);
+    sorted = sorted.filter(crime => {
+      const tier = CRIME_TIERS[crime.name.toLowerCase()] || 99;
+      return tier === filterTier;
+    });
+  }
+
+  if (sorted.length === 0) {
+    container.innerHTML = '<div class="empty-state">No crimes found for this tier</div>';
+    return;
+  }
 
   container.innerHTML = sorted.map(crime => {
     const tier = getCrimeTier(crime.name);
@@ -1044,7 +1069,7 @@ function renderTimelineChart() {
     const dayIndex = days.findIndex(d => d.date.getTime() === crimeTime);
 
     if (dayIndex !== -1) {
-      const isSuccess = crime.rewards && crime.rewards.respect > 0;
+      const isSuccess = crime.status === 'Successful';
       if (isSuccess) {
         days[dayIndex].success++;
       } else {
