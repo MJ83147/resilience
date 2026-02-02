@@ -19,30 +19,7 @@ const MULTI_STAGE_CRIMES = [
   'gone fission'
 ];
 
-// Crime tiers - fixed tier per crime type
-const CRIME_TIERS = {
-  "pet project": 1,
-  "cash me if you can": 1,
-  "smoke and wing mirrors": 1,
-  "market forces": 1,
-  "mob mentality": 1,
-  "best of the lot": 1,
-  "honey trap": 2,
-  "leave no trace": 2,
-  "snow blind": 2,
-  "sneaky git grab": 3,
-  "no reserve": 3,
-  "stacking the deck": 4,
-  "ace in the hole": 4,
-  "break the bank": 5,
-  "bidding war": 5,
-  "clinical precision": 5,
-  "gaslight the way": 5,
-  "stage fright": 5,
-  "blast from the past": 6,
-  "manifest cruelty": 6,
-  "gone fission": 7
-};
+// Crime tiers come from API (crime.difficulty), not hardcoded
 
 // CPR Requirements from userscript
 const CPR_REQUIREMENTS = {
@@ -148,10 +125,7 @@ function getCPRThreshold(crimeName, position, positionNumber) {
   return 70;
 }
 
-function getCrimeTier(crimeName) {
-  const tier = CRIME_TIERS[crimeName.toLowerCase()];
-  return tier ? `T${tier}` : '';
-}
+// Tier comes from crime.difficulty in the API
 
 function isMultiStageCrime(crimeName) {
   return MULTI_STAGE_CRIMES.includes(crimeName.toLowerCase());
@@ -554,7 +528,7 @@ function renderMissingItems(members) {
   }
 
   list.innerHTML = members.map(m => {
-    const tierText = getCrimeTier(m.crimeName);
+    const tierText = m.difficulty ? `T${m.difficulty}` : '';
     const itemName = itemNames[m.itemId] || `Item #${m.itemId}`;
     return `
       <li class="issue-item">
@@ -580,7 +554,7 @@ function renderLowSuccess(members) {
   }
 
   list.innerHTML = members.map(m => {
-    const tierText = getCrimeTier(m.crimeName);
+    const tierText = m.difficulty ? `T${m.difficulty}` : '';
     const posText = m.positionNumber > 1 ? `${m.position} #${m.positionNumber}` : m.position;
     
     const messageUrl = `https://www.torn.com/messages.php#/p=compose&XID=${m.id}`;
@@ -669,7 +643,7 @@ function renderRewardsTable() {
     
     const avgRespect = data.count > 0 ? Math.round(data.respect / data.count) : 0;
     const avgMoney = data.count > 0 ? Math.round(data.money / data.count) : 0;
-    const tier = getCrimeTier(data.name);
+    const tier = data.tier ? `T${data.tier}` : '';
     const displayName = tier ? `${data.name} (${tier})` : data.name;
     
     return `
@@ -724,10 +698,12 @@ function renderRewards() {
     if (isMultiStageCrime(name)) return;
     
     if (!byCrimeType.has(name)) {
-      byCrimeType.set(name, { name, count: 0, success: 0, failed: 0, respect: 0, money: 0 });
+      byCrimeType.set(name, { name, tier: crime.difficulty || 0, count: 0, success: 0, failed: 0, respect: 0, money: 0 });
     }
     const entry = byCrimeType.get(name);
     entry.count++;
+    // Update tier if we didn't have it
+    if (!entry.tier && crime.difficulty) entry.tier = crime.difficulty;
     countedCrimes++;
 
     const isSuccess = crime.status === 'Successful';
@@ -806,10 +782,12 @@ function renderDetails() {
   completedCrimes.forEach(crime => {
     const name = crime.name;
     const isMultiStage = isMultiStageCrime(name);
+    const tier = crime.difficulty || 0;
     
     if (!byCrimeType.has(name)) {
       byCrimeType.set(name, { 
         name, 
+        tier: tier,
         count: 0, 
         success: 0, 
         failed: 0, 
@@ -819,6 +797,8 @@ function renderDetails() {
     }
     const entry = byCrimeType.get(name);
     entry.count++;
+    // Update tier if we didn't have it before
+    if (!entry.tier && tier) entry.tier = tier;
 
     const isSuccess = crime.status === 'Successful';
     
@@ -858,8 +838,8 @@ function renderDetails() {
 
   // Sort by tier then name
   let sorted = Array.from(byCrimeType.values()).sort((a, b) => {
-    const tierA = CRIME_TIERS[a.name.toLowerCase()] || 99;
-    const tierB = CRIME_TIERS[b.name.toLowerCase()] || 99;
+    const tierA = a.tier || 99;
+    const tierB = b.tier || 99;
     if (tierA !== tierB) return tierA - tierB;
     return a.name.localeCompare(b.name);
   });
@@ -867,10 +847,7 @@ function renderDetails() {
   // Apply tier filter
   if (currentTierFilter !== 'all') {
     const filterTier = parseInt(currentTierFilter);
-    sorted = sorted.filter(crime => {
-      const tier = CRIME_TIERS[crime.name.toLowerCase()] || 99;
-      return tier === filterTier;
-    });
+    sorted = sorted.filter(crime => crime.tier === filterTier);
   }
 
   if (sorted.length === 0) {
@@ -879,7 +856,7 @@ function renderDetails() {
   }
 
   container.innerHTML = sorted.map(crime => {
-    const tier = getCrimeTier(crime.name);
+    const tier = crime.tier ? `T${crime.tier}` : '';
     const successRate = crime.count > 0 ? Math.round((crime.success / crime.count) * 100) : 0;
     
     // Get top 3 by completions for this crime
@@ -972,8 +949,8 @@ function renderMetricChart(data) {
   }
 
   const isRespect = currentMetric === 'respect';
-  const labels = data.map(([name]) => {
-    const tier = getCrimeTier(name);
+  const labels = data.map(([name, d]) => {
+    const tier = d.tier ? `T${d.tier}` : '';
     return tier ? `${name} (${tier})` : name;
   });
   const values = data.map(([, d]) => isRespect ? d.respect : d.money);
