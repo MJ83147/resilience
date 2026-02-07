@@ -224,7 +224,7 @@
       weeks.forEach(function(week) {
         if (!visibleWeeks.has(week)) return;
         headerHTML += '<th class="week-header" onclick="sortBy(\'' + week + ' Energy\')">' + week + ' Avg/Day</th>';
-        headerHTML += '<th onclick="sortBy(\'' + week + ' Trains\')">' + week + ' Trains</th>';
+       
       });
 
       headerHTML += '</tr>';
@@ -287,7 +287,6 @@
           if (!visibleWeeks.has(week)) return;
 
           var energy = row[week + ' Energy'] || '-';
-          var trains = row[week + ' Trains'] || '-';
           var dailyAvg = getDailyAverage(energy, week);
           var displayEnergy = dailyAvg !== null ? dailyAvg : '-';
 
@@ -297,7 +296,6 @@
           }
 
           bodyHTML += '<td class="' + energyClass + '">' + displayEnergy + '</td>';
-          bodyHTML += '<td>' + trains + '</td>';
         });
 
         bodyHTML += '</tr>';
