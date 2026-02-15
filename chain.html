@@ -708,12 +708,12 @@
         }
 
         setProgress(30, 'Fetching chain list...');
-        var chainsResp = await fetch(CHAINS_CSV);
+        var chainsResp = await fetch(CHAINS_CSV, { credentials: 'omit' });
         if (!chainsResp.ok) throw new Error('Failed to load chains sheet');
         parseChainsCSV(await chainsResp.text());
 
         setProgress(50, 'Fetching chain reports...');
-        var reportsResp = await fetch(REPORTS_CSV);
+        var reportsResp = await fetch(REPORTS_CSV, { credentials: 'omit' });
         if (!reportsResp.ok) throw new Error('Failed to load reports sheet');
         parseReportsCSV(await reportsResp.text());
 
