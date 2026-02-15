@@ -167,15 +167,10 @@
     <a href="index.html" class="nav-link">Xanax Tracker</a>
     <a href="energy.html" class="nav-link">Energy Monitor</a>
     <a href="chains.html" class="nav-link" style="color: var(--green); font-weight: 500;">Chain Performance</a>
-    <button class="theme-toggle" onclick="toggleTheme()">Theme</button>
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()"></button>
   </nav>
 
   <div class="container">
-    <div class="header">
-      <h1>Chain Performance</h1>
-      <p>All chains over 5,000 hits. Threshold: 1% of chain length (rounded down).</p>
-    </div>
-
     <div id="loadingState" class="loading-container">
       <p id="loadingText">Loading chain data...</p>
       <div class="progress-bar">
@@ -684,11 +679,18 @@
       var next = current === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
       localStorage.setItem('theme', next);
+      updateThemeBtn();
+    }
+
+    function updateThemeBtn() {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.getElementById('themeBtn').textContent = isDark ? '\u2600\uFE0F Light' : '\uD83C\uDF19 Dark';
     }
 
     (function() {
       var saved = localStorage.getItem('theme');
       if (saved) document.documentElement.setAttribute('data-theme', saved);
+      updateThemeBtn();
     })();
 
     // ---- Load ----
