@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chain Performance - Resilience Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    .progress-bar {
+      width: 300px;
+      height: 4px;
+      background: var(--gray-300);
+      border-radius: 2px;
+      margin: 12px auto 0;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 2px;
+      transition: width 0.3s;
+      width: 0%;
+    }
+
+    .loading-container {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-light);
+      font-size: 14px;
+    }
+
+    .stat-cards {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 18px;
+      min-width: 150px;
+      flex: 1;
+    }
+
+    .stat-card .sc-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+
+    .stat-card .sc-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .stat-card .sc-value.green { color: var(--green); }
+    .stat-card .sc-value.red { color: var(--red); }
+
+    .section-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .section-bar h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .section-bar .sub {
+      font-size: 12px;
+      color: var(--text-light);
+      font-weight: 400;
+    }
+
+    .section {
+      margin-bottom: 24px;
+    }
+
+    .pct-great { color: var(--green); font-weight: 600; }
+    .pct-ok { color: var(--green); }
+    .pct-warn { color: #E65100; font-weight: 500; }
+
+    [data-theme="dark"] .pct-warn { color: #FFB74D; }
+
+    .pct-bad { color: var(--red); font-weight: 600; }
+    .pct-zero { color: var(--red); font-weight: 700; }
+    .pct-absent { color: var(--text-light); }
+
+    .fail-badge {
+      display: inline-block;
+      background: var(--red-light);
+      color: var(--red);
+      font-weight: 600;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .pass-badge {
+      display: inline-block;
+      background: var(--green-light);
+      color: var(--green);
+      font-weight: 600;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .chain-meta {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .chain-meta .cm-item {
+      background: var(--gray-100);
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .chain-meta .cm-item .cm-label {
+      color: var(--text-light);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .chain-meta .cm-item .cm-val {
+      color: var(--text);
+      font-weight: 600;
+      font-size: 14px;
+      margin-top: 1px;
+    }
+
+    .hidden { display: none !important; }
+
+    .error-msg {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--red);
+      font-size: 14px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px 20px;
+      color: var(--text-light);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">Resilience Dashboard</a>
+    <a href="index.html" class="nav-link">Xanax Tracker</a>
+    <a href="energy.html" class="nav-link">Energy Monitor</a>
+    <a href="chains.html" class="nav-link" style="color: var(--green); font-weight: 500;">Chain Performance</a>
+    <button class="theme-toggle" onclick="toggleTheme()">Theme</button>
+  </nav>
+
+  <div class="container">
+    <div class="header">
+      <h1>Chain Performance</h1>
+      <p>All chains over 5,000 hits. Threshold: 1% of chain length (rounded down).</p>
+    </div>
+
+    <div id="loadingState" class="loading-container">
+      <p id="loadingText">Loading chain data...</p>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div id="errorState" class="hidden">
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+
+    <div id="mainContent" class="hidden">
+      <div class="stat-cards" id="statsRow"></div>
+
+      <div class="tab-container">
+        <div class="tab-buttons">
+          <button class="active" data-tab="contributors">Top Contributors</button>
+          <button data-tab="offenders">Repeat Offenders</button>
+          <button data-tab="all">All Members</button>
+          <button data-tab="chain">Chain Detail</button>
+        </div>
+
+        <div class="tab-section active" id="tab-contributors">
+          <div class="section" style="margin-top: 16px;">
+            <div class="section-bar">
+              <h2>Top Contributors <span class="sub">Aggregated across all qualifying chains</span></h2>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead id="contribHead"></thead>
+                <tbody id="contribBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-section" id="tab-offenders">
+          <div class="section" style="margin-top: 16px;">
+            <div class="section-bar">
+              <h2>Repeat Offenders <span class="sub">Failed 1% threshold in 2+ qualifying chains</span></h2>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead id="offenderHead"></thead>
+                <tbody id="offenderBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-section" id="tab-all">
+          <div class="section" style="margin-top: 16px;">
+            <div class="section-bar">
+              <h2>All Members <span class="sub">Performance as % of 1% threshold per chain</span></h2>
+              <input type="text" class="search-box" id="memberSearch" placeholder="Search member..." style="flex: 0; min-width: 180px;">
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead id="allHead"></thead>
+                <tbody id="allBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-section" id="tab-chain">
+          <div class="section" style="margin-top: 16px;">
+            <div class="section-bar">
+              <h2>Chain Detail</h2>
+              <select id="chainSelect" class="week-select"></select>
+            </div>
+            <div class="chain-meta" id="chainMeta"></div>
+            <div class="table-wrapper">
+              <table>
+                <thead id="chainHead"></thead>
+                <tbody id="chainBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =============================================
+    // CONFIG - Update CSV_URL after publishing sheet
+    // =============================================
+    var CSV_URL = 'YOUR_PUBLISHED_SHEET_CSV_URL_HERE';
+    var API_KEY = 'POW66la7QjNjI97z';
+    var TORN_BASE = 'https://api.torn.com/v2';
+
+    // ---- State ----
+    var currentMembers = {};   // id -> name (live from API, current faction only)
+    var chains = {};           // chainId -> { start, end, length, respect, members, war }
+    var chainRows = {};        // chainId -> [ { memberId, hits, respect, avgRespect, warHits } ]
+    var aggregated = {};       // memberId -> { name, totalHits, totalRespect, chainsPresent, chainsFailed, chainData }
+    var sortedChainIds = [];   // chain IDs sorted newest first
+
+    // ---- Helpers ----
+
+    function setProgress(pct, text) {
+      document.getElementById('progressFill').style.width = pct + '%';
+      if (text) document.getElementById('loadingText').textContent = text;
+    }
+
+    function showError(msg) {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('errorState').classList.remove('hidden');
+      document.getElementById('errorMsg').textContent = msg;
+    }
+
+    function formatDate(ts) {
+      var d = new Date(ts * 1000);
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    }
+
+    function formatDuration(start, end) {
+      var mins = Math.round((end - start) / 60);
+      if (mins < 60) return mins + 'm';
+      return Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm';
+    }
+
+    function formatNumber(n) {
+      if (typeof n === 'number') return n.toLocaleString();
+      return n;
+    }
+
+    function getPctClass(pct) {
+      if (pct === 0) return 'pct-zero';
+      if (pct < 50) return 'pct-bad';
+      if (pct < 100) return 'pct-warn';
+      if (pct < 200) return 'pct-ok';
+      return 'pct-great';
+    }
+
+    // ---- CSV parsing ----
+
+    function parseCSV(csv) {
+      var rows = csv.trim().split('\n').map(function(r) {
+        var result = [];
+        var current = '';
+        var inQuotes = false;
+
+        for (var i = 0; i < r.length; i++) {
+          var ch = r[i];
+          if (ch === '"') {
+            inQuotes = !inQuotes;
+          } else if (ch === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += ch;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      });
+
+      var headers = rows[0];
+
+      for (var i = 1; i < rows.length; i++) {
+        var row = rows[i];
+        if (row.length < 13) continue;
+
+        var chainId = parseInt(row[0]);
+        var memberId = parseInt(row[7]);
+
+        if (isNaN(chainId) || isNaN(memberId)) continue;
+
+        // Build chain metadata (once per chain)
+        if (!chains[chainId]) {
+          chains[chainId] = {
+            start: parseInt(row[1]),
+            end: parseInt(row[2]),
+            length: parseInt(row[3]),
+            respect: parseFloat(row[4]),
+            members: parseInt(row[5]),
+            war: parseInt(row[6])
+          };
+        }
+
+        // Build per-chain rows
+        if (!chainRows[chainId]) {
+          chainRows[chainId] = [];
+        }
+
+        chainRows[chainId].push({
+          memberId: memberId,
+          memberName: row[8],
+          hits: parseInt(row[9]) || 0,
+          respect: parseFloat(row[10]) || 0,
+          avgRespect: parseFloat(row[11]) || 0,
+          warHits: parseInt(row[12]) || 0
+        });
+      }
+
+      // Sort chains newest first
+      sortedChainIds = Object.keys(chains).map(Number).sort(function(a, b) {
+        return chains[b].start - chains[a].start;
+      });
+    }
+
+    // ---- Process data ----
+
+    function processData() {
+      aggregated = {};
+
+      sortedChainIds.forEach(function(chainId) {
+        var chain = chains[chainId];
+        var threshold = Math.floor(chain.length * 0.01);
+        var rows = chainRows[chainId] || [];
+
+        rows.forEach(function(row) {
+          // Only include current faction members
+          if (!currentMembers[row.memberId]) return;
+
+          if (!aggregated[row.memberId]) {
+            aggregated[row.memberId] = {
+              name: currentMembers[row.memberId],
+              totalHits: 0,
+              totalRespect: 0,
+              chainsPresent: 0,
+              chainsFailed: 0,
+              chainData: {}
+            };
+          }
+
+          var a = aggregated[row.memberId];
+          a.totalHits += row.hits;
+          a.totalRespect += row.respect;
+          a.chainsPresent += 1;
+
+          var passed = row.hits >= threshold;
+          if (!passed) a.chainsFailed += 1;
+
+          a.chainData[chainId] = {
+            hits: row.hits,
+            respect: row.respect,
+            threshold: threshold,
+            chainLength: chain.length,
+            passed: passed,
+            pct: threshold > 0 ? Math.round((row.hits / threshold) * 100) : 0
+          };
+        });
+      });
+    }
+
+    // ---- Stats ----
+
+    function renderStats() {
+      var ids = Object.keys(aggregated);
+      var totalHits = 0;
+      var totalRespect = 0;
+      var offenderCount = 0;
+
+      ids.forEach(function(id) {
+        totalHits += aggregated[id].totalHits;
+        totalRespect += aggregated[id].totalRespect;
+        if (aggregated[id].chainsFailed > 1) offenderCount++;
+      });
+
+      document.getElementById('statsRow').innerHTML =
+        '<div class="stat-card"><div class="sc-label">Chains Analysed</div><div class="sc-value">' + sortedChainIds.length + '</div></div>' +
+        '<div class="stat-card"><div class="sc-label">Current Members</div><div class="sc-value">' + Object.keys(currentMembers).length + '</div></div>' +
+        '<div class="stat-card"><div class="sc-label">Total Hits</div><div class="sc-value green">' + formatNumber(totalHits) + '</div></div>' +
+        '<div class="stat-card"><div class="sc-label">Total Respect</div><div class="sc-value green">' + formatNumber(Math.round(totalRespect)) + '</div></div>' +
+        '<div class="stat-card"><div class="sc-label">Repeat Offenders</div><div class="sc-value red">' + offenderCount + '</div></div>';
+    }
+
+    // ---- Sorting ----
+
+    var sortStates = {};
+
+    function doSort(tableKey, data, col, renderFn) {
+      if (!sortStates[tableKey]) sortStates[tableKey] = { col: null, asc: true };
+      var s = sortStates[tableKey];
+
+      if (s.col === col) {
+        s.asc = !s.asc;
+      } else {
+        s.col = col;
+        s.asc = col === 'name' ? true : false;
+      }
+
+      data.sort(function(a, b) {
+        var av = a[col], bv = b[col];
+        if (typeof av === 'string') return s.asc ? av.localeCompare(bv) : bv.localeCompare(av);
+        return s.asc ? av - bv : bv - av;
+      });
+
+      renderFn(data, s.col, s.asc);
+    }
+
+    function sc(col, activeCol, asc) {
+      if (col !== activeCol) return '';
+      return asc ? ' class="sorted-asc"' : ' class="sorted-desc"';
+    }
+
+    // ---- Contributors ----
+
+    var contribData = [];
+
+    function renderContributors(data, sortCol, sortAsc) {
+      if (!data) {
+        contribData = [];
+        Object.keys(aggregated).forEach(function(id) {
+          var a = aggregated[id];
+          contribData.push({
+            id: parseInt(id),
+            name: a.name,
+            totalHits: a.totalHits,
+            totalRespect: Math.round(a.totalRespect * 100) / 100,
+            avgRespect: a.totalHits > 0 ? Math.round((a.totalRespect / a.totalHits) * 100) / 100 : 0,
+            chainsPresent: a.chainsPresent,
+            chainsFailed: a.chainsFailed
+          });
+        });
+        contribData.sort(function(a, b) { return b.totalHits - a.totalHits; });
+        sortCol = 'totalHits';
+        sortAsc = false;
+        sortStates['contrib'] = { col: 'totalHits', asc: false };
+        data = contribData;
+      }
+
+      var totalChains = sortedChainIds.length;
+
+      var h = '<tr>';
+      h += '<th' + sc('name', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'name\', renderContributors)">Member</th>';
+      h += '<th' + sc('totalHits', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'totalHits\', renderContributors)">Total Hits</th>';
+      h += '<th' + sc('totalRespect', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'totalRespect\', renderContributors)">Total Respect</th>';
+      h += '<th' + sc('avgRespect', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'avgRespect\', renderContributors)">Avg Respect/Hit</th>';
+      h += '<th' + sc('chainsPresent', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'chainsPresent\', renderContributors)">Chains In</th>';
+      h += '<th' + sc('chainsFailed', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'chainsFailed\', renderContributors)">Times Failed</th>';
+      h += '</tr>';
+      document.getElementById('contribHead').innerHTML = h;
+
+      var body = '';
+      data.forEach(function(row) {
+        var failCell = row.chainsFailed > 0
+          ? '<span class="fail-badge">' + row.chainsFailed + '/' + row.chainsPresent + '</span>'
+          : '<span class="pass-badge">0/' + row.chainsPresent + '</span>';
+
+        body += '<tr>';
+        body += '<td><a href="https://www.torn.com/profiles.php?XID=' + row.id + '" target="_blank">' + row.name + '</a></td>';
+        body += '<td>' + formatNumber(row.totalHits) + '</td>';
+        body += '<td>' + formatNumber(row.totalRespect) + '</td>';
+        body += '<td>' + row.avgRespect.toFixed(2) + '</td>';
+        body += '<td>' + row.chainsPresent + '/' + totalChains + '</td>';
+        body += '<td>' + failCell + '</td>';
+        body += '</tr>';
+      });
+
+      document.getElementById('contribBody').innerHTML = body || '<tr><td colspan="6" class="empty-state">No data</td></tr>';
+    }
+
+    // ---- Offenders ----
+
+    var offenderData = [];
+
+    function renderOffenders(data, sortCol, sortAsc) {
+      if (!data) {
+        offenderData = [];
+        Object.keys(aggregated).forEach(function(id) {
+          var a = aggregated[id];
+          if (a.chainsFailed <= 1) return;
+          offenderData.push({
+            id: parseInt(id),
+            name: a.name,
+            chainsFailed: a.chainsFailed,
+            chainsPresent: a.chainsPresent,
+            failRate: Math.round((a.chainsFailed / a.chainsPresent) * 100),
+            totalHits: a.totalHits
+          });
+        });
+        offenderData.sort(function(a, b) { return b.chainsFailed - a.chainsFailed || b.failRate - a.failRate; });
+        sortCol = 'chainsFailed';
+        sortAsc = false;
+        sortStates['offender'] = { col: 'chainsFailed', asc: false };
+        data = offenderData;
+      }
+
+      var h = '<tr>';
+      h += '<th' + sc('name', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'name\', renderOffenders)">Member</th>';
+      h += '<th' + sc('chainsFailed', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'chainsFailed\', renderOffenders)">Times Failed</th>';
+      h += '<th' + sc('chainsPresent', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'chainsPresent\', renderOffenders)">Chains Present</th>';
+      h += '<th' + sc('failRate', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'failRate\', renderOffenders)">Fail Rate</th>';
+      h += '<th' + sc('totalHits', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'totalHits\', renderOffenders)">Total Hits</th>';
+      h += '</tr>';
+      document.getElementById('offenderHead').innerHTML = h;
+
+      var body = '';
+      data.forEach(function(row) {
+        body += '<tr>';
+        body += '<td><a href="https://www.torn.com/profiles.php?XID=' + row.id + '" target="_blank">' + row.name + '</a></td>';
+        body += '<td><span class="fail-badge">' + row.chainsFailed + '/' + row.chainsPresent + '</span></td>';
+        body += '<td>' + row.chainsPresent + '</td>';
+        body += '<td style="color: var(--red); font-weight: 600;">' + row.failRate + '%</td>';
+        body += '<td>' + formatNumber(row.totalHits) + '</td>';
+        body += '</tr>';
+      });
+
+      document.getElementById('offenderBody').innerHTML = body || '<tr><td colspan="5" class="empty-state">No repeat offenders. Everyone is pulling their weight.</td></tr>';
+    }
+
+    // ---- All Members ----
+
+    var allMemberData = [];
+    var memberSearchTerm = '';
+
+    function buildAllMemberData() {
+      allMemberData = [];
+
+      Object.keys(currentMembers).forEach(function(id) {
+        var numId = parseInt(id);
+        var row = { id: numId, name: currentMembers[numId], chains: {} };
+
+        sortedChainIds.forEach(function(cid) {
+          if (aggregated[numId] && aggregated[numId].chainData[cid]) {
+            row.chains[cid] = aggregated[numId].chainData[cid].pct;
+          } else {
+            row.chains[cid] = null;
+          }
+        });
+
+        allMemberData.push(row);
+      });
+
+      allMemberData.sort(function(a, b) { return a.name.localeCompare(b.name); });
+    }
+
+    function renderAllMembers() {
+      var h = '<tr><th>Member</th>';
+      sortedChainIds.forEach(function(cid) {
+        var chain = chains[cid];
+        h += '<th>' + formatDate(chain.start) + '<br><span style="font-weight:400;font-size:10px;">' + formatNumber(chain.length) + ' hits</span></th>';
+      });
+      h += '</tr>';
+      document.getElementById('allHead').innerHTML = h;
+
+      var filtered = allMemberData.filter(function(row) {
+        if (!memberSearchTerm) return true;
+        return row.name.toLowerCase().indexOf(memberSearchTerm.toLowerCase()) !== -1;
+      });
+
+      var body = '';
+      filtered.forEach(function(row) {
+        body += '<tr>';
+        body += '<td><a href="https://www.torn.com/profiles.php?XID=' + row.id + '" target="_blank">' + row.name + '</a></td>';
+
+        sortedChainIds.forEach(function(cid) {
+          var pct = row.chains[cid];
+          if (pct === null) {
+            body += '<td class="pct-absent">--</td>';
+          } else {
+            body += '<td class="' + getPctClass(pct) + '">' + pct + '%</td>';
+          }
+        });
+
+        body += '</tr>';
+      });
+
+      document.getElementById('allBody').innerHTML = body || '<tr><td colspan="' + (sortedChainIds.length + 1) + '" class="empty-state">No members found</td></tr>';
+    }
+
+    document.getElementById('memberSearch').addEventListener('input', function(e) {
+      memberSearchTerm = e.target.value;
+      renderAllMembers();
+    });
+
+    // ---- Chain Detail ----
+
+    function populateChainSelect() {
+      var select = document.getElementById('chainSelect');
+
+      select.innerHTML = sortedChainIds.map(function(cid) {
+        var c = chains[cid];
+        return '<option value="' + cid + '">' + formatDate(c.start) + ' - ' + formatNumber(c.length) + ' hits - ' + c.respect.toFixed(1) + ' respect</option>';
+      }).join('');
+
+      select.addEventListener('change', function() {
+        renderChainDetail(parseInt(select.value));
+      });
+    }
+
+    function renderChainDetail(chainId) {
+      var chain = chains[chainId];
+      if (!chain) return;
+
+      var threshold = Math.floor(chain.length * 0.01);
+
+      var meta = '';
+      meta += '<div class="cm-item"><div class="cm-label">Length</div><div class="cm-val">' + formatNumber(chain.length) + ' hits</div></div>';
+      meta += '<div class="cm-item"><div class="cm-label">Respect</div><div class="cm-val">' + chain.respect.toFixed(1) + '</div></div>';
+      meta += '<div class="cm-item"><div class="cm-label">Duration</div><div class="cm-val">' + formatDuration(chain.start, chain.end) + '</div></div>';
+      meta += '<div class="cm-item"><div class="cm-label">Members</div><div class="cm-val">' + chain.members + '</div></div>';
+      meta += '<div class="cm-item"><div class="cm-label">1% Threshold</div><div class="cm-val">' + threshold + ' hits</div></div>';
+      meta += '<div class="cm-item"><div class="cm-label">War Hits</div><div class="cm-val">' + formatNumber(chain.war) + '</div></div>';
+      document.getElementById('chainMeta').innerHTML = meta;
+
+      var rows = (chainRows[chainId] || [])
+        .filter(function(r) { return currentMembers[r.memberId]; })
+        .map(function(r) {
+          return {
+            id: r.memberId,
+            name: currentMembers[r.memberId],
+            hits: r.hits,
+            respect: Math.round(r.respect * 100) / 100,
+            avgRespect: r.avgRespect,
+            warHits: r.warHits,
+            passed: r.hits >= threshold,
+            pct: threshold > 0 ? Math.round((r.hits / threshold) * 100) : 0
+          };
+        })
+        .sort(function(a, b) { return b.hits - a.hits; });
+
+      document.getElementById('chainHead').innerHTML =
+        '<tr><th>Member</th><th>Hits</th><th>% of Threshold</th><th>Respect</th><th>Avg Respect</th><th>War Hits</th><th>Status</th></tr>';
+
+      var body = '';
+      rows.forEach(function(row) {
+        var badge = row.passed ? '<span class="pass-badge">Pass</span>' : '<span class="fail-badge">Fail</span>';
+
+        body += '<tr>';
+        body += '<td><a href="https://www.torn.com/profiles.php?XID=' + row.id + '" target="_blank">' + row.name + '</a></td>';
+        body += '<td>' + formatNumber(row.hits) + '</td>';
+        body += '<td class="' + getPctClass(row.pct) + '">' + row.pct + '%</td>';
+        body += '<td>' + formatNumber(row.respect) + '</td>';
+        body += '<td>' + row.avgRespect.toFixed(2) + '</td>';
+        body += '<td>' + formatNumber(row.warHits) + '</td>';
+        body += '<td>' + badge + '</td>';
+        body += '</tr>';
+      });
+
+      document.getElementById('chainBody').innerHTML = body || '<tr><td colspan="7" class="empty-state">No data</td></tr>';
+    }
+
+    // ---- Tabs ----
+
+    document.querySelectorAll('.tab-buttons button').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-buttons button').forEach(function(b) { b.classList.remove('active'); });
+        document.querySelectorAll('.tab-section').forEach(function(s) { s.classList.remove('active'); });
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ---- Theme ----
+
+    function toggleTheme() {
+      var current = document.documentElement.getAttribute('data-theme');
+      var next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    }
+
+    (function() {
+      var saved = localStorage.getItem('theme');
+      if (saved) document.documentElement.setAttribute('data-theme', saved);
+    })();
+
+    // ---- Load ----
+
+    async function loadAll() {
+      try {
+        setProgress(10, 'Fetching current faction members...');
+
+        var membersResp = await fetch(TORN_BASE + '/faction/members', {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'ApiKey ' + API_KEY
+          }
+        });
+
+        if (!membersResp.ok) throw new Error('Members API returned ' + membersResp.status);
+        var membersData = await membersResp.json();
+
+        if (membersData.members) {
+          membersData.members.forEach(function(m) {
+            currentMembers[m.id] = m.name;
+          });
+        }
+
+        setProgress(30, 'Fetching chain data from sheet...');
+
+        var csvResp = await fetch(CSV_URL);
+        if (!csvResp.ok) throw new Error('Failed to load sheet data');
+        var csv = await csvResp.text();
+
+        setProgress(60, 'Parsing data...');
+        parseCSV(csv);
+
+        if (sortedChainIds.length === 0) {
+          showError('No chain data found in sheet. Run the Apps Script first.');
+          return;
+        }
+
+        setProgress(80, 'Processing...');
+        processData();
+
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('mainContent').classList.remove('hidden');
+
+        renderStats();
+        renderContributors();
+        renderOffenders();
+        buildAllMemberData();
+        renderAllMembers();
+        populateChainSelect();
+        renderChainDetail(sortedChainIds[0]);
+
+      } catch (err) {
+        showError('Failed to load: ' + err.message);
+      }
+    }
+
+    loadAll();
+  </script>
+</body>
+</html>
