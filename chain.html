@@ -708,13 +708,39 @@
         }
 
         setProgress(30, 'Fetching chain list...');
-        var chainsResp = await fetch(CHAINS_CSV, { credentials: 'omit' });
-        if (!chainsResp.ok) throw new Error('Failed to load chains sheet');
-        parseChainsCSV(await chainsResp.text());
+        console.log('Fetching chains from:', CHAINS_CSV);
+        try {
+          var chainsResp = await fetch(CHAINS_CSV, { credentials: 'omit', redirect: 'error' });
+          console.log('Chains response status:', chainsResp.status);
+          console.log('Chains response URL:', chainsResp.url);
+          console.log('Chains response type:', chainsResp.type);
+        } catch (fetchErr) {
+          console.error('Chains fetch failed (likely redirect):', fetchErr);
+          // Try alternative URL format
+          var altChainsUrl = CHAINS_CSV.replace('/pub?', '/gviz/tq?tqx=out:csv&');
+          console.log('Trying alternative URL:', altChainsUrl);
+          var chainsResp = await fetch(altChainsUrl, { credentials: 'omit' });
+          console.log('Alt chains response status:', chainsResp.status);
+        }
+        if (!chainsResp.ok) throw new Error('Failed to load chains sheet (status: ' + chainsResp.status + ')');
+        var chainsText = await chainsResp.text();
+        console.log('Chains CSV first 200 chars:', chainsText.substring(0, 200));
+        parseChainsCSV(chainsText);
 
         setProgress(50, 'Fetching chain reports...');
-        var reportsResp = await fetch(REPORTS_CSV, { credentials: 'omit' });
-        if (!reportsResp.ok) throw new Error('Failed to load reports sheet');
+        console.log('Fetching reports from:', REPORTS_CSV);
+        try {
+          var reportsResp = await fetch(REPORTS_CSV, { credentials: 'omit', redirect: 'error' });
+          console.log('Reports response status:', reportsResp.status);
+          console.log('Reports response URL:', reportsResp.url);
+        } catch (fetchErr) {
+          console.error('Reports fetch failed (likely redirect):', fetchErr);
+          var altReportsUrl = REPORTS_CSV.replace('/pub?', '/gviz/tq?tqx=out:csv&');
+          console.log('Trying alternative URL:', altReportsUrl);
+          var reportsResp = await fetch(altReportsUrl, { credentials: 'omit' });
+          console.log('Alt reports response status:', reportsResp.status);
+        }
+        if (!reportsResp.ok) throw new Error('Failed to load reports sheet (status: ' + reportsResp.status + ')');
         parseReportsCSV(await reportsResp.text());
 
         if (sortedChainIds.length === 0) {
