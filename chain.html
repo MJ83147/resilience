@@ -64,29 +64,79 @@
     .stat-card .sc-value.green { color: var(--green); }
     .stat-card .sc-value.red { color: var(--red); }
 
-    .section-bar {
+    /* Two column layout */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    @media (max-width: 1100px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .right-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--gray-200);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 8px;
       flex-wrap: wrap;
       gap: 8px;
     }
 
-    .section-bar h2 {
-      font-size: 16px;
+    .panel-header h2 {
+      font-size: 15px;
       font-weight: 600;
       color: var(--text);
+      margin: 0;
     }
 
-    .section-bar .sub {
-      font-size: 12px;
+    .panel-header .sub {
+      font-size: 11px;
       color: var(--text-light);
       font-weight: 400;
     }
 
-    .section { margin-bottom: 24px; }
+    .panel-body {
+      overflow-x: auto;
+      max-height: 600px;
+      overflow-y: auto;
+    }
 
+    .panel-body table {
+      min-width: auto;
+    }
+
+    /* Member links */
+    td a {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    td a:hover {
+      color: var(--green);
+      text-decoration: underline;
+    }
+
+    /* Percentage colors */
     .pct-great { color: var(--green); font-weight: 600; }
     .pct-ok { color: var(--green); }
     .pct-warn { color: #E65100; font-weight: 500; }
@@ -113,6 +163,11 @@
       font-size: 12px;
       padding: 2px 8px;
       border-radius: 4px;
+    }
+
+    /* Chain detail section */
+    .chain-detail {
+      margin-top: 16px;
     }
 
     .chain-meta {
@@ -159,6 +214,12 @@
       color: var(--text-light);
       font-size: 13px;
     }
+
+    .rank-cell {
+      color: var(--text-light);
+      font-size: 12px;
+      font-weight: 400;
+    }
   </style>
 </head>
 <body>
@@ -182,34 +243,49 @@
     <div id="mainContent" class="hidden">
       <div class="stat-cards" id="statsRow"></div>
 
-      <div class="tab-container">
-        <div class="tab-buttons">
-          <button class="active" data-tab="contributors">Top Contributors</button>
-          <button data-tab="offenders">Repeat Offenders</button>
-          <button data-tab="all">All Members</button>
-          <button data-tab="chain">Chain Detail</button>
+      <div class="main-layout">
+        <!-- Left: All Members -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>All Members</h2>
+              <span class="sub">Performance as % of 1% threshold per chain</span>
+            </div>
+            <input type="text" class="search-box" id="memberSearch" placeholder="Search member..." style="flex: 0; min-width: 160px; margin: 0;">
+          </div>
+          <div class="panel-body" style="max-height: 700px;">
+            <table>
+              <thead id="allHead"></thead>
+              <tbody id="allBody"></tbody>
+            </table>
+          </div>
         </div>
 
-        <div class="tab-section active" id="tab-contributors">
-          <div class="section" style="margin-top: 16px;">
-            <div class="section-bar">
-              <h2>Top Contributors <span class="sub">Aggregated across all qualifying chains</span></h2>
+        <!-- Right: stacked -->
+        <div class="right-stack">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Top Contributors</h2>
+                <span class="sub">Last 5 qualifying chains</span>
+              </div>
             </div>
-            <div class="table-wrapper">
+            <div class="panel-body">
               <table>
                 <thead id="contribHead"></thead>
                 <tbody id="contribBody"></tbody>
               </table>
             </div>
           </div>
-        </div>
 
-        <div class="tab-section" id="tab-offenders">
-          <div class="section" style="margin-top: 16px;">
-            <div class="section-bar">
-              <h2>Repeat Offenders <span class="sub">Failed 1% threshold in 2+ qualifying chains</span></h2>
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Repeat Offenders</h2>
+                <span class="sub">Failed 1% in 2+ of last 5 qualifying chains</span>
+              </div>
             </div>
-            <div class="table-wrapper">
+            <div class="panel-body">
               <table>
                 <thead id="offenderHead"></thead>
                 <tbody id="offenderBody"></tbody>
@@ -217,35 +293,21 @@
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="tab-section" id="tab-all">
-          <div class="section" style="margin-top: 16px;">
-            <div class="section-bar">
-              <h2>All Members <span class="sub">Performance as % of 1% threshold per chain</span></h2>
-              <input type="text" class="search-box" id="memberSearch" placeholder="Search member..." style="flex: 0; min-width: 180px;">
-            </div>
-            <div class="table-wrapper">
-              <table>
-                <thead id="allHead"></thead>
-                <tbody id="allBody"></tbody>
-              </table>
-            </div>
+      <!-- Chain Detail below -->
+      <div class="chain-detail">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Chain Detail</h2>
+            <select id="chainSelect" class="week-select"></select>
           </div>
-        </div>
-
-        <div class="tab-section" id="tab-chain">
-          <div class="section" style="margin-top: 16px;">
-            <div class="section-bar">
-              <h2>Chain Detail</h2>
-              <select id="chainSelect" class="week-select"></select>
-            </div>
-            <div class="chain-meta" id="chainMeta"></div>
-            <div class="table-wrapper">
-              <table>
-                <thead id="chainHead"></thead>
-                <tbody id="chainBody"></tbody>
-              </table>
-            </div>
+          <div class="chain-meta" id="chainMeta"></div>
+          <div class="panel-body">
+            <table>
+              <thead id="chainHead"></thead>
+              <tbody id="chainBody"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -258,13 +320,16 @@
     var REPORTS_CSV = 'https://docs.google.com/spreadsheets/d/1garCJf8OdTzWaNgdXfOMIKtR3MmG8-kuAjh1r-ln2CE/gviz/tq?tqx=out:csv&sheet=ChainReports';
     var API_KEY = 'POW66la7QjNjI97z';
     var TORN_BASE = 'https://api.torn.com/v2';
+    var RECENT_COUNT = 5;
 
     // ---- State ----
-    var currentMembers = {};   // id -> name
-    var chains = {};           // chainId -> { length }
-    var chainRows = {};        // chainId -> [ { memberId, hits, respect, avgRespect, warHits } ]
-    var aggregated = {};       // memberId -> aggregated stats
-    var sortedChainIds = [];   // sorted by length desc
+    var currentMembers = {};
+    var chains = {};
+    var chainRows = {};
+    var aggregated = {};
+    var recentAggregated = {};
+    var sortedChainIds = [];
+    var recentChainIds = [];
 
     // ---- Helpers ----
 
@@ -312,7 +377,6 @@
 
     function parseChainsCSV(csv) {
       var rows = parseCSV(csv);
-      // Skip header: ChainID, ChainLength
       for (var i = 1; i < rows.length; i++) {
         var id = parseInt(rows[i][0]);
         var length = parseInt(rows[i][1]);
@@ -320,29 +384,21 @@
           chains[id] = { length: length };
         }
       }
-
-      // Sort by length descending
-      sortedChainIds = Object.keys(chains).map(Number).sort(function(a, b) {
-        return chains[b].length - chains[a].length;
-      });
+      // Sort by chain ID descending (most recent first)
+      sortedChainIds = Object.keys(chains).map(Number).sort(function(a, b) { return b - a; });
+      recentChainIds = sortedChainIds.slice(0, RECENT_COUNT);
     }
 
     function parseReportsCSV(csv) {
       var rows = parseCSV(csv);
-      // Skip header: ChainID, MemberID, MemberName, Hits, Respect, AvgRespect, WarHits
       for (var i = 1; i < rows.length; i++) {
         var row = rows[i];
         if (row.length < 7) continue;
-
         var chainId = parseInt(row[0]);
         var memberId = parseInt(row[1]);
         if (isNaN(chainId) || isNaN(memberId)) continue;
-
-        // Skip chains we don't have in the chains list
         if (!chains[chainId]) continue;
-
         if (!chainRows[chainId]) chainRows[chainId] = [];
-
         chainRows[chainId].push({
           memberId: memberId,
           hits: parseInt(row[3]) || 0,
@@ -356,64 +412,72 @@
     // ---- Process ----
 
     function processData() {
+      // All chains aggregation (for All Members table)
       aggregated = {};
-
       sortedChainIds.forEach(function(chainId) {
-        var chain = chains[chainId];
-        var threshold = Math.floor(chain.length * 0.01);
-        var rows = chainRows[chainId] || [];
+        processChainForAgg(chainId, aggregated);
+      });
 
-        rows.forEach(function(row) {
-          if (!currentMembers[row.memberId]) return;
+      // Recent 5 chains aggregation (for top contributors + offenders)
+      recentAggregated = {};
+      recentChainIds.forEach(function(chainId) {
+        processChainForAgg(chainId, recentAggregated);
+      });
+    }
 
-          if (!aggregated[row.memberId]) {
-            aggregated[row.memberId] = {
-              name: currentMembers[row.memberId],
-              totalHits: 0,
-              totalRespect: 0,
-              chainsPresent: 0,
-              chainsFailed: 0,
-              chainData: {}
-            };
-          }
+    function processChainForAgg(chainId, agg) {
+      var chain = chains[chainId];
+      var threshold = Math.floor(chain.length * 0.01);
+      var rows = chainRows[chainId] || [];
 
-          var a = aggregated[row.memberId];
-          a.totalHits += row.hits;
-          a.totalRespect += row.respect;
-          a.chainsPresent += 1;
+      rows.forEach(function(row) {
+        if (!currentMembers[row.memberId]) return;
 
-          var passed = row.hits >= threshold;
-          if (!passed) a.chainsFailed += 1;
-
-          a.chainData[chainId] = {
-            hits: row.hits,
-            threshold: threshold,
-            passed: passed,
-            pct: threshold > 0 ? Math.round((row.hits / threshold) * 100) : 0
+        if (!agg[row.memberId]) {
+          agg[row.memberId] = {
+            name: currentMembers[row.memberId],
+            totalHits: 0,
+            totalRespect: 0,
+            chainsPresent: 0,
+            chainsFailed: 0,
+            chainData: {}
           };
-        });
+        }
+
+        var a = agg[row.memberId];
+        a.totalHits += row.hits;
+        a.totalRespect += row.respect;
+        a.chainsPresent += 1;
+        if (row.hits < threshold) a.chainsFailed += 1;
+
+        a.chainData[chainId] = {
+          hits: row.hits,
+          threshold: threshold,
+          passed: row.hits >= threshold,
+          pct: threshold > 0 ? Math.round((row.hits / threshold) * 100) : 0
+        };
       });
     }
 
     // ---- Stats ----
 
     function renderStats() {
-      var ids = Object.keys(aggregated);
+      var ids = Object.keys(recentAggregated);
       var totalHits = 0;
       var totalRespect = 0;
       var offenderCount = 0;
 
       ids.forEach(function(id) {
-        totalHits += aggregated[id].totalHits;
-        totalRespect += aggregated[id].totalRespect;
-        if (aggregated[id].chainsFailed > 1) offenderCount++;
+        totalHits += recentAggregated[id].totalHits;
+        totalRespect += recentAggregated[id].totalRespect;
+        if (recentAggregated[id].chainsFailed > 1) offenderCount++;
       });
 
       document.getElementById('statsRow').innerHTML =
-        '<div class="stat-card"><div class="sc-label">Chains Analysed</div><div class="sc-value">' + sortedChainIds.length + '</div></div>' +
+        '<div class="stat-card"><div class="sc-label">Chains Tracked</div><div class="sc-value">' + sortedChainIds.length + '</div></div>' +
         '<div class="stat-card"><div class="sc-label">Current Members</div><div class="sc-value">' + Object.keys(currentMembers).length + '</div></div>' +
-        '<div class="stat-card"><div class="sc-label">Total Hits</div><div class="sc-value green">' + formatNumber(totalHits) + '</div></div>' +
-        '<div class="stat-card"><div class="sc-label">Total Respect</div><div class="sc-value green">' + formatNumber(Math.round(totalRespect)) + '</div></div>' +
+        '<div class="stat-card"><div class="sc-label">Hits (Last 5)</div><div class="sc-value green">' + formatNumber(totalHits) + '</div></div>' +
+        '<div class="stat-card"><div class="sc-label">Respect (Last 5)</div><div class="sc-value green">' + formatNumber(Math.round(totalRespect)) + '</div></div>' +
         '<div class="stat-card"><div class="sc-label">Repeat Offenders</div><div class="sc-value red">' + offenderCount + '</div></div>';
     }
 
@@ -426,7 +490,6 @@
       var s = sortStates[tableKey];
       if (s.col === col) { s.asc = !s.asc; }
       else { s.col = col; s.asc = col === 'name' ? true : false; }
-
       data.sort(function(a, b) {
         var av = a[col], bv = b[col];
         if (typeof av === 'string') return s.asc ? av.localeCompare(bv) : bv.localeCompare(av);
@@ -440,15 +503,15 @@
       return asc ? ' class="sorted-asc"' : ' class="sorted-desc"';
     }
 
-    // ---- Contributors ----
+    // ---- Top Contributors (recent 5) ----
 
     var contribData = [];
 
     function renderContributors(data, sortCol, sortAsc) {
       if (!data) {
         contribData = [];
-        Object.keys(aggregated).forEach(function(id) {
-          var a = aggregated[id];
+        Object.keys(recentAggregated).forEach(function(id) {
+          var a = recentAggregated[id];
           contribData.push({
             id: parseInt(id),
             name: a.name,
@@ -465,19 +528,16 @@
         data = contribData;
       }
 
-      var total = sortedChainIds.length;
       var h = '<tr>';
       h += '<th' + sc('name', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'name\', renderContributors)">Member</th>';
-      h += '<th' + sc('totalHits', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'totalHits\', renderContributors)">Total Hits</th>';
-      h += '<th' + sc('totalRespect', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'totalRespect\', renderContributors)">Total Respect</th>';
-      h += '<th' + sc('avgRespect', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'avgRespect\', renderContributors)">Avg Respect/Hit</th>';
-      h += '<th' + sc('chainsPresent', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'chainsPresent\', renderContributors)">Chains In</th>';
-      h += '<th' + sc('chainsFailed', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'chainsFailed\', renderContributors)">Times Failed</th>';
+      h += '<th' + sc('totalHits', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'totalHits\', renderContributors)">Hits</th>';
+      h += '<th' + sc('totalRespect', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'totalRespect\', renderContributors)">Respect</th>';
+      h += '<th' + sc('chainsFailed', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'chainsFailed\', renderContributors)">Failed</th>';
       h += '</tr>';
       document.getElementById('contribHead').innerHTML = h;
 
       var body = '';
-      data.forEach(function(row) {
+      data.forEach(function(row, i) {
         var failCell = row.chainsFailed > 0
           ? '<span class="fail-badge">' + row.chainsFailed + '/' + row.chainsPresent + '</span>'
           : '<span class="pass-badge">0/' + row.chainsPresent + '</span>';
@@ -485,23 +545,21 @@
         body += '<td><a href="https://www.torn.com/profiles.php?XID=' + row.id + '" target="_blank">' + row.name + '</a></td>';
         body += '<td>' + formatNumber(row.totalHits) + '</td>';
         body += '<td>' + formatNumber(row.totalRespect) + '</td>';
-        body += '<td>' + row.avgRespect.toFixed(2) + '</td>';
-        body += '<td>' + row.chainsPresent + '/' + total + '</td>';
         body += '<td>' + failCell + '</td>';
         body += '</tr>';
       });
-      document.getElementById('contribBody').innerHTML = body || '<tr><td colspan="6" class="empty-state">No data</td></tr>';
+      document.getElementById('contribBody').innerHTML = body || '<tr><td colspan="4" class="empty-state">No data</td></tr>';
     }
 
-    // ---- Offenders ----
+    // ---- Offenders (recent 5) ----
 
     var offenderData = [];
 
     function renderOffenders(data, sortCol, sortAsc) {
       if (!data) {
         offenderData = [];
-        Object.keys(aggregated).forEach(function(id) {
-          var a = aggregated[id];
+        Object.keys(recentAggregated).forEach(function(id) {
+          var a = recentAggregated[id];
           if (a.chainsFailed <= 1) return;
           offenderData.push({
             id: parseInt(id),
@@ -520,8 +578,7 @@
 
       var h = '<tr>';
       h += '<th' + sc('name', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'name\', renderOffenders)">Member</th>';
-      h += '<th' + sc('chainsFailed', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'chainsFailed\', renderOffenders)">Times Failed</th>';
-      h += '<th' + sc('chainsPresent', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'chainsPresent\', renderOffenders)">Chains Present</th>';
+      h += '<th' + sc('chainsFailed', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'chainsFailed\', renderOffenders)">Failed</th>';
       h += '<th' + sc('failRate', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'failRate\', renderOffenders)">Fail Rate</th>';
       h += '<th' + sc('totalHits', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'totalHits\', renderOffenders)">Total Hits</th>';
       h += '</tr>';
@@ -532,15 +589,14 @@
         body += '<tr>';
         body += '<td><a href="https://www.torn.com/profiles.php?XID=' + row.id + '" target="_blank">' + row.name + '</a></td>';
         body += '<td><span class="fail-badge">' + row.chainsFailed + '/' + row.chainsPresent + '</span></td>';
-        body += '<td>' + row.chainsPresent + '</td>';
         body += '<td style="color: var(--red); font-weight: 600;">' + row.failRate + '%</td>';
         body += '<td>' + formatNumber(row.totalHits) + '</td>';
         body += '</tr>';
       });
-      document.getElementById('offenderBody').innerHTML = body || '<tr><td colspan="5" class="empty-state">No repeat offenders. Everyone is pulling their weight.</td></tr>';
+      document.getElementById('offenderBody').innerHTML = body || '<tr><td colspan="4" class="empty-state">No repeat offenders. Everyone is pulling their weight.</td></tr>';
     }
 
-    // ---- All Members ----
+    // ---- All Members (all chains) ----
 
     var allMemberData = [];
     var memberSearchTerm = '';
@@ -550,7 +606,6 @@
       Object.keys(currentMembers).forEach(function(id) {
         var numId = parseInt(id);
         var row = { id: numId, name: currentMembers[numId], chains: {} };
-
         sortedChainIds.forEach(function(cid) {
           if (aggregated[numId] && aggregated[numId].chainData[cid]) {
             row.chains[cid] = aggregated[numId].chainData[cid].pct;
@@ -558,7 +613,6 @@
             row.chains[cid] = null;
           }
         });
-
         allMemberData.push(row);
       });
       allMemberData.sort(function(a, b) { return a.name.localeCompare(b.name); });
@@ -567,7 +621,7 @@
     function renderAllMembers() {
       var h = '<tr><th>Member</th>';
       sortedChainIds.forEach(function(cid) {
-        h += '<th>' + formatNumber(chains[cid].length) + ' hits</th>';
+        h += '<th>' + formatNumber(chains[cid].length) + '</th>';
       });
       h += '</tr>';
       document.getElementById('allHead').innerHTML = h;
@@ -606,7 +660,6 @@
       select.innerHTML = sortedChainIds.map(function(cid) {
         return '<option value="' + cid + '">' + formatNumber(chains[cid].length) + ' hits (ID: ' + cid + ')</option>';
       }).join('');
-
       select.addEventListener('change', function() {
         renderChainDetail(parseInt(select.value));
       });
@@ -615,13 +668,11 @@
     function renderChainDetail(chainId) {
       var chain = chains[chainId];
       if (!chain) return;
-
       var threshold = Math.floor(chain.length * 0.01);
 
-      var meta = '';
-      meta += '<div class="cm-item"><div class="cm-label">Length</div><div class="cm-val">' + formatNumber(chain.length) + ' hits</div></div>';
-      meta += '<div class="cm-item"><div class="cm-label">1% Threshold</div><div class="cm-val">' + threshold + ' hits</div></div>';
-      document.getElementById('chainMeta').innerHTML = meta;
+      document.getElementById('chainMeta').innerHTML =
+        '<div class="cm-item"><div class="cm-label">Length</div><div class="cm-val">' + formatNumber(chain.length) + ' hits</div></div>' +
+        '<div class="cm-item"><div class="cm-label">1% Threshold</div><div class="cm-val">' + threshold + ' hits</div></div>';
 
       var rows = (chainRows[chainId] || [])
         .filter(function(r) { return currentMembers[r.memberId]; })
@@ -657,17 +708,6 @@
       });
       document.getElementById('chainBody').innerHTML = body || '<tr><td colspan="7" class="empty-state">No data</td></tr>';
     }
-
-    // ---- Tabs ----
-
-    document.querySelectorAll('.tab-buttons button').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.tab-buttons button').forEach(function(b) { b.classList.remove('active'); });
-        document.querySelectorAll('.tab-section').forEach(function(s) { s.classList.remove('active'); });
-        btn.classList.add('active');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-      });
-    });
 
     // ---- Theme ----
 
