@@ -162,14 +162,6 @@
   </style>
 </head>
 <body>
-  <nav class="navbar">
-    <a href="index.html" class="nav-brand">Resilience Dashboard</a>
-    <a href="index.html" class="nav-link">Xanax Tracker</a>
-    <a href="energy.html" class="nav-link">Energy Monitor</a>
-    <a href="chains.html" class="nav-link" style="color: var(--green); font-weight: 500;">Chain Performance</a>
-    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()"></button>
-  </nav>
-
   <div class="container">
     <div id="loadingState" class="loading-container">
       <p id="loadingText">Loading chain data...</p>
@@ -257,8 +249,8 @@
 
   <script>
     // ---- Config ----
-    var CHAINS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQoM_H3M6BnzoCD0IDg6c9Cb4SLN_PxYe3liXQetJkX949FGITPXiYKAvrPFFeOkD7QFRfIlH0uOqNU/pub?gid=54920680&single=true&output=csv';
-    var REPORTS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQoM_H3M6BnzoCD0IDg6c9Cb4SLN_PxYe3liXQetJkX949FGITPXiYKAvrPFFeOkD7QFRfIlH0uOqNU/pub?gid=1334017932&single=true&output=csv';
+    var CHAINS_CSV = 'https://docs.google.com/spreadsheets/d/1garCJf8OdTzWaNgdXfOMIKtR3MmG8-kuAjh1r-ln2CE/gviz/tq?tqx=out:csv&sheet=Chains';
+    var REPORTS_CSV = 'https://docs.google.com/spreadsheets/d/1garCJf8OdTzWaNgdXfOMIKtR3MmG8-kuAjh1r-ln2CE/gviz/tq?tqx=out:csv&sheet=ChainReports';
     var API_KEY = 'POW66la7QjNjI97z';
     var TORN_BASE = 'https://api.torn.com/v2';
 
@@ -708,39 +700,13 @@
         }
 
         setProgress(30, 'Fetching chain list...');
-        console.log('Fetching chains from:', CHAINS_CSV);
-        try {
-          var chainsResp = await fetch(CHAINS_CSV, { credentials: 'omit', redirect: 'error' });
-          console.log('Chains response status:', chainsResp.status);
-          console.log('Chains response URL:', chainsResp.url);
-          console.log('Chains response type:', chainsResp.type);
-        } catch (fetchErr) {
-          console.error('Chains fetch failed (likely redirect):', fetchErr);
-          // Try alternative URL format
-          var altChainsUrl = CHAINS_CSV.replace('/pub?', '/gviz/tq?tqx=out:csv&');
-          console.log('Trying alternative URL:', altChainsUrl);
-          var chainsResp = await fetch(altChainsUrl, { credentials: 'omit' });
-          console.log('Alt chains response status:', chainsResp.status);
-        }
-        if (!chainsResp.ok) throw new Error('Failed to load chains sheet (status: ' + chainsResp.status + ')');
-        var chainsText = await chainsResp.text();
-        console.log('Chains CSV first 200 chars:', chainsText.substring(0, 200));
-        parseChainsCSV(chainsText);
+        var chainsResp = await fetch(CHAINS_CSV);
+        if (!chainsResp.ok) throw new Error('Failed to load chains sheet');
+        parseChainsCSV(await chainsResp.text());
 
         setProgress(50, 'Fetching chain reports...');
-        console.log('Fetching reports from:', REPORTS_CSV);
-        try {
-          var reportsResp = await fetch(REPORTS_CSV, { credentials: 'omit', redirect: 'error' });
-          console.log('Reports response status:', reportsResp.status);
-          console.log('Reports response URL:', reportsResp.url);
-        } catch (fetchErr) {
-          console.error('Reports fetch failed (likely redirect):', fetchErr);
-          var altReportsUrl = REPORTS_CSV.replace('/pub?', '/gviz/tq?tqx=out:csv&');
-          console.log('Trying alternative URL:', altReportsUrl);
-          var reportsResp = await fetch(altReportsUrl, { credentials: 'omit' });
-          console.log('Alt reports response status:', reportsResp.status);
-        }
-        if (!reportsResp.ok) throw new Error('Failed to load reports sheet (status: ' + reportsResp.status + ')');
+        var reportsResp = await fetch(REPORTS_CSV);
+        if (!reportsResp.ok) throw new Error('Failed to load reports sheet');
         parseReportsCSV(await reportsResp.text());
 
         if (sortedChainIds.length === 0) {
