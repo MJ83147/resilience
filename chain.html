@@ -237,6 +237,24 @@
       font-size: 12px;
       font-weight: 400;
     }
+
+    .toggle-btn {
+      background: var(--gray-100);
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-light);
+      cursor: pointer;
+    }
+
+    .toggle-btn.active {
+      background: var(--green-light);
+      border-color: var(--green);
+      color: var(--green);
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -261,19 +279,31 @@
       <div class="stat-cards" id="statsRow"></div>
 
       <div class="main-layout">
-        <!-- Left: All Members -->
+        <!-- Left: Toggle between All Members / Chain Detail -->
         <div class="panel">
           <div class="panel-header">
-            <div>
-              <h2>All Members</h2>
-              <span class="sub">Performance as % of 1% threshold per chain</span>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="toggle-btn active" id="btnAllMembers" onclick="showLeftView('members')">All Members</button>
+              <button class="toggle-btn" id="btnChainDetail" onclick="showLeftView('chain')">Chain Detail</button>
             </div>
-            <input type="text" class="search-box" id="memberSearch" placeholder="Search member..." style="flex: 0; min-width: 160px; margin: 0;">
+            <div id="memberSearchWrap">
+              <input type="text" class="search-box" id="memberSearch" placeholder="Search member..." style="flex: 0; min-width: 160px; margin: 0;">
+            </div>
+            <div id="chainSelectWrap" class="hidden">
+              <select id="chainSelect" class="week-select"></select>
+            </div>
           </div>
-          <div class="panel-body" style="max-height: 700px;">
+          <div id="chainMeta" class="chain-meta hidden"></div>
+          <div class="panel-body" style="max-height: 700px;" id="leftMembersView">
             <table>
               <thead id="allHead"></thead>
               <tbody id="allBody"></tbody>
+            </table>
+          </div>
+          <div class="panel-body hidden" style="max-height: 700px;" id="leftChainView">
+            <table>
+              <thead id="chainHead"></thead>
+              <tbody id="chainBody"></tbody>
             </table>
           </div>
         </div>
@@ -283,14 +313,29 @@
           <div class="panel">
             <div class="panel-header">
               <div>
-                <h2>Top Contributors</h2>
-                <span class="sub">100%+ of threshold across last 5 chains</span>
+                <h2>Exceeded</h2>
+                <span class="sub">Over 100% in every chain</span>
               </div>
             </div>
             <div class="panel-body">
               <table>
-                <thead id="contribHead"></thead>
-                <tbody id="contribBody"></tbody>
+                <thead id="exceededHead"></thead>
+                <tbody id="exceededBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Consistent</h2>
+                <span class="sub">Hit 100% in every chain</span>
+              </div>
+            </div>
+            <div class="panel-body">
+              <table>
+                <thead id="consistentHead"></thead>
+                <tbody id="consistentBody"></tbody>
               </table>
             </div>
           </div>
@@ -311,23 +356,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Chain Detail below -->
-      <div class="chain-detail">
-        <div class="panel">
-          <div class="panel-header">
-            <h2>Chain Detail</h2>
-            <select id="chainSelect" class="week-select"></select>
-          </div>
-          <div class="chain-meta" id="chainMeta"></div>
-          <div class="panel-body">
-            <table>
-              <thead id="chainHead"></thead>
-              <tbody id="chainBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -337,16 +365,42 @@
     var REPORTS_CSV = 'https://docs.google.com/spreadsheets/d/1garCJf8OdTzWaNgdXfOMIKtR3MmG8-kuAjh1r-ln2CE/gviz/tq?tqx=out:csv&sheet=ChainReports';
     var API_KEY = 'POW66la7QjNjI97z';
     var TORN_BASE = 'https://api.torn.com/v2';
-    var RECENT_COUNT = 5;
 
     // ---- State ----
     var currentMembers = {};
     var chains = {};
     var chainRows = {};
     var aggregated = {};
-    var recentAggregated = {};
     var sortedChainIds = [];
-    var recentChainIds = [];
+
+    // ---- Left panel toggle ----
+    function showLeftView(view) {
+      var membersView = document.getElementById('leftMembersView');
+      var chainView = document.getElementById('leftChainView');
+      var searchWrap = document.getElementById('memberSearchWrap');
+      var selectWrap = document.getElementById('chainSelectWrap');
+      var metaEl = document.getElementById('chainMeta');
+      var btnAll = document.getElementById('btnAllMembers');
+      var btnChain = document.getElementById('btnChainDetail');
+
+      if (view === 'members') {
+        membersView.classList.remove('hidden');
+        chainView.classList.add('hidden');
+        searchWrap.classList.remove('hidden');
+        selectWrap.classList.add('hidden');
+        metaEl.classList.add('hidden');
+        btnAll.classList.add('active');
+        btnChain.classList.remove('active');
+      } else {
+        membersView.classList.add('hidden');
+        chainView.classList.remove('hidden');
+        searchWrap.classList.add('hidden');
+        selectWrap.classList.remove('hidden');
+        metaEl.classList.remove('hidden');
+        btnAll.classList.remove('active');
+        btnChain.classList.add('active');
+      }
+    }
 
     // ---- Helpers ----
 
@@ -403,7 +457,6 @@
       }
       // Sort by chain ID descending (most recent first)
       sortedChainIds = Object.keys(chains).map(Number).sort(function(a, b) { return b - a; });
-      recentChainIds = sortedChainIds.slice(0, RECENT_COUNT);
     }
 
     function parseReportsCSV(csv) {
@@ -429,16 +482,9 @@
     // ---- Process ----
 
     function processData() {
-      // All chains aggregation (for All Members table)
       aggregated = {};
       sortedChainIds.forEach(function(chainId) {
         processChainForAgg(chainId, aggregated);
-      });
-
-      // Recent 5 chains aggregation (for top contributors + offenders)
-      recentAggregated = {};
-      recentChainIds.forEach(function(chainId) {
-        processChainForAgg(chainId, recentAggregated);
       });
     }
 
@@ -471,6 +517,7 @@
             score: 0,
             tiers: { over: 0, success: 0, missed: 0, fail: 0, abysmal: 0, awful: 0 },
             allSuccess: true,
+            allExceeded: true,
             chainData: {}
           };
         }
@@ -485,6 +532,7 @@
         a.score += TIER_SCORES[tier];
         a.tiers[tier] += 1;
         if (tier !== 'over' && tier !== 'success') a.allSuccess = false;
+        if (tier !== 'over') a.allExceeded = false;
 
         a.chainData[chainId] = {
           hits: row.hits,
@@ -498,24 +546,25 @@
     // ---- Stats ----
 
     function renderStats() {
-      var ids = Object.keys(recentAggregated);
+      var ids = Object.keys(aggregated);
       var totalHits = 0;
-      var totalRespect = 0;
       var offenderCount = 0;
-      var topCount = 0;
+      var exceededCount = 0;
+      var consistentCount = 0;
 
       ids.forEach(function(id) {
-        totalHits += recentAggregated[id].totalHits;
-        totalRespect += recentAggregated[id].totalRespect;
-        if (recentAggregated[id].score < 0) offenderCount++;
-        if (recentAggregated[id].allSuccess) topCount++;
+        totalHits += aggregated[id].totalHits;
+        if (aggregated[id].score < 0) offenderCount++;
+        if (aggregated[id].allExceeded && aggregated[id].chainsPresent > 0) exceededCount++;
+        else if (aggregated[id].allSuccess && aggregated[id].chainsPresent > 0) consistentCount++;
       });
 
       document.getElementById('statsRow').innerHTML =
         '<div class="stat-card"><div class="sc-label">Chains Tracked</div><div class="sc-value">' + sortedChainIds.length + '</div></div>' +
         '<div class="stat-card"><div class="sc-label">Current Members</div><div class="sc-value">' + Object.keys(currentMembers).length + '</div></div>' +
-        '<div class="stat-card"><div class="sc-label">Hits (Last 5)</div><div class="sc-value green">' + formatNumber(totalHits) + '</div></div>' +
-        '<div class="stat-card"><div class="sc-label">Top Performers</div><div class="sc-value green">' + topCount + '</div></div>' +
+        '<div class="stat-card"><div class="sc-label">Total Hits</div><div class="sc-value green">' + formatNumber(totalHits) + '</div></div>' +
+        '<div class="stat-card"><div class="sc-label">Exceeded</div><div class="sc-value green">' + exceededCount + '</div></div>' +
+        '<div class="stat-card"><div class="sc-label">Consistent</div><div class="sc-value green">' + consistentCount + '</div></div>' +
         '<div class="stat-card"><div class="sc-label">Offenders</div><div class="sc-value red">' + offenderCount + '</div></div>';
     }
 
@@ -541,17 +590,61 @@
       return asc ? ' class="sorted-asc"' : ' class="sorted-desc"';
     }
 
-    // ---- Top Contributors (recent 5) ----
+    // ---- Exceeded (over 100% every chain) ----
 
-    var contribData = [];
+    var exceededData = [];
 
-    function renderContributors(data, sortCol, sortAsc) {
+    function renderExceeded(data, sortCol, sortAsc) {
       if (!data) {
-        contribData = [];
-        Object.keys(recentAggregated).forEach(function(id) {
-          var a = recentAggregated[id];
-          if (!a.allSuccess) return;
-          contribData.push({
+        exceededData = [];
+        Object.keys(aggregated).forEach(function(id) {
+          var a = aggregated[id];
+          if (!a.allExceeded || a.chainsPresent === 0) return;
+          exceededData.push({
+            id: parseInt(id),
+            name: a.name,
+            totalHits: a.totalHits,
+            score: a.score,
+            chainsPresent: a.chainsPresent
+          });
+        });
+        exceededData.sort(function(a, b) { return b.totalHits - a.totalHits; });
+        sortCol = 'totalHits'; sortAsc = false;
+        sortStates['exceeded'] = { col: 'totalHits', asc: false };
+        data = exceededData;
+      }
+
+      var h = '<tr>';
+      h += '<th' + sc('name', sortCol, sortAsc) + ' onclick="doSort(\'exceeded\', exceededData, \'name\', renderExceeded)">Member</th>';
+      h += '<th' + sc('totalHits', sortCol, sortAsc) + ' onclick="doSort(\'exceeded\', exceededData, \'totalHits\', renderExceeded)">Hits</th>';
+      h += '<th' + sc('score', sortCol, sortAsc) + ' onclick="doSort(\'exceeded\', exceededData, \'score\', renderExceeded)">Score</th>';
+      h += '<th' + sc('chainsPresent', sortCol, sortAsc) + ' onclick="doSort(\'exceeded\', exceededData, \'chainsPresent\', renderExceeded)">Chains</th>';
+      h += '</tr>';
+      document.getElementById('exceededHead').innerHTML = h;
+
+      var body = '';
+      data.forEach(function(row) {
+        body += '<tr>';
+        body += '<td><a href="https://www.torn.com/profiles.php?XID=' + row.id + '" target="_blank">' + row.name + '</a></td>';
+        body += '<td>' + formatNumber(row.totalHits) + '</td>';
+        body += '<td style="color: var(--green); font-weight: 600;">+' + row.score + '</td>';
+        body += '<td>' + row.chainsPresent + '/' + sortedChainIds.length + '</td>';
+        body += '</tr>';
+      });
+      document.getElementById('exceededBody').innerHTML = body || '<tr><td colspan="4" class="empty-state">No members exceeded in every chain</td></tr>';
+    }
+
+    // ---- Consistent (100% or more every chain, but not all exceeded) ----
+
+    var consistentData = [];
+
+    function renderConsistent(data, sortCol, sortAsc) {
+      if (!data) {
+        consistentData = [];
+        Object.keys(aggregated).forEach(function(id) {
+          var a = aggregated[id];
+          if (a.allExceeded || !a.allSuccess || a.chainsPresent === 0) return;
+          consistentData.push({
             id: parseInt(id),
             name: a.name,
             totalHits: a.totalHits,
@@ -561,19 +654,19 @@
             successCount: a.tiers.success
           });
         });
-        contribData.sort(function(a, b) { return b.score - a.score || b.totalHits - a.totalHits; });
+        consistentData.sort(function(a, b) { return b.score - a.score || b.totalHits - a.totalHits; });
         sortCol = 'score'; sortAsc = false;
-        sortStates['contrib'] = { col: 'score', asc: false };
-        data = contribData;
+        sortStates['consistent'] = { col: 'score', asc: false };
+        data = consistentData;
       }
 
       var h = '<tr>';
-      h += '<th' + sc('name', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'name\', renderContributors)">Member</th>';
-      h += '<th' + sc('totalHits', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'totalHits\', renderContributors)">Hits</th>';
-      h += '<th' + sc('score', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'score\', renderContributors)">Score</th>';
+      h += '<th' + sc('name', sortCol, sortAsc) + ' onclick="doSort(\'consistent\', consistentData, \'name\', renderConsistent)">Member</th>';
+      h += '<th' + sc('totalHits', sortCol, sortAsc) + ' onclick="doSort(\'consistent\', consistentData, \'totalHits\', renderConsistent)">Hits</th>';
+      h += '<th' + sc('score', sortCol, sortAsc) + ' onclick="doSort(\'consistent\', consistentData, \'score\', renderConsistent)">Score</th>';
       h += '<th>Breakdown</th>';
       h += '</tr>';
-      document.getElementById('contribHead').innerHTML = h;
+      document.getElementById('consistentHead').innerHTML = h;
 
       var body = '';
       data.forEach(function(row) {
@@ -587,7 +680,7 @@
         body += '<td>' + breakdown + '</td>';
         body += '</tr>';
       });
-      document.getElementById('contribBody').innerHTML = body || '<tr><td colspan="4" class="empty-state">No members with perfect records across all recent chains</td></tr>';
+      document.getElementById('consistentBody').innerHTML = body || '<tr><td colspan="4" class="empty-state">No members in this category</td></tr>';
     }
 
     // ---- Offenders (recent 5) ----
@@ -597,8 +690,8 @@
     function renderOffenders(data, sortCol, sortAsc) {
       if (!data) {
         offenderData = [];
-        Object.keys(recentAggregated).forEach(function(id) {
-          var a = recentAggregated[id];
+        Object.keys(aggregated).forEach(function(id) {
+          var a = aggregated[id];
           if (a.score >= 0) return;
           offenderData.push({
             id: parseInt(id),
@@ -821,7 +914,8 @@
         document.getElementById('mainContent').classList.remove('hidden');
 
         renderStats();
-        renderContributors();
+        renderExceeded();
+        renderConsistent();
         renderOffenders();
         buildAllMemberData();
         renderAllMembers();
