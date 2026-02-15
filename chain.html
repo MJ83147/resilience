@@ -141,6 +141,8 @@
     .pct-ok { color: var(--green); }
     .pct-warn { color: #E65100; font-weight: 500; }
     [data-theme="dark"] .pct-warn { color: #FFB74D; }
+    .pct-missed { color: #F57C00; }
+    [data-theme="dark"] .pct-missed { color: #FFE0B2; }
     .pct-bad { color: var(--red); font-weight: 600; }
     .pct-zero { color: var(--red); font-weight: 700; }
     .pct-absent { color: var(--text-light); }
@@ -163,6 +165,21 @@
       font-size: 12px;
       padding: 2px 8px;
       border-radius: 4px;
+    }
+
+    .warn-badge {
+      display: inline-block;
+      background: #FFF3E0;
+      color: #E65100;
+      font-weight: 600;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    [data-theme="dark"] .warn-badge {
+      background: rgba(255, 183, 77, 0.15);
+      color: #FFB74D;
     }
 
     /* Chain detail section */
@@ -267,7 +284,7 @@
             <div class="panel-header">
               <div>
                 <h2>Top Contributors</h2>
-                <span class="sub">Last 5 qualifying chains</span>
+                <span class="sub">100%+ of threshold across last 5 chains</span>
               </div>
             </div>
             <div class="panel-body">
@@ -281,8 +298,8 @@
           <div class="panel">
             <div class="panel-header">
               <div>
-                <h2>Repeat Offenders</h2>
-                <span class="sub">Failed 1% in 2+ of last 5 qualifying chains</span>
+                <h2>Offenders</h2>
+                <span class="sub">Negative weighted score across last 5 chains</span>
               </div>
             </div>
             <div class="panel-body">
@@ -352,8 +369,8 @@
     function getPctClass(pct) {
       if (pct === 0) return 'pct-zero';
       if (pct < 50) return 'pct-bad';
-      if (pct < 100) return 'pct-warn';
-      if (pct < 200) return 'pct-ok';
+      if (pct < 75) return 'pct-warn';
+      if (pct < 100) return 'pct-missed';
       return 'pct-great';
     }
 
@@ -425,6 +442,18 @@
       });
     }
 
+    function getTier(pct) {
+      if (pct === 0) return 'awful';
+      if (pct < 50) return 'abysmal';
+      if (pct < 75) return 'fail';
+      if (pct < 100) return 'missed';
+      if (pct === 100) return 'success';
+      return 'over';
+    }
+
+    var TIER_SCORES = { over: 3, success: 2, missed: 0, fail: -2, abysmal: -4, awful: -6 };
+    var TIER_LABELS = { over: 'Over Achieved', success: 'Success', missed: 'Missed the Mark', fail: 'Fail', abysmal: 'Abysmal', awful: 'AWFUL' };
+
     function processChainForAgg(chainId, agg) {
       var chain = chains[chainId];
       var threshold = Math.floor(chain.length * 0.01);
@@ -439,22 +468,29 @@
             totalHits: 0,
             totalRespect: 0,
             chainsPresent: 0,
-            chainsFailed: 0,
+            score: 0,
+            tiers: { over: 0, success: 0, missed: 0, fail: 0, abysmal: 0, awful: 0 },
+            allSuccess: true,
             chainData: {}
           };
         }
 
         var a = agg[row.memberId];
+        var pct = threshold > 0 ? Math.round((row.hits / threshold) * 100) : 0;
+        var tier = getTier(pct);
+
         a.totalHits += row.hits;
         a.totalRespect += row.respect;
         a.chainsPresent += 1;
-        if (row.hits < threshold) a.chainsFailed += 1;
+        a.score += TIER_SCORES[tier];
+        a.tiers[tier] += 1;
+        if (tier !== 'over' && tier !== 'success') a.allSuccess = false;
 
         a.chainData[chainId] = {
           hits: row.hits,
           threshold: threshold,
-          passed: row.hits >= threshold,
-          pct: threshold > 0 ? Math.round((row.hits / threshold) * 100) : 0
+          pct: pct,
+          tier: tier
         };
       });
     }
@@ -466,19 +502,21 @@
       var totalHits = 0;
       var totalRespect = 0;
       var offenderCount = 0;
+      var topCount = 0;
 
       ids.forEach(function(id) {
         totalHits += recentAggregated[id].totalHits;
         totalRespect += recentAggregated[id].totalRespect;
-        if (recentAggregated[id].chainsFailed > 1) offenderCount++;
+        if (recentAggregated[id].score < 0) offenderCount++;
+        if (recentAggregated[id].allSuccess) topCount++;
       });
 
       document.getElementById('statsRow').innerHTML =
         '<div class="stat-card"><div class="sc-label">Chains Tracked</div><div class="sc-value">' + sortedChainIds.length + '</div></div>' +
         '<div class="stat-card"><div class="sc-label">Current Members</div><div class="sc-value">' + Object.keys(currentMembers).length + '</div></div>' +
         '<div class="stat-card"><div class="sc-label">Hits (Last 5)</div><div class="sc-value green">' + formatNumber(totalHits) + '</div></div>' +
-        '<div class="stat-card"><div class="sc-label">Respect (Last 5)</div><div class="sc-value green">' + formatNumber(Math.round(totalRespect)) + '</div></div>' +
-        '<div class="stat-card"><div class="sc-label">Repeat Offenders</div><div class="sc-value red">' + offenderCount + '</div></div>';
+        '<div class="stat-card"><div class="sc-label">Top Performers</div><div class="sc-value green">' + topCount + '</div></div>' +
+        '<div class="stat-card"><div class="sc-label">Offenders</div><div class="sc-value red">' + offenderCount + '</div></div>';
     }
 
     // ---- Sorting ----
@@ -512,43 +550,44 @@
         contribData = [];
         Object.keys(recentAggregated).forEach(function(id) {
           var a = recentAggregated[id];
+          if (!a.allSuccess) return;
           contribData.push({
             id: parseInt(id),
             name: a.name,
             totalHits: a.totalHits,
-            totalRespect: Math.round(a.totalRespect * 100) / 100,
-            avgRespect: a.totalHits > 0 ? Math.round((a.totalRespect / a.totalHits) * 100) / 100 : 0,
+            score: a.score,
             chainsPresent: a.chainsPresent,
-            chainsFailed: a.chainsFailed
+            overCount: a.tiers.over,
+            successCount: a.tiers.success
           });
         });
-        contribData.sort(function(a, b) { return b.totalHits - a.totalHits; });
-        sortCol = 'totalHits'; sortAsc = false;
-        sortStates['contrib'] = { col: 'totalHits', asc: false };
+        contribData.sort(function(a, b) { return b.score - a.score || b.totalHits - a.totalHits; });
+        sortCol = 'score'; sortAsc = false;
+        sortStates['contrib'] = { col: 'score', asc: false };
         data = contribData;
       }
 
       var h = '<tr>';
       h += '<th' + sc('name', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'name\', renderContributors)">Member</th>';
       h += '<th' + sc('totalHits', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'totalHits\', renderContributors)">Hits</th>';
-      h += '<th' + sc('totalRespect', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'totalRespect\', renderContributors)">Respect</th>';
-      h += '<th' + sc('chainsFailed', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'chainsFailed\', renderContributors)">Failed</th>';
+      h += '<th' + sc('score', sortCol, sortAsc) + ' onclick="doSort(\'contrib\', contribData, \'score\', renderContributors)">Score</th>';
+      h += '<th>Breakdown</th>';
       h += '</tr>';
       document.getElementById('contribHead').innerHTML = h;
 
       var body = '';
-      data.forEach(function(row, i) {
-        var failCell = row.chainsFailed > 0
-          ? '<span class="fail-badge">' + row.chainsFailed + '/' + row.chainsPresent + '</span>'
-          : '<span class="pass-badge">0/' + row.chainsPresent + '</span>';
+      data.forEach(function(row) {
+        var breakdown = '';
+        if (row.overCount > 0) breakdown += '<span class="pass-badge">' + row.overCount + ' Over</span> ';
+        if (row.successCount > 0) breakdown += '<span class="pass-badge">' + row.successCount + ' Success</span>';
         body += '<tr>';
         body += '<td><a href="https://www.torn.com/profiles.php?XID=' + row.id + '" target="_blank">' + row.name + '</a></td>';
         body += '<td>' + formatNumber(row.totalHits) + '</td>';
-        body += '<td>' + formatNumber(row.totalRespect) + '</td>';
-        body += '<td>' + failCell + '</td>';
+        body += '<td style="color: var(--green); font-weight: 600;">+' + row.score + '</td>';
+        body += '<td>' + breakdown + '</td>';
         body += '</tr>';
       });
-      document.getElementById('contribBody').innerHTML = body || '<tr><td colspan="4" class="empty-state">No data</td></tr>';
+      document.getElementById('contribBody').innerHTML = body || '<tr><td colspan="4" class="empty-state">No members with perfect records across all recent chains</td></tr>';
     }
 
     // ---- Offenders (recent 5) ----
@@ -560,40 +599,53 @@
         offenderData = [];
         Object.keys(recentAggregated).forEach(function(id) {
           var a = recentAggregated[id];
-          if (a.chainsFailed <= 1) return;
+          if (a.score >= 0) return;
           offenderData.push({
             id: parseInt(id),
             name: a.name,
-            chainsFailed: a.chainsFailed,
+            score: a.score,
             chainsPresent: a.chainsPresent,
-            failRate: Math.round((a.chainsFailed / a.chainsPresent) * 100),
-            totalHits: a.totalHits
+            totalHits: a.totalHits,
+            awful: a.tiers.awful,
+            abysmal: a.tiers.abysmal,
+            fail: a.tiers.fail,
+            missed: a.tiers.missed,
+            over: a.tiers.over,
+            success: a.tiers.success
           });
         });
-        offenderData.sort(function(a, b) { return b.chainsFailed - a.chainsFailed || b.failRate - a.failRate; });
-        sortCol = 'chainsFailed'; sortAsc = false;
-        sortStates['offender'] = { col: 'chainsFailed', asc: false };
+        offenderData.sort(function(a, b) { return a.score - b.score; });
+        sortCol = 'score'; sortAsc = true;
+        sortStates['offender'] = { col: 'score', asc: true };
         data = offenderData;
       }
 
       var h = '<tr>';
       h += '<th' + sc('name', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'name\', renderOffenders)">Member</th>';
-      h += '<th' + sc('chainsFailed', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'chainsFailed\', renderOffenders)">Failed</th>';
-      h += '<th' + sc('failRate', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'failRate\', renderOffenders)">Fail Rate</th>';
+      h += '<th' + sc('score', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'score\', renderOffenders)">Score</th>';
+      h += '<th>Breakdown</th>';
       h += '<th' + sc('totalHits', sortCol, sortAsc) + ' onclick="doSort(\'offender\', offenderData, \'totalHits\', renderOffenders)">Total Hits</th>';
       h += '</tr>';
       document.getElementById('offenderHead').innerHTML = h;
 
       var body = '';
       data.forEach(function(row) {
+        var parts = [];
+        if (row.awful > 0) parts.push('<span class="fail-badge">' + row.awful + ' AWFUL</span>');
+        if (row.abysmal > 0) parts.push('<span class="fail-badge">' + row.abysmal + ' Abysmal</span>');
+        if (row.fail > 0) parts.push('<span class="fail-badge">' + row.fail + ' Fail</span>');
+        if (row.missed > 0) parts.push('<span class="warn-badge">' + row.missed + ' Missed</span>');
+        if (row.success > 0) parts.push('<span class="pass-badge">' + row.success + ' Success</span>');
+        if (row.over > 0) parts.push('<span class="pass-badge">' + row.over + ' Over</span>');
+
         body += '<tr>';
         body += '<td><a href="https://www.torn.com/profiles.php?XID=' + row.id + '" target="_blank">' + row.name + '</a></td>';
-        body += '<td><span class="fail-badge">' + row.chainsFailed + '/' + row.chainsPresent + '</span></td>';
-        body += '<td style="color: var(--red); font-weight: 600;">' + row.failRate + '%</td>';
+        body += '<td style="color: var(--red); font-weight: 600;">' + row.score + '</td>';
+        body += '<td>' + parts.join(' ') + '</td>';
         body += '<td>' + formatNumber(row.totalHits) + '</td>';
         body += '</tr>';
       });
-      document.getElementById('offenderBody').innerHTML = body || '<tr><td colspan="4" class="empty-state">No repeat offenders. Everyone is pulling their weight.</td></tr>';
+      document.getElementById('offenderBody').innerHTML = body || '<tr><td colspan="4" class="empty-state">No offenders. Everyone is pulling their weight.</td></tr>';
     }
 
     // ---- All Members (all chains) ----
@@ -677,6 +729,8 @@
       var rows = (chainRows[chainId] || [])
         .filter(function(r) { return currentMembers[r.memberId]; })
         .map(function(r) {
+          var pct = threshold > 0 ? Math.round((r.hits / threshold) * 100) : 0;
+          var tier = getTier(pct);
           return {
             id: r.memberId,
             name: currentMembers[r.memberId],
@@ -684,8 +738,8 @@
             respect: Math.round(r.respect * 100) / 100,
             avgRespect: r.avgRespect,
             warHits: r.warHits,
-            passed: r.hits >= threshold,
-            pct: threshold > 0 ? Math.round((r.hits / threshold) * 100) : 0
+            pct: pct,
+            tier: tier
           };
         })
         .sort(function(a, b) { return b.hits - a.hits; });
@@ -695,7 +749,8 @@
 
       var body = '';
       rows.forEach(function(row) {
-        var badge = row.passed ? '<span class="pass-badge">Pass</span>' : '<span class="fail-badge">Fail</span>';
+        var tierBadgeClass = { over: 'pass-badge', success: 'pass-badge', missed: 'warn-badge', fail: 'fail-badge', abysmal: 'fail-badge', awful: 'fail-badge' };
+        var badge = '<span class="' + tierBadgeClass[row.tier] + '">' + TIER_LABELS[row.tier] + '</span>';
         body += '<tr>';
         body += '<td><a href="https://www.torn.com/profiles.php?XID=' + row.id + '" target="_blank">' + row.name + '</a></td>';
         body += '<td>' + formatNumber(row.hits) + '</td>';
