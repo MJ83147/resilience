@@ -19,8 +19,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     html, body {
-      height: 100vh;
-      overflow: hidden;
+      min-height: 100vh;
       font-family: var(--font-family);
       background-color: var(--gray-100);
       color: var(--text);
@@ -29,7 +28,7 @@
 
     .container {
       width: 100%;
-      height: 100vh;
+      min-height: 100vh;
       padding: 12px;
       display: flex;
       flex-direction: column;
@@ -42,13 +41,6 @@
       margin-bottom: 12px;
       box-shadow: var(--shadow);
       flex-shrink: 0;
-    }
-
-    .eggs-header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
     }
 
     .page-title {
@@ -69,14 +61,8 @@
       transition: all 0.2s ease;
     }
 
-    .refresh-btn:hover {
-      background-color: var(--primary-light);
-    }
-
-    .refresh-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    .refresh-btn:hover { background-color: var(--primary-light); }
+    .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .loader {
       width: 20px;
@@ -90,14 +76,11 @@
       vertical-align: middle;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .hidden {
-      display: none;
-    }
+    .hidden { display: none; }
 
+    /* --- Dashboard layout --- */
     .dashboard {
       display: flex;
       gap: 12px;
@@ -106,23 +89,22 @@
       border-radius: var(--border-radius);
       padding: 12px;
       box-shadow: var(--shadow);
-      overflow: hidden;
-      height: calc(100% - 66px);
+      min-height: 0;
     }
 
     .chart-section {
-      flex: 2;
+      flex: 1;
       min-width: 0;
       position: relative;
-      height: 100%;
+      min-height: 350px;
     }
 
     .table-section {
-      flex: 3;
+      flex: 1;
       min-width: 0;
       display: flex;
       flex-direction: column;
-      height: 100%;
+      min-height: 0;
     }
 
     .table-container {
@@ -131,6 +113,7 @@
       margin-bottom: 8px;
     }
 
+    /* --- Chart --- */
     .chart-container {
       height: 100%;
       position: relative;
@@ -142,14 +125,14 @@
       flex: 1;
       position: relative;
       display: flex;
-      padding: 10px 10px 90px 40px;
+      padding: 10px 10px 80px 40px;
     }
 
     .y-axis {
       position: absolute;
       left: 0;
       top: 0;
-      bottom: 90px;
+      bottom: 80px;
       width: 40px;
       display: flex;
       flex-direction: column;
@@ -168,20 +151,12 @@
       position: relative;
     }
 
-    .grid-line {
-      position: absolute;
-      left: 40px;
-      right: 10px;
-      height: 1px;
-      background-color: var(--gray-200);
-    }
-
     .bar-container {
       display: flex;
       flex: 1;
       align-items: flex-end;
       justify-content: space-evenly;
-      padding-bottom: 70px;
+      padding-bottom: 60px;
       overflow: visible;
     }
 
@@ -190,22 +165,19 @@
       margin: 0 4px;
       border-radius: 8px 8px 0 0;
       position: relative;
-      min-width: 30px;
-      max-width: 60px;
+      min-width: 25px;
+      max-width: 50px;
       background: linear-gradient(to top, var(--primary-color), var(--primary-lighter));
     }
 
     .bar-label {
       position: absolute;
-      bottom: -25px;
+      bottom: -10px;
       left: 50%;
-      transform: translateX(-50%);
-      text-align: center;
+      transform: translateX(-30%) rotate(-40deg);
+      transform-origin: top left;
       font-size: 11px;
-      width: 80px;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .bar-value {
@@ -219,24 +191,17 @@
       color: var(--primary-color);
     }
 
+    /* --- Table --- */
     table {
       width: 100%;
       border-collapse: collapse;
-      table-layout: fixed;
     }
 
     th, td {
       padding: 6px 8px;
       text-align: left;
       border-bottom: 1px solid var(--gray-300);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
-
-    .col-rank { width: 40px; text-align: center; }
-    .col-score { width: 70px; text-align: center; }
-    .col-total { width: 70px; text-align: center; }
 
     th {
       background-color: var(--primary-lightest);
@@ -247,45 +212,19 @@
       z-index: 10;
     }
 
-    th.sortable {
-      cursor: pointer;
-      user-select: none;
-    }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { background-color: var(--primary-lighter); color: var(--white); }
+    th .sort-arrow { margin-left: 4px; font-size: 10px; opacity: 0.4; }
+    th.active-sort .sort-arrow { opacity: 1; }
 
-    th.sortable:hover {
-      background-color: var(--primary-lighter);
-      color: var(--white);
-    }
+    tr:nth-child(even) { background-color: var(--gray-100); }
 
-    th .sort-arrow {
-      margin-left: 4px;
-      font-size: 10px;
-      opacity: 0.4;
-    }
+    .rank { text-align: center; font-weight: 700; }
+    td.rank { width: 40px; }
+    td.col-score, td.col-total { width: 70px; text-align: right; }
 
-    th.active-sort .sort-arrow {
-      opacity: 1;
-    }
-
-    tr:nth-child(even) {
-      background-color: var(--gray-100);
-    }
-
-    .rank {
-      text-align: center;
-      font-weight: 700;
-      width: 30px;
-    }
-
-    .top-3 {
-      color: var(--primary-color);
-      font-weight: 700;
-    }
-
-    .egg-icon {
-      color: #ffd700;
-      margin-right: 4px;
-    }
+    .top-3 { color: var(--primary-color); font-weight: 700; }
+    .egg-icon { color: #ffd700; margin-right: 4px; }
 
     .last-updated {
       font-size: 12px;
@@ -294,24 +233,32 @@
       flex-shrink: 0;
     }
 
+    /* --- Mobile --- */
     @media (max-width: 768px) {
-      .dashboard { flex-direction: column; }
-      .chart-section, .table-section {
-        width: 100%;
-        min-width: 0;
-        height: auto;
+      .dashboard {
+        flex-direction: column;
+        overflow: visible;
       }
 
-      .chart-section { height: 220px; }
-      .table-container { max-height: 300px; }
+      .chart-section {
+        width: 100%;
+        min-height: 280px;
+        flex: none;
+      }
+
+      .table-section {
+        width: 100%;
+        flex: none;
+      }
+
+      .table-container {
+        max-height: none;
+        overflow-y: visible;
+      }
 
       .bar { min-width: 20px; }
+
       .bar-label {
-        transform: translateX(-50%) rotate(-45deg);
-        transform-origin: center top;
-        bottom: auto;
-        top: 100%;
-        width: auto;
         font-size: 10px;
       }
     }
@@ -344,12 +291,18 @@
       <div class="table-section">
         <div class="table-container">
           <table id="leaderboardTable">
+            <colgroup>
+              <col style="width: 50px;">
+              <col>
+              <col style="width: 80px;">
+              <col style="width: 80px;">
+            </colgroup>
             <thead>
               <tr>
-                <th class="col-rank">Rank</th>
+                <th>Rank</th>
                 <th>Name</th>
-                <th class="sortable active-sort col-score" data-sort="score" data-dir="desc">This Year <span class="sort-arrow">&#9660;</span></th>
-                <th class="sortable col-total" data-sort="total" data-dir="desc">All Time <span class="sort-arrow">&#9660;</span></th>
+                <th class="sortable active-sort" data-sort="score" data-dir="desc">This Year <span class="sort-arrow">&#9660;</span></th>
+                <th class="sortable" data-sort="total" data-dir="desc">All Time <span class="sort-arrow">&#9660;</span></th>
               </tr>
             </thead>
             <tbody></tbody>
