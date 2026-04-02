@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="styles.css">
   <style>
-    /* [unchanged styling – exactly as you had it, including loader styles] */
     :root {
       --primary-color: #2E7D32;
       --primary-light: #4CAF50;
@@ -248,6 +247,26 @@
       z-index: 10;
     }
 
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th.sortable:hover {
+      background-color: var(--primary-lighter);
+      color: var(--white);
+    }
+
+    th .sort-arrow {
+      margin-left: 4px;
+      font-size: 10px;
+      opacity: 0.4;
+    }
+
+    th.active-sort .sort-arrow {
+      opacity: 1;
+    }
+
     tr:nth-child(even) {
       background-color: var(--gray-100);
     }
@@ -329,7 +348,8 @@
               <tr>
                 <th>Rank</th>
                 <th>Name</th>
-                <th>Eggs</th>
+                <th class="sortable active-sort" data-sort="score" data-dir="desc">This Year <span class="sort-arrow">&#9660;</span></th>
+                <th class="sortable" data-sort="total" data-dir="desc">All Time <span class="sort-arrow">&#9660;</span></th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -350,6 +370,10 @@
     const leaderboardTable = document.getElementById('leaderboardTable');
     const lastUpdated = document.getElementById('lastUpdated');
 
+    // Current data store and sort state
+    let currentData = [];
+    let currentSort = { field: 'score', dir: 'desc' };
+
     function formatDateTime(timestamp) {
       const date = new Date(timestamp);
       return date.toLocaleString();
@@ -360,20 +384,34 @@
       const headers = lines[0].split(',');
       const nameIndex = headers.findIndex(h => h.trim().toLowerCase() === 'name');
       const scoreIndex = headers.findIndex(h => h.trim().toLowerCase() === 'score');
+      const totalIndex = headers.findIndex(h => h.trim().toLowerCase() === 'total');
       const result = [];
 
       for (let i = 1; i < lines.length; i++) {
         const fields = lines[i].split(',');
         const name = fields[nameIndex];
-        const score = parseInt(fields[scoreIndex], 10);
-        if (name && score > 0) result.push({ name: name.trim(), score });
+        if (!name || !name.trim()) continue;
+        const score = parseInt(fields[scoreIndex], 10) || 0;
+        const total = parseInt(fields[totalIndex], 10) || 0;
+        result.push({ name: name.trim(), score, total });
       }
       return result;
     }
 
+    function sortData(data, field, dir) {
+      return [...data].sort((a, b) => {
+        const diff = b[field] - a[field];
+        if (dir === 'asc') return -diff;
+        return diff;
+      });
+    }
+
     function drawBarChart(data) {
       barChart.innerHTML = '';
-      const chartData = data.slice(0, 8);
+      // Bar chart always shows top 8 by this year's score
+      const chartData = sortData(data, 'score', 'desc').filter(d => d.score > 0).slice(0, 8);
+      if (chartData.length === 0) return;
+
       const maxScore = Math.max(...chartData.map(d => d.score));
       const yAxis = document.getElementById('yAxis');
       yAxis.innerHTML = '';
@@ -396,22 +434,51 @@
     }
 
     function displayLeaderboard(data) {
+      const sorted = sortData(data, currentSort.field, currentSort.dir);
       const tbody = leaderboardTable.querySelector('tbody');
       tbody.innerHTML = '';
-      data.sort((a, b) => b.score - a.score);
 
-      data.forEach((entry, index) => {
+      sorted.forEach((entry, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td class="rank">${index + 1}</td>
           <td class="${index < 3 ? 'top-3' : ''}">${entry.name}</td>
           <td class="${index < 3 ? 'top-3' : ''}"><span class="egg-icon">🥚</span>${entry.score}</td>
+          <td>${entry.total}</td>
         `;
         tbody.appendChild(row);
       });
 
       drawBarChart(data);
     }
+
+    // Sort header click handling
+    document.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const field = th.dataset.sort;
+        let dir = 'desc';
+
+        // If clicking the same column, toggle direction
+        if (currentSort.field === field) {
+          dir = currentSort.dir === 'desc' ? 'asc' : 'desc';
+        }
+
+        currentSort = { field, dir };
+
+        // Update header styles
+        document.querySelectorAll('th.sortable').forEach(header => {
+          header.classList.remove('active-sort');
+          header.querySelector('.sort-arrow').innerHTML = '&#9660;';
+        });
+        th.classList.add('active-sort');
+        th.querySelector('.sort-arrow').innerHTML = dir === 'desc' ? '&#9660;' : '&#9650;';
+
+        // Re-render table with new sort
+        if (currentData.length > 0) {
+          displayLeaderboard(currentData);
+        }
+      });
+    });
 
     async function fetchData() {
       refreshBtn.disabled = true;
@@ -421,8 +488,8 @@
       try {
         const res = await fetch(SHEET_URL);
         const text = await res.text();
-        const data = parseCSV(text);
-        displayLeaderboard(data);
+        currentData = parseCSV(text);
+        displayLeaderboard(currentData);
 
         const timestampRes = await fetch(TIMESTAMP_URL);
         const timestampText = await timestampRes.text();
