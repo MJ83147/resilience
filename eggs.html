@@ -142,14 +142,14 @@
       flex: 1;
       position: relative;
       display: flex;
-      padding: 10px 10px 60px 40px;
+      padding: 10px 10px 90px 40px;
     }
 
     .y-axis {
       position: absolute;
       left: 0;
       top: 0;
-      bottom: 60px;
+      bottom: 90px;
       width: 40px;
       display: flex;
       flex-direction: column;
@@ -181,7 +181,7 @@
       flex: 1;
       align-items: flex-end;
       justify-content: space-evenly;
-      padding-bottom: 40px;
+      padding-bottom: 70px;
       overflow: visible;
     }
 
@@ -222,6 +222,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
+      table-layout: fixed;
     }
 
     th, td {
@@ -229,7 +230,13 @@
       text-align: left;
       border-bottom: 1px solid var(--gray-300);
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+
+    .col-rank { width: 40px; text-align: center; }
+    .col-score { width: 70px; text-align: center; }
+    .col-total { width: 70px; text-align: center; }
 
     th {
       background-color: var(--primary-lightest);
@@ -339,10 +346,10 @@
           <table id="leaderboardTable">
             <thead>
               <tr>
-                <th>Rank</th>
+                <th class="col-rank">Rank</th>
                 <th>Name</th>
-                <th class="sortable active-sort" data-sort="score" data-dir="desc">This Year <span class="sort-arrow">&#9660;</span></th>
-                <th class="sortable" data-sort="total" data-dir="desc">All Time <span class="sort-arrow">&#9660;</span></th>
+                <th class="sortable active-sort col-score" data-sort="score" data-dir="desc">This Year <span class="sort-arrow">&#9660;</span></th>
+                <th class="sortable col-total" data-sort="total" data-dir="desc">All Time <span class="sort-arrow">&#9660;</span></th>
               </tr>
             </thead>
             <tbody></tbody>
