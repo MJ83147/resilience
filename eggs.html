@@ -150,14 +150,14 @@
       flex: 1;
       position: relative;
       display: flex;
-      padding: 10px 10px 30px 40px;
+      padding: 10px 10px 60px 40px;
     }
 
     .y-axis {
       position: absolute;
       left: 0;
       top: 0;
-      bottom: 30px;
+      bottom: 60px;
       width: 40px;
       display: flex;
       flex-direction: column;
@@ -189,7 +189,7 @@
       flex: 1;
       align-items: flex-end;
       justify-content: space-evenly;
-      padding-bottom: 30px;
+      padding-bottom: 40px;
       overflow: visible;
     }
 
@@ -416,7 +416,7 @@
       const yAxis = document.getElementById('yAxis');
       yAxis.innerHTML = '';
 
-      for (let i = 0; i <= 5; i++) {
+      for (let i = 5; i >= 0; i--) {
         const label = document.createElement('div');
         label.className = 'y-axis-line';
         const value = Math.round((maxScore / 5) * i);
