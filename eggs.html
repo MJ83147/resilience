@@ -119,15 +119,15 @@
     }
 
     .chart-section {
-      flex: 3;
-      min-width: 400px;
+      flex: 2;
+      min-width: 0;
       position: relative;
       height: 100%;
     }
 
     .table-section {
-      flex: 2;
-      min-width: 300px;
+      flex: 3;
+      min-width: 0;
       display: flex;
       flex-direction: column;
       height: 100%;
@@ -233,9 +233,10 @@
     }
 
     th, td {
-      padding: 8px 12px;
+      padding: 6px 8px;
       text-align: left;
       border-bottom: 1px solid var(--gray-300);
+      white-space: nowrap;
     }
 
     th {
@@ -274,7 +275,7 @@
     .rank {
       text-align: center;
       font-weight: 700;
-      width: 40px;
+      width: 30px;
     }
 
     .top-3 {
@@ -416,18 +417,22 @@
       const yAxis = document.getElementById('yAxis');
       yAxis.innerHTML = '';
 
-      for (let i = 5; i >= 0; i--) {
+      // Use integer steps, cap at 5 ticks max
+      const steps = Math.min(maxScore, 5);
+      const stepSize = Math.ceil(maxScore / steps);
+      const adjustedMax = stepSize * steps;
+
+      for (let i = steps; i >= 0; i--) {
         const label = document.createElement('div');
         label.className = 'y-axis-line';
-        const value = Math.round((maxScore / 5) * i);
-        label.textContent = value;
+        label.textContent = stepSize * i;
         yAxis.appendChild(label);
       }
 
       chartData.forEach(entry => {
         const bar = document.createElement('div');
         bar.className = 'bar';
-        bar.style.height = `${(entry.score / maxScore) * 100}%`;
+        bar.style.height = `${(entry.score / adjustedMax) * 100}%`;
         bar.innerHTML = `<div class="bar-value">${entry.score}</div><div class="bar-label">${entry.name}</div>`;
         barChart.appendChild(bar);
       });
