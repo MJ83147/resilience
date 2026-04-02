@@ -6,11 +6,11 @@
   <title>Easter Egg Hunt Leaderboard!</title>
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     :root {
       --primary-color: var(--green);
       --primary-light: #4CAF50;
-      --primary-lighter: #81C784;
       --primary-lightest: var(--green-light);
       --border-radius: 8px;
       --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
@@ -28,10 +28,7 @@
 
     .container {
       width: 100%;
-      min-height: 100vh;
       padding: 12px;
-      display: flex;
-      flex-direction: column;
     }
 
     .eggs-header {
@@ -40,7 +37,6 @@
       border-radius: var(--border-radius);
       margin-bottom: 12px;
       box-shadow: var(--shadow);
-      flex-shrink: 0;
     }
 
     .page-title {
@@ -77,26 +73,22 @@
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
-
     .hidden { display: none; }
 
-    /* --- Dashboard layout --- */
     .dashboard {
       display: flex;
       gap: 12px;
-      flex: 1;
       background-color: var(--white);
       border-radius: var(--border-radius);
       padding: 12px;
       box-shadow: var(--shadow);
-      min-height: 0;
     }
 
     .chart-section {
       flex: 1;
       min-width: 0;
       position: relative;
-      min-height: 350px;
+      height: 400px;
     }
 
     .table-section {
@@ -104,94 +96,14 @@
       min-width: 0;
       display: flex;
       flex-direction: column;
-      min-height: 0;
     }
 
     .table-container {
-      flex: 1;
+      max-height: 500px;
       overflow-y: auto;
       margin-bottom: 8px;
     }
 
-    /* --- Chart --- */
-    .chart-container {
-      height: 100%;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .chart-area {
-      flex: 1;
-      position: relative;
-      display: flex;
-      padding: 10px 10px 80px 40px;
-    }
-
-    .y-axis {
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 80px;
-      width: 40px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding-top: 5px;
-      padding-right: 5px;
-    }
-
-    .y-axis-line {
-      font-size: 10px;
-      text-align: right;
-      width: 100%;
-      color: var(--text-light);
-      border-top: 1px dashed var(--gray-300);
-      padding-right: 5px;
-      position: relative;
-    }
-
-    .bar-container {
-      display: flex;
-      flex: 1;
-      align-items: flex-end;
-      justify-content: space-evenly;
-      padding-bottom: 60px;
-      overflow: visible;
-    }
-
-    .bar {
-      flex: 0 1 8%;
-      margin: 0 4px;
-      border-radius: 8px 8px 0 0;
-      position: relative;
-      min-width: 25px;
-      max-width: 50px;
-      background: linear-gradient(to top, var(--primary-color), var(--primary-lighter));
-    }
-
-    .bar-label {
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-30%) rotate(-40deg);
-      transform-origin: top left;
-      font-size: 11px;
-      white-space: nowrap;
-    }
-
-    .bar-value {
-      position: absolute;
-      top: -20px;
-      left: 0;
-      right: 0;
-      text-align: center;
-      font-weight: 700;
-      font-size: 12px;
-      color: var(--primary-color);
-    }
-
-    /* --- Table --- */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -213,16 +125,13 @@
     }
 
     th.sortable { cursor: pointer; user-select: none; }
-    th.sortable:hover { background-color: var(--primary-lighter); color: var(--white); }
+    th.sortable:hover { background-color: #81C784; color: var(--white); }
     th .sort-arrow { margin-left: 4px; font-size: 10px; opacity: 0.4; }
     th.active-sort .sort-arrow { opacity: 1; }
 
     tr:nth-child(even) { background-color: var(--gray-100); }
 
     .rank { text-align: center; font-weight: 700; }
-    td.rank { width: 40px; }
-    td.col-score, td.col-total { width: 70px; text-align: right; }
-
     .top-3 { color: var(--primary-color); font-weight: 700; }
     .egg-icon { color: #ffd700; margin-right: 4px; }
 
@@ -230,36 +139,19 @@
       font-size: 12px;
       color: var(--text-light);
       text-align: right;
-      flex-shrink: 0;
     }
 
-    /* --- Mobile --- */
     @media (max-width: 768px) {
       .dashboard {
         flex-direction: column;
-        overflow: visible;
       }
 
       .chart-section {
-        width: 100%;
-        min-height: 280px;
-        flex: none;
-      }
-
-      .table-section {
-        width: 100%;
-        flex: none;
+        height: 250px;
       }
 
       .table-container {
         max-height: none;
-        overflow-y: visible;
-      }
-
-      .bar { min-width: 20px; }
-
-      .bar-label {
-        font-size: 10px;
       }
     }
   </style>
@@ -272,7 +164,7 @@
   <div class="container">
     <div class="eggs-header">
       <h1 class="page-title">Easter Egg Hunt Leaderboard</h1>
-      <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
         <button id="refreshBtn" class="refresh-btn">Refresh Data</button>
         <div id="loader" class="loader hidden"></div>
       </div>
@@ -280,12 +172,7 @@
 
     <div class="dashboard">
       <div class="chart-section">
-        <div class="chart-container" id="chartContainer">
-          <div class="chart-area">
-            <div class="y-axis" id="yAxis"></div>
-            <div class="bar-container" id="barChart"></div>
-          </div>
-        </div>
+        <canvas id="eggChart"></canvas>
       </div>
 
       <div class="table-section">
@@ -319,13 +206,12 @@
 
     const refreshBtn = document.getElementById('refreshBtn');
     const loader = document.getElementById('loader');
-    const barChart = document.getElementById('barChart');
     const leaderboardTable = document.getElementById('leaderboardTable');
     const lastUpdated = document.getElementById('lastUpdated');
 
-    // Current data store and sort state
     let currentData = [];
     let currentSort = { field: 'score', dir: 'desc' };
+    let chartInstance = null;
 
     function formatDateTime(timestamp) {
       const date = new Date(timestamp);
@@ -360,33 +246,50 @@
     }
 
     function drawBarChart(data) {
-      barChart.innerHTML = '';
-      // Bar chart always shows top 8 by this year's score
-      const chartData = sortData(data, 'score', 'desc').filter(d => d.score > 0).slice(0, 8);
+      const chartData = sortData(data, 'score', 'desc').filter(d => d.score > 0).slice(0, 10);
       if (chartData.length === 0) return;
 
-      const maxScore = Math.max(...chartData.map(d => d.score));
-      const yAxis = document.getElementById('yAxis');
-      yAxis.innerHTML = '';
+      const ctx = document.getElementById('eggChart').getContext('2d');
 
-      // Use integer steps, cap at 5 ticks max
-      const steps = Math.min(maxScore, 5);
-      const stepSize = Math.ceil(maxScore / steps);
-      const adjustedMax = stepSize * steps;
-
-      for (let i = steps; i >= 0; i--) {
-        const label = document.createElement('div');
-        label.className = 'y-axis-line';
-        label.textContent = stepSize * i;
-        yAxis.appendChild(label);
+      if (chartInstance) {
+        chartInstance.destroy();
       }
 
-      chartData.forEach(entry => {
-        const bar = document.createElement('div');
-        bar.className = 'bar';
-        bar.style.height = `${(entry.score / adjustedMax) * 100}%`;
-        bar.innerHTML = `<div class="bar-value">${entry.score}</div><div class="bar-label">${entry.name}</div>`;
-        barChart.appendChild(bar);
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: chartData.map(d => d.name),
+          datasets: [{
+            label: 'Eggs This Year',
+            data: chartData.map(d => d.score),
+            backgroundColor: '#4CAF50',
+            borderColor: '#2E7D32',
+            borderWidth: 1,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1,
+                precision: 0
+              }
+            },
+            x: {
+              ticks: {
+                maxRotation: 45,
+                minRotation: 0
+              }
+            }
+          }
+        }
       });
     }
 
@@ -409,20 +312,17 @@
       drawBarChart(data);
     }
 
-    // Sort header click handling
     document.querySelectorAll('th.sortable').forEach(th => {
       th.addEventListener('click', () => {
         const field = th.dataset.sort;
         let dir = 'desc';
 
-        // If clicking the same column, toggle direction
         if (currentSort.field === field) {
           dir = currentSort.dir === 'desc' ? 'asc' : 'desc';
         }
 
         currentSort = { field, dir };
 
-        // Update header styles
         document.querySelectorAll('th.sortable').forEach(header => {
           header.classList.remove('active-sort');
           header.querySelector('.sort-arrow').innerHTML = '&#9660;';
@@ -430,7 +330,6 @@
         th.classList.add('active-sort');
         th.querySelector('.sort-arrow').innerHTML = dir === 'desc' ? '&#9660;' : '&#9650;';
 
-        // Re-render table with new sort
         if (currentData.length > 0) {
           displayLeaderboard(currentData);
         }
