@@ -1,3 +1,3 @@
 const CONFIG = {
-  apiKey: 'POW66la7QjNjI97z'
+  apiKey: 'Ai7FeouMaJd9ufVr'
 };
