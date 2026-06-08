@@ -27,18 +27,22 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .status-bar {
+    .page-header {
       display: flex;
-      align-items: center;
-      gap: 12px;
+      align-items: baseline;
+      gap: 16px;
       margin-bottom: 16px;
-      padding: 12px 16px;
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      padding: 0 4px;
     }
-    .faction-name { font-weight: 600; color: var(--green); }
-    .last-updated { font-size: 12px; color: var(--text-light); margin-left: auto; }
+    .page-header h2 {
+      color: var(--green);
+      font-size: 20px;
+      flex: 1;
+    }
+    .last-updated {
+      font-size: 12px;
+      color: var(--text-light);
+    }
 
     .summary-cards {
       display: grid;
@@ -105,8 +109,9 @@
   </nav>
 
   <div class="container">
-    <div class="header">
+    <div class="page-header">
       <h2>Xanax Runners</h2>
+      <span class="last-updated" id="lastUpdated"></span>
     </div>
 
     <div class="setup-section" id="setupSection">
@@ -115,11 +120,6 @@
     </div>
 
     <div class="dashboard-content" id="dashboardContent">
-      <div class="status-bar">
-        <span class="faction-name">Resilience XR</span>
-        <span class="last-updated" id="lastUpdated"></span>
-      </div>
-
       <div class="summary-cards">
         <div class="summary-card">
           <div class="summary-value" id="kpiXanax">0</div>
