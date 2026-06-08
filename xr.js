@@ -60,6 +60,7 @@ function renderActivityChart() {
   const monthlyData = aggregateByMonth(state.data.deposits, state.activityRange);
   const labels = monthlyData.map(m => m.label);
   const values = monthlyData.map(m => m[state.activityMetric]);
+  const prices = monthlyData.map(m => m.avgPrice);
 
   const metricLabels = {
     tickets: 'Tickets',
@@ -69,29 +70,61 @@ function renderActivityChart() {
 
   if (state.activityChart) state.activityChart.destroy();
   const ctx = document.getElementById('activityChart').getContext('2d');
-  const greenColor = getComputedStyle(document.documentElement).getPropertyValue('--green').trim();
+  const root = getComputedStyle(document.documentElement);
+  const greenColor = root.getPropertyValue('--green').trim();
+  const textLight = root.getPropertyValue('--text-light').trim();
+  const gridColor = root.getPropertyValue('--gray-200').trim();
 
   state.activityChart = new Chart(ctx, {
-    type: 'bar',
     data: {
       labels: labels,
-      datasets: [{
-        label: metricLabels[state.activityMetric],
-        data: values,
-        backgroundColor: greenColor,
-        borderRadius: 4
-      }]
+      datasets: [
+        {
+          type: 'bar',
+          label: metricLabels[state.activityMetric],
+          data: values,
+          backgroundColor: greenColor,
+          borderRadius: 4,
+          yAxisID: 'y',
+          order: 2
+        },
+        {
+          type: 'line',
+          label: 'Avg cheapest run',
+          data: prices,
+          borderColor: textLight,
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: textLight,
+          tension: 0.3,
+          yAxisID: 'y1',
+          order: 1,
+          spanGaps: true
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: false },
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { boxWidth: 12, boxHeight: 12, padding: 12 }
+        },
         tooltip: {
           callbacks: {
             label: (ctx) => {
               const v = ctx.parsed.y;
-              return state.activityMetric === 'reimbursed' ? formatMoney(v) : formatCompact(v);
+              if (v == null) return null;
+              if (ctx.dataset.yAxisID === 'y1') {
+                return `Avg price: ${formatMoney(v)}`;
+              }
+              return `${metricLabels[state.activityMetric]}: ${
+                state.activityMetric === 'reimbursed' ? formatMoney(v) : formatCompact(v)
+              }`;
             }
           }
         }
@@ -99,10 +132,19 @@ function renderActivityChart() {
       scales: {
         x: { grid: { display: false } },
         y: {
+          position: 'left',
           beginAtZero: true,
+          grid: { color: gridColor },
           ticks: {
             callback: (v) => state.activityMetric === 'reimbursed' ? formatCompact(v) : v
           }
+        },
+        y1: {
+          position: 'right',
+          beginAtZero: false,
+          grid: { display: false },
+          ticks: { callback: (v) => formatMoney(v) },
+          title: { display: true, text: 'Avg run price', color: textLight, font: { size: 11 } }
         }
       }
     }
@@ -135,19 +177,27 @@ function aggregateByMonth(deposits, rangeMonths) {
 
   const buckets = new Map();
   filtered.forEach(d => {
-    const key = d.date.slice(0, 7); // YYYY-MM
-    if (!buckets.has(key)) buckets.set(key, { tickets: 0, xanax: 0, reimbursed: 0 });
+    const key = d.date.slice(0, 7);
+    if (!buckets.has(key)) buckets.set(key, { tickets: 0, xanax: 0, reimbursed: 0, priceSum: 0, priceCount: 0 });
     const b = buckets.get(key);
     b.tickets += 1;
     b.xanax += d.qty;
     b.reimbursed += d.reimbursement;
+    if (d.cheapest_run > 0) {
+      b.priceSum += d.cheapest_run;
+      b.priceCount += 1;
+    }
   });
 
-  const sorted = Array.from(buckets.entries()).sort((a, b) => a[0] < b[0] ? -1 : 1);
-  return sorted.map(([key, vals]) => ({
-    label: monthLabel(key),
-    ...vals
-  }));
+  return Array.from(buckets.entries())
+    .sort((a, b) => a[0] < b[0] ? -1 : 1)
+    .map(([key, vals]) => ({
+      label: monthLabel(key),
+      tickets: vals.tickets,
+      xanax: vals.xanax,
+      reimbursed: vals.reimbursed,
+      avgPrice: vals.priceCount ? vals.priceSum / vals.priceCount : null
+    }));
 }
 
 // --- Helpers ---
