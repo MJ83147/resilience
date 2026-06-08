@@ -5,102 +5,148 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Xanax Runners Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="styles.css">
   <style>
-    .setup-section {
-      background: var(--gray-100);
-      padding: 16px;
-      border-radius: var(--radius);
-      margin-bottom: 16px;
-    }
+    .setup-section { background: var(--gray-100); padding: 16px; border-radius: var(--radius); margin-bottom: 16px; }
     .dashboard-content { display: none; }
     .loading-spinner {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid var(--gray-300);
-      border-top-color: var(--green);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-right: 8px;
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid var(--gray-300); border-top-color: var(--green);
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .page-header {
-      display: flex;
-      align-items: baseline;
-      gap: 16px;
-      margin-bottom: 16px;
-      padding: 0 4px;
+      display: flex; align-items: baseline; gap: 16px;
+      margin-bottom: 16px; padding: 0 4px;
     }
-    .page-header h2 {
-      color: var(--green);
-      font-size: 20px;
-      flex: 1;
-    }
-    .last-updated {
-      font-size: 12px;
-      color: var(--text-light);
-    }
+    .page-header h2 { color: var(--green); font-size: 20px; flex: 1; }
+    .last-updated { font-size: 12px; color: var(--text-light); }
 
     .summary-cards {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 12px;
-      margin-bottom: 16px;
+      display: grid; grid-template-columns: repeat(6, 1fr);
+      gap: 12px; margin-bottom: 16px;
     }
-    @media (max-width: 1100px) {
-      .summary-cards { grid-template-columns: repeat(3, 1fr); }
-    }
-    @media (max-width: 600px) {
-      .summary-cards { grid-template-columns: repeat(2, 1fr); }
-    }
+    @media (max-width: 1100px) { .summary-cards { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 600px) { .summary-cards { grid-template-columns: repeat(2, 1fr); } }
     .summary-card {
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 14px 12px;
-      text-align: center;
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 14px 12px; text-align: center;
     }
-    .summary-value {
-      font-size: 22px;
-      font-weight: 600;
-      color: var(--green);
-      line-height: 1.2;
-    }
+    .summary-value { font-size: 22px; font-weight: 600; color: var(--green); line-height: 1.2; }
     .summary-label {
-      font-size: 11px;
-      color: var(--text-light);
-      margin-top: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size: 11px; color: var(--text-light); margin-top: 4px;
+      text-transform: uppercase; letter-spacing: 0.5px;
     }
 
     .panel {
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px;
-      margin-bottom: 16px;
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px;
     }
     .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-      gap: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px; flex-wrap: wrap; gap: 12px;
     }
     .panel-title { font-weight: 600; font-size: 15px; }
+    .panel-subtitle { font-size: 12px; color: var(--text-light); font-weight: normal; margin-top: 2px; }
     .panel-filters { display: flex; gap: 4px; flex-wrap: wrap; }
     .panel-filters .filter-btn { padding: 4px 10px; font-size: 12px; }
 
-    .chart-canvas-container {
-      position: relative;
-      height: 320px;
-      width: 100%;
+    .chart-canvas-container { position: relative; height: 320px; width: 100%; }
+    .chart-canvas-container.tall { height: 380px; }
+    .chart-canvas-container.short { height: 220px; }
+
+    .two-col {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-bottom: 16px;
     }
+    @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+    .two-col .panel { margin-bottom: 0; }
+
+    /* Runner search */
+    .runner-search-wrapper { position: relative; margin-bottom: 16px; }
+    .runner-search {
+      width: 100%; padding: 12px 16px;
+      border: 1px solid var(--gray-300); border-radius: var(--radius);
+      background: var(--white); color: var(--text); font-size: 14px;
+    }
+    .runner-search:focus { outline: none; border-color: var(--green); }
+    .runner-suggestions {
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: var(--white); border: 1px solid var(--gray-300);
+      border-top: none; border-radius: 0 0 var(--radius) var(--radius);
+      max-height: 280px; overflow-y: auto; z-index: 100;
+      box-shadow: var(--shadow); display: none;
+    }
+    .runner-suggestions.open { display: block; }
+    .runner-suggestion {
+      padding: 8px 16px; cursor: pointer; font-size: 14px;
+      display: flex; justify-content: space-between;
+    }
+    .runner-suggestion:hover, .runner-suggestion.highlighted { background: var(--gray-100); }
+    .runner-suggestion-meta { color: var(--text-light); font-size: 12px; }
+    .runner-clear {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text-light); cursor: pointer;
+      font-size: 18px; padding: 0; line-height: 1;
+    }
+
+    /* Runner stat tiles with comparison */
+    .runner-stat-grid {
+      display: grid; grid-template-columns: repeat(6, 1fr);
+      gap: 12px; margin-bottom: 16px;
+    }
+    @media (max-width: 1100px) { .runner-stat-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 600px) { .runner-stat-grid { grid-template-columns: repeat(2, 1fr); } }
+    .runner-stat {
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 12px; text-align: center;
+    }
+    .runner-stat-value { font-size: 18px; font-weight: 600; color: var(--green); }
+    .runner-stat-label {
+      font-size: 10px; color: var(--text-light); margin-top: 2px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .runner-stat-compare {
+      font-size: 11px; color: var(--text-light); margin-top: 6px;
+      padding-top: 6px; border-top: 1px solid var(--gray-200);
+    }
+    .runner-stat-compare strong { color: var(--text); }
+
+    /* Callouts */
+    .callout-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 12px; margin-bottom: 16px;
+    }
+    @media (max-width: 800px) { .callout-row { grid-template-columns: 1fr; } }
+    .callout {
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 14px; display: flex; flex-direction: column; gap: 4px;
+    }
+    .callout-label { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+    .callout-value { font-size: 16px; font-weight: 600; color: var(--text); }
+    .callout-detail { font-size: 12px; color: var(--text-light); }
+
+    /* Empty state */
+    .runner-empty {
+      padding: 32px; text-align: center; color: var(--text-light);
+      background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
+    }
+
+    /* Recent deposits */
+    .mini-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+    .mini-table th, .mini-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--gray-200); }
+    .mini-table th { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; background: var(--gray-100); }
+    .mini-table td { white-space: nowrap; }
+    .mini-table tbody tr:hover { background: var(--gray-100); }
+    .paid-yes { color: var(--green); font-weight: 600; }
+    .paid-no { color: var(--red); font-weight: 600; }
+
+    /* Raw data filter row */
+    .raw-filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+    .raw-filters input { padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: var(--radius); background: var(--white); color: var(--text); font-size: 13px; }
   </style>
 </head>
 <body>
@@ -121,49 +167,191 @@
 
     <div class="dashboard-content" id="dashboardContent">
       <div class="summary-cards">
-        <div class="summary-card">
-          <div class="summary-value" id="kpiXanax">0</div>
-          <div class="summary-label">Xanax Deposited</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-value" id="kpiReimbursed">$0</div>
-          <div class="summary-label">Reimbursed to Runners</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-value" id="kpiRevenue">$0</div>
-          <div class="summary-label">Sales Revenue</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-value" id="kpiProfit">$0</div>
-          <div class="summary-label">Net Profit</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-value" id="kpiRunners">0</div>
-          <div class="summary-label">Contributors</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-value" id="kpiMonths">0</div>
-          <div class="summary-label">Months Running</div>
-        </div>
+        <div class="summary-card"><div class="summary-value" id="kpiXanax">0</div><div class="summary-label">Xanax Deposited</div></div>
+        <div class="summary-card"><div class="summary-value" id="kpiReimbursed">$0</div><div class="summary-label">Reimbursed to Runners</div></div>
+        <div class="summary-card"><div class="summary-value" id="kpiRevenue">$0</div><div class="summary-label">Est. Revenue</div></div>
+        <div class="summary-card"><div class="summary-value" id="kpiNet">$0</div><div class="summary-label">Est. Net</div></div>
+        <div class="summary-card"><div class="summary-value" id="kpiPrice">$0</div><div class="summary-label">Xanax Market Price</div></div>
+        <div class="summary-card"><div class="summary-value" id="kpiRunners">0</div><div class="summary-label">Contributors</div></div>
       </div>
 
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Activity Over Time</div>
-          <div class="panel-filters" id="activityMetricFilter">
-            <button class="filter-btn active" data-metric="tickets">Tickets</button>
-            <button class="filter-btn" data-metric="xanax">Xanax</button>
-            <button class="filter-btn" data-metric="reimbursed">Reimbursed</button>
+      <div class="tab-container">
+        <div class="tab-buttons">
+          <button id="tabBtn-overview" class="active" onclick="showTab('overview')">Overview</button>
+          <button id="tabBtn-runners" onclick="showTab('runners')">Runners</button>
+          <button id="tabBtn-pricing" onclick="showTab('pricing')">Pricing</button>
+          <button id="tabBtn-sales" onclick="showTab('sales')">Sales</button>
+          <button id="tabBtn-raw" onclick="showTab('raw')">Raw Data</button>
+        </div>
+
+        <!-- OVERVIEW TAB -->
+        <div id="tab-overview" class="tab-section active">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Cumulative Xanax Deposited</div>
+                <div class="panel-subtitle">The relentless climb. Total xanax delivered to the armoury since day one.</div>
+              </div>
+            </div>
+            <div class="chart-canvas-container tall"><canvas id="cumulativeChart"></canvas></div>
           </div>
-          <div class="panel-filters" id="activityRangeFilter">
-            <button class="filter-btn" data-range="3">3M</button>
-            <button class="filter-btn" data-range="6">6M</button>
-            <button class="filter-btn active" data-range="12">12M</button>
-            <button class="filter-btn" data-range="all">All</button>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">When Do Runs Happen?</div>
+                <div class="panel-subtitle">Deposits by day of week and hour (UTC). Darker = more activity.</div>
+              </div>
+            </div>
+            <div class="chart-canvas-container tall"><canvas id="heatmapChart"></canvas></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Monthly Volume</div>
+                <div class="panel-subtitle">Tickets per month with average run price overlaid.</div>
+              </div>
+              <div class="panel-filters" id="activityRangeFilter">
+                <button class="filter-btn" data-range="6">6M</button>
+                <button class="filter-btn active" data-range="12">12M</button>
+                <button class="filter-btn" data-range="all">All</button>
+              </div>
+            </div>
+            <div class="chart-canvas-container"><canvas id="activityChart"></canvas></div>
           </div>
         </div>
-        <div class="chart-canvas-container">
-          <canvas id="activityChart"></canvas>
+
+        <!-- RUNNERS TAB -->
+        <div id="tab-runners" class="tab-section">
+          <div class="two-col">
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Who Carries the Op</div>
+                  <div class="panel-subtitle">Sorted by total runs. Line shows cumulative % of total contribution.</div>
+                </div>
+              </div>
+              <div class="chart-canvas-container"><canvas id="paretoChart"></canvas></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">New vs Veteran Runners</div>
+                  <div class="panel-subtitle">Monthly volume stacked by when each runner first joined.</div>
+                </div>
+              </div>
+              <div class="chart-canvas-container"><canvas id="cohortChart"></canvas></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Runner Lookup</div>
+                <div class="panel-subtitle">Search any runner to see their personal dashboard. Leave empty for faction-wide view.</div>
+              </div>
+            </div>
+            <div class="runner-search-wrapper">
+              <input type="text" class="runner-search" id="runnerSearch" placeholder="Type a runner name..." autocomplete="off">
+              <button class="runner-clear" id="runnerClear" style="display:none">×</button>
+              <div class="runner-suggestions" id="runnerSuggestions"></div>
+            </div>
+
+            <div id="runnerDashboard">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- PRICING TAB -->
+        <div id="tab-pricing" class="tab-section">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Cheapest Run Price Over Time</div>
+                <div class="panel-subtitle">Daily lowest pharmacist price. 30-day moving average overlaid.</div>
+              </div>
+            </div>
+            <div class="chart-canvas-container tall"><canvas id="priceChart"></canvas></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Pharmacist Load</div>
+                <div class="panel-subtitle">Monthly tickets processed, split by pharmacist.</div>
+              </div>
+            </div>
+            <div class="chart-canvas-container"><canvas id="pharmacistChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- SALES TAB -->
+        <div id="tab-sales" class="tab-section">
+          <div class="two-col">
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Top Buyers</div>
+                  <div class="panel-subtitle">Share of total xanax sold per buyer.</div>
+                </div>
+              </div>
+              <div class="chart-canvas-container"><canvas id="buyersChart"></canvas></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Sale Price vs Quantity</div>
+                  <div class="panel-subtitle">Each dot is one sale. Bigger orders tend to mean lower per-unit price.</div>
+                </div>
+              </div>
+              <div class="chart-canvas-container"><canvas id="salesScatterChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RAW DATA TAB -->
+        <div id="tab-raw" class="tab-section">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">All Deposits</div>
+                <div class="panel-subtitle">Every recorded ticket. Click headers to sort.</div>
+              </div>
+            </div>
+            <div class="raw-filters">
+              <input type="text" id="rawSearch" placeholder="Search runner or ticket...">
+              <select id="rawPharmacist">
+                <option value="">All pharmacists</option>
+              </select>
+              <select id="rawPaid">
+                <option value="">All statuses</option>
+                <option value="paid">Paid</option>
+                <option value="unpaid">Unpaid</option>
+              </select>
+              <span id="rawCount" style="font-size:12px;color:var(--text-light);"></span>
+            </div>
+            <div class="table-wrapper">
+              <table id="rawTable">
+                <thead>
+                  <tr>
+                    <th data-sort="date">Date</th>
+                    <th data-sort="runner">Runner</th>
+                    <th data-sort="ticket">Ticket</th>
+                    <th data-sort="cheapest_run">Cheapest Run</th>
+                    <th data-sort="qty">Qty</th>
+                    <th data-sort="processed_by">Pharmacist</th>
+                    <th data-sort="reimbursement">Reimbursed</th>
+                    <th data-sort="paid">Paid</th>
+                  </tr>
+                </thead>
+                <tbody id="rawTableBody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
