@@ -57,10 +57,14 @@
     @media (max-width: 1000px) {
       .tab-grid { grid-template-columns: repeat(2, 1fr); }
       .span-2, .span-3 { grid-column: span 2; }
+      /* Heatmap goes full-width, so lay its callouts in a row beneath it. */
+      .tab-grid .callout-stack { grid-column: span 2; flex-direction: row; }
+      .tab-grid .callout-stack .callout { flex: 1; }
     }
     @media (max-width: 640px) {
       .tab-grid, .tab-grid.cols-2 { grid-template-columns: 1fr; }
       .span-1, .span-2, .span-3 { grid-column: span 1; }
+      .tab-grid .callout-stack { flex-direction: column; }
     }
 
     /* ---- Panels ---- */
@@ -94,7 +98,8 @@
     .callout-stack { display: flex; flex-direction: column; gap: 16px; }
 
     /* ---- Heatmap (HTML/CSS grid) ---- */
-    .heatmap { display: grid; gap: 3px; margin-top: 4px; }
+    #heatmap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .heatmap { display: grid; gap: 3px; margin-top: 4px; min-width: 480px; }
     .hm-daylabel { font-size: 11px; color: var(--text-light); display: flex; align-items: center; padding-right: 8px; justify-content: flex-end; }
     .hm-cell { border-radius: 2px; min-height: 16px; aspect-ratio: 1 / 1; }
     .hm-xlabel { font-size: 11px; color: var(--text-light); text-align: left; padding-top: 4px; }
@@ -189,6 +194,20 @@
     }
     .raw-filters input:focus { outline: none; border-color: var(--green); }
     .raw-count { font-size: 12px; color: var(--text-light); margin-left: auto; }
+
+    /* ---- Mobile tuning ---- */
+    @media (max-width: 640px) {
+      .page-header h1 { font-size: 20px; }
+      .panel { padding: 14px; }
+      .chart-box { height: 260px; }
+      .chart-box.tall { height: 300px; }
+      .chart-box.pareto { height: 380px; }
+      /* Keep tabs on one scrollable row instead of wrapping. */
+      .tab-buttons { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+      .tab-buttons button { white-space: nowrap; flex: 0 0 auto; }
+      .raw-filters input[type="text"] { min-width: 0; width: 100%; }
+      .raw-count { margin-left: 0; }
+    }
   </style>
 </head>
 <body>
