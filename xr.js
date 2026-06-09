@@ -157,8 +157,20 @@ function renderSnapshotColumn(elId, days, title, sub) {
   const prev = state.deposits.filter(d => d.date >= prevStart && d.date < curStart);
 
   const runners = new Set(cur.map(d => d.runner)).size;
-  const xanax = sum(cur, d => d.qty);
-  const reimbursed = sum(cur, d => d.reimbursement);
+  const prevRunners = new Set(prev.map(d => d.runner)).size;
+  const xanax = sum(cur, d => d.qty), prevXanax = sum(prev, d => d.qty);
+  const reimb = sum(cur, d => d.reimbursement), prevReimb = sum(prev, d => d.reimbursement);
+  const estVal = xanax * XANAX_PRICE, prevEst = prevXanax * XANAX_PRICE;
+  const avg = avgRunCost(cur), prevAvg = avgRunCost(prev);
+
+  const metrics = [
+    { label: 'Active runners', val: runners.toLocaleString(), delta: snapDelta(runners, prevRunners, 'up', false) },
+    { label: 'Avg cost / run', val: avg == null ? 'n/a' : formatMoney(avg),
+      delta: (avg == null || prevAvg == null) ? '<span class="snap-flat">no priced runs</span>' : snapDelta(avg, prevAvg, 'down', true) },
+    { label: 'Xanax delivered', val: formatCompact(xanax), delta: snapDelta(xanax, prevXanax, 'up', true) },
+    { label: 'Est. value', val: formatMoney(estVal), delta: snapDelta(estVal, prevEst, 'up', true) },
+    { label: 'Reimbursed', val: formatMoney(reimb), delta: snapDelta(reimb, prevReimb, 'neutral', true) }
+  ];
 
   const byRunner = groupBy(cur, 'runner');
   const contributors = Object.entries(byRunner)
@@ -168,31 +180,44 @@ function renderSnapshotColumn(elId, days, title, sub) {
   const chips = contributors.length
     ? '<div class="snapshot-chips">' + contributors.map(r =>
         '<span class="snap-chip">' + runnerHTML(r.name) + '<strong>' + r.count + '</strong></span>').join('') + '</div>'
-    : '<div class="snapshot-empty">No runs recorded yet. Runs usually land on a Saturday.</div>';
+    : '<div class="snapshot-empty">No runs in this window. Runs usually land on a Saturday.</div>';
 
   document.getElementById(elId).innerHTML =
     '<div class="snap-col-head"><span class="snap-col-title">' + title + '</span><span class="snap-col-sub">' + sub + '</span></div>' +
     '<div class="snap-hero">' +
       '<span class="snap-hero-num">' + cur.length.toLocaleString() + '</span>' +
       '<span class="snap-hero-unit">' + (cur.length === 1 ? 'run' : 'runs') + '</span>' +
-      '<span class="snap-hero-delta">' + deltaHTML(cur.length, prev.length, days) + '</span>' +
+      '<span class="snap-hero-delta">' + snapDelta(cur.length, prev.length, 'up', false) + ' vs prior ' + days + ' days</span>' +
     '</div>' +
-    '<div class="snap-subline">' +
-      '<span><strong>' + runners + '</strong> ' + (runners === 1 ? 'runner' : 'runners') + '</span>' +
-      '<span class="snap-sep">&middot;</span>' +
-      '<span><strong>' + formatCompact(xanax) + '</strong> xanax</span>' +
-      '<span class="snap-sep">&middot;</span>' +
-      '<span><strong>' + formatMoney(reimbursed) + '</strong> reimbursed</span>' +
+    '<div class="snap-metrics">' +
+      metrics.map(m =>
+        '<div class="snap-m">' +
+          '<div class="snap-m-val">' + m.val + '</div>' +
+          '<div class="snap-m-label">' + m.label + '</div>' +
+          '<div class="snap-m-delta">' + m.delta + '</div>' +
+        '</div>').join('') +
     '</div>' +
     '<div class="snapshot-runners-label">Who ran</div>' + chips;
 }
 
-function deltaHTML(cur, prev, days) {
-  const d = cur - prev;
-  if (d === 0) return '<span class="snap-flat">No change vs prior ' + days + ' days</span>';
-  const cls = d > 0 ? 'snap-up' : 'snap-down';
-  const arrow = d > 0 ? '▲' : '▼';
-  return '<span class="' + cls + '">' + arrow + ' ' + Math.abs(d) + '</span> vs prior ' + days + ' days';
+function avgRunCost(rows) {
+  const costs = rows.filter(d => d.cheapest_run > 1).map(d => d.cheapest_run);
+  return costs.length ? costs.reduce((s, c) => s + c, 0) / costs.length : null;
+}
+
+// Comparison badge vs the prior equal-length period.
+// better: 'up' (higher is good), 'down' (lower is good), 'neutral' (no colour).
+// pct: true shows percentage change, false shows absolute change.
+function snapDelta(cur, prev, better, pct) {
+  if (cur === prev) return '<span class="snap-flat">no change</span>';
+  const up = cur > prev;
+  const good = better === 'neutral' ? null : (better === 'up' ? up : !up);
+  const cls = good === null ? 'snap-neutral' : (good ? 'snap-up' : 'snap-down');
+  const arrow = up ? '▲' : '▼';
+  const mag = pct
+    ? (prev === 0 ? 'new' : Math.abs(Math.round((cur - prev) / prev * 100)) + '%')
+    : Math.abs(cur - prev).toLocaleString();
+  return '<span class="' + cls + '">' + arrow + ' ' + mag + '</span>';
 }
 
 // =====================================================================

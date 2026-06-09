@@ -119,19 +119,21 @@
     .snap-col-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
     .snap-col-title { font-weight: 700; font-size: 13px; color: var(--snap-accent, var(--green)); text-transform: uppercase; letter-spacing: 0.6px; }
     .snap-col-sub { font-size: 11px; color: var(--text-light); }
-    .snap-hero { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .snap-hero { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
     .snap-hero-num { font-size: 42px; font-weight: 700; color: var(--snap-accent, var(--green)); line-height: 1; letter-spacing: -1.5px; }
     .snap-hero-unit { font-size: 15px; color: var(--text-light); }
-    .snap-hero-delta { font-size: 12px; margin-left: auto; align-self: center; white-space: nowrap; }
-    .snap-subline {
-      display: flex; flex-wrap: wrap; align-items: center;
-      font-size: 13.5px; color: var(--text); padding: 12px 0; margin-bottom: 4px;
-      border-top: 1px solid var(--gray-300); border-bottom: 1px solid var(--gray-300);
+    .snap-hero-delta { font-size: 12px; margin-left: auto; align-self: center; white-space: nowrap; color: var(--text-light); }
+    .snap-metrics {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 14px;
+      padding: 16px 0; margin-top: 14px; border-top: 1px solid var(--gray-300);
     }
-    .snap-subline strong { font-weight: 700; }
-    .snap-sep { color: var(--gray-300); margin: 0 10px; }
+    @media (max-width: 1150px) { .snap-metrics { grid-template-columns: repeat(2, 1fr); } }
+    .snap-m-val { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.1; }
+    .snap-m-label { font-size: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 4px; }
+    .snap-m-delta { font-size: 11px; margin-top: 5px; color: var(--text-light); }
     .snap-up { color: var(--green); font-weight: 600; }
     .snap-down { color: var(--red); font-weight: 600; }
+    .snap-neutral { color: var(--text-light); font-weight: 600; }
     .snap-flat { color: var(--text-light); }
     .snapshot-runners-label { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 8px; }
     .snapshot-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -567,7 +569,7 @@
     </div>
   </div>
 
-  <script src="xr.js?v=20260609c"></script>
+  <script src="xr.js?v=20260609d"></script>
   <script src="theme.js"></script>
 </body>
 </html>
