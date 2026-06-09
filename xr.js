@@ -82,6 +82,7 @@ function renderAll() {
   renderRunnerDashboard();
   renderReimbursementChart();
   renderReimbursementCallouts();
+  renderLeaderboard();
   renderPriceChart();
   renderPricingCallouts();
   renderPharmacistChart();
@@ -156,12 +157,8 @@ function renderSnapshotColumn(elId, days, title, sub) {
   const prev = state.deposits.filter(d => d.date >= prevStart && d.date < curStart);
 
   const runners = new Set(cur.map(d => d.runner)).size;
-  const stats = [
-    { v: cur.length.toLocaleString(), l: 'Runs' },
-    { v: runners.toLocaleString(), l: 'Runners' },
-    { v: formatCompact(sum(cur, d => d.qty)), l: 'Xanax' },
-    { v: formatMoney(sum(cur, d => d.reimbursement)), l: 'Reimbursed' }
-  ];
+  const xanax = sum(cur, d => d.qty);
+  const reimbursed = sum(cur, d => d.reimbursement);
 
   const byRunner = groupBy(cur, 'runner');
   const contributors = Object.entries(byRunner)
@@ -175,19 +172,27 @@ function renderSnapshotColumn(elId, days, title, sub) {
 
   document.getElementById(elId).innerHTML =
     '<div class="snap-col-head"><span class="snap-col-title">' + title + '</span><span class="snap-col-sub">' + sub + '</span></div>' +
-    '<div class="snap-stat-row">' +
-      stats.map(s => '<div class="snap-stat"><div class="snap-stat-v">' + s.v + '</div><div class="snap-stat-l">' + s.l + '</div></div>').join('') +
+    '<div class="snap-hero">' +
+      '<span class="snap-hero-num">' + cur.length.toLocaleString() + '</span>' +
+      '<span class="snap-hero-unit">' + (cur.length === 1 ? 'run' : 'runs') + '</span>' +
+      '<span class="snap-hero-delta">' + deltaHTML(cur.length, prev.length, days) + '</span>' +
     '</div>' +
-    '<div class="snap-delta">' + deltaHTML(cur.length, prev.length, days) + '</div>' +
+    '<div class="snap-subline">' +
+      '<span><strong>' + runners + '</strong> ' + (runners === 1 ? 'runner' : 'runners') + '</span>' +
+      '<span class="snap-sep">&middot;</span>' +
+      '<span><strong>' + formatCompact(xanax) + '</strong> xanax</span>' +
+      '<span class="snap-sep">&middot;</span>' +
+      '<span><strong>' + formatMoney(reimbursed) + '</strong> reimbursed</span>' +
+    '</div>' +
     '<div class="snapshot-runners-label">Who ran</div>' + chips;
 }
 
 function deltaHTML(cur, prev, days) {
   const d = cur - prev;
-  if (d === 0) return '<span class="snap-flat">No change vs the prior ' + days + ' days</span>';
+  if (d === 0) return '<span class="snap-flat">No change vs prior ' + days + ' days</span>';
   const cls = d > 0 ? 'snap-up' : 'snap-down';
   const arrow = d > 0 ? '▲' : '▼';
-  return '<span class="' + cls + '">' + arrow + ' ' + Math.abs(d) + ' runs</span> vs the prior ' + days + ' days';
+  return '<span class="' + cls + '">' + arrow + ' ' + Math.abs(d) + '</span> vs prior ' + days + ' days';
 }
 
 // =====================================================================
@@ -489,13 +494,34 @@ function renderReimbursementCallouts() {
   }
 }
 
+// Faction-wide leaderboard (aggregate view lives on the Runners tab).
+function renderLeaderboard() {
+  const byRunner = groupBy(state.deposits, 'runner');
+  const rows = Object.entries(byRunner)
+    .map(([name, d]) => ({ name, runs: d.length, xanax: sum(d, x => x.qty), earned: sum(d, x => x.reimbursement) }))
+    .sort((a, b) => b.runs - a.runs);
+
+  document.getElementById('leaderboardWrap').innerHTML =
+    '<table class="mini-table"><thead><tr><th>#</th><th>Runner</th><th>Runs</th><th>Xanax</th><th>Reimbursed</th></tr></thead><tbody>' +
+    rows.map((r, i) =>
+      '<tr><td>' + (i + 1) + '</td><td>' + runnerHTML(r.name) + '</td><td>' + r.runs +
+      '</td><td>' + formatCompact(r.xanax) + '</td><td>' + formatMoney(r.earned) + '</td></tr>').join('') +
+    '</tbody></table>';
+}
+
 // =====================================================================
 // Runners: lookup mini-dashboard
 // =====================================================================
 function renderRunnerDashboard() {
   const container = document.getElementById('runnerDashboard');
-  const view = computeRunnerView(state.selectedRunner);
   const runner = state.selectedRunner;
+
+  if (!runner) {
+    container.innerHTML = '<div class="lookup-empty">Search for a runner above to see their xanax delivered, total earned, runs over time, and recent deposits.<br>For the faction-wide picture, see the Runners tab.</div>';
+    return;
+  }
+
+  const view = computeRunnerView(runner);
 
   container.innerHTML =
     '<div class="runner-stat-grid">' +
@@ -540,31 +566,6 @@ function computeRunnerView(runner) {
   const runsLb = names.map(n => ({ name: n, runs: byRunner[n].length })).sort((a, b) => b.runs - a.runs);
   const xanaxLb = names.map(n => ({ name: n, xanax: sum(byRunner[n], d => d.qty) })).sort((a, b) => b.xanax - a.xanax);
   const earnedLb = names.map(n => ({ name: n, earned: sum(byRunner[n], d => d.reimbursement) })).sort((a, b) => b.earned - a.earned);
-
-  if (!runner) {
-    const totalXanax = sum(all, d => d.qty);
-    const totalEarned = sum(all, d => d.reimbursement);
-    const avgRuns = (totalRuns / totalRunners).toFixed(1);
-    const sorted = [...all].sort((a, b) => a.date < b.date ? -1 : 1);
-    const first = sorted[0].date, last = sorted[sorted.length - 1].date;
-
-    return {
-      tiles: [
-        { value: formatCompact(totalXanax), label: 'Total xanax', compare: 'Top: <strong>' + runnerHTML(xanaxLb[0].name) + '</strong>' },
-        { value: formatMoney(totalEarned), label: 'Total earned', compare: 'Top: <strong>' + runnerHTML(earnedLb[0].name) + '</strong>' },
-        { value: totalRuns.toLocaleString(), label: 'Run count', compare: '<strong>' + avgRuns + '</strong> per runner' },
-        { value: formatShortDate(first), label: 'First deposit', compare: 'By <strong>' + runnerHTML(sorted[0].runner) + '</strong>' },
-        { value: formatShortDate(last), label: 'Last deposit', compare: daysSinceLabel(last) },
-        { value: totalRunners, label: 'Contributors', compare: 'All-time runners' }
-      ],
-      callouts: [
-        { label: 'Busiest month', value: busiestMonthLabel(all), detail: 'Across all runners' },
-        { label: 'Top 10 share', value: topNShare(runsLb, 10) + '%', detail: 'Of all runs by top 10 runners' },
-        { label: 'Most recent run', value: runnerHTML(sorted[sorted.length - 1].runner), detail: formatShortDate(last) }
-      ],
-      tableHTML: leaderboardTable(runsLb.slice(0, 20))
-    };
-  }
 
   const mine = (byRunner[runner] || []).slice().sort((a, b) => a.date < b.date ? -1 : 1);
   const myRuns = mine.length;
@@ -642,12 +643,6 @@ function renderRunnerActivityChart() {
       }
     })
   });
-}
-
-function leaderboardTable(rows) {
-  return '<table class="mini-table"><thead><tr><th>#</th><th>Runner</th><th>Runs</th></tr></thead><tbody>' +
-    rows.map((r, i) => '<tr><td>' + (i + 1) + '</td><td>' + runnerHTML(r.name) + '</td><td>' + r.runs + '</td></tr>').join('') +
-    '</tbody></table>';
 }
 
 function recentDepositsTable(allSorted) {
@@ -1139,19 +1134,6 @@ function bestAndQuietestMonths(sorted) {
     bestLabel: monthLabel(best[0]) + ' (' + best[1] + ')',
     quietLabel: monthLabel(quiet[0]) + ' (' + quiet[1] + ')'
   };
-}
-
-function busiestMonthLabel(deposits) {
-  const m = new Map();
-  deposits.forEach(d => { const k = d.date.slice(0, 7); m.set(k, (m.get(k) || 0) + 1); });
-  const best = [...m.entries()].reduce((a, b) => b[1] > a[1] ? b : a, ['', 0]);
-  return monthLabel(best[0]) + ' (' + best[1] + ')';
-}
-
-function topNShare(runsLb, n) {
-  const total = runsLb.reduce((s, r) => s + r.runs, 0);
-  const top = runsLb.slice(0, n).reduce((s, r) => s + r.runs, 0);
-  return total ? ((top / total) * 100).toFixed(0) : '0';
 }
 
 // =====================================================================
