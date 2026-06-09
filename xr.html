@@ -85,6 +85,14 @@
     .chart-box.tall { height: 380px; }
     .chart-box.short { height: 230px; }
     .chart-box.pareto { height: 440px; }
+    .chart-empty {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      text-align: center; color: var(--text-light); font-size: 13px; padding: 16px;
+    }
+
+    /* ---- Former-member marker ---- */
+    .former-mark { color: var(--text-light); font-weight: normal; margin-left: 1px; cursor: help; }
+    .former-note { font-size: 11px; color: var(--text-light); margin-top: 10px; }
 
     /* ---- Callout tiles ---- */
     .callout {
@@ -304,11 +312,22 @@
         <div id="tab-runners" class="tab-section">
           <div class="tab-grid">
             <div class="panel span-2">
-              <div class="panel-header"><div>
-                <div class="panel-title">Contribution concentration</div>
-                <div class="panel-subtitle">The 15 most active runners by total runs.</div>
-              </div></div>
-              <div class="chart-box pareto"><canvas id="paretoChart"></canvas></div>
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Contribution concentration</div>
+                  <div class="panel-subtitle">The 15 most active runners by runs. <span id="paretoSummary"></span></div>
+                </div>
+                <div class="panel-filters" id="paretoPeriodFilter">
+                  <button class="filter-btn" data-period="week">This week</button>
+                  <button class="filter-btn" data-period="month">This month</button>
+                  <button class="filter-btn active" data-period="all">All time</button>
+                </div>
+              </div>
+              <div class="chart-box pareto">
+                <canvas id="paretoChart"></canvas>
+                <div id="paretoEmpty" class="chart-empty" style="display:none"></div>
+              </div>
+              <div class="former-note">Names marked <span class="former-mark">*</span> are no longer in the faction. Their history is kept.</div>
             </div>
 
             <div class="panel span-1">
@@ -437,6 +456,7 @@
                 <tbody id="rawTableBody"></tbody>
               </table>
             </div>
+            <div class="former-note">Runners marked <span class="former-mark">*</span> are no longer in the faction. Their history is kept.</div>
           </div>
         </div>
       </div>

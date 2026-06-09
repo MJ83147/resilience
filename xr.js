@@ -26,7 +26,9 @@ const state = {
   raw: null,            // full parsed JSON
   deposits: [],         // deposits with a valid date
   sales: [],            // all sales (negatives kept)
+  activeRunners: new Set(), // current roster, used to flag former members
   activityRange: 12,
+  runnersPeriod: 'all', // contribution concentration window: week | month | all
   selectedRunner: null,
   runnerTableSort: { key: 'date', dir: 'desc' },
   rawSort: { key: 'date', dir: 'desc' },
@@ -44,6 +46,7 @@ async function init() {
     // The feed can contain a stray row with no date / zero qty. Drop those for charts.
     state.deposits = (state.raw.deposits || []).filter(d => d && d.date);
     state.sales = state.raw.sales || [];
+    state.activeRunners = new Set((state.raw.roster && state.raw.roster.runners_active) || []);
 
     document.getElementById('setupSection').style.display = 'none';
     document.getElementById('dashboardContent').style.display = 'block';
@@ -285,18 +288,37 @@ function renderActivityChart() {
 // Runners: contribution concentration (horizontal bars, top 15)
 // =====================================================================
 function renderParetoChart() {
-  const byRunner = groupBy(state.deposits, 'runner');
+  const period = state.runnersPeriod;
+  const deps = depositsInPeriod(period);
+  const byRunner = groupBy(deps, 'runner');
   const top = Object.entries(byRunner)
-    .map(([name, deps]) => ({ name, count: deps.length }))
+    .map(([name, d]) => ({ name, count: d.length }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 15);
   const c = themeColors();
+  const label = periodLabel(period);
+
+  const runners = Object.keys(byRunner).length;
+  setHTML('paretoSummary', deps.length.toLocaleString() + ' run' + (deps.length === 1 ? '' : 's') +
+    ' by ' + runners + ' runner' + (runners === 1 ? '' : 's') + ' ' + label + '.');
+
+  const canvas = document.getElementById('paretoChart');
+  const emptyEl = document.getElementById('paretoEmpty');
+  if (!top.length) {
+    destroyChart('pareto');
+    canvas.style.display = 'none';
+    emptyEl.style.display = 'flex';
+    emptyEl.textContent = 'No runs recorded ' + label + ' yet.';
+    return;
+  }
+  canvas.style.display = '';
+  emptyEl.style.display = 'none';
 
   destroyChart('pareto');
   state.charts.pareto = new Chart(ctx('paretoChart'), {
     type: 'bar',
     data: {
-      labels: top.map(r => r.name),
+      labels: top.map(r => runnerText(r.name)),
       datasets: [{ label: 'Runs', data: top.map(r => r.count),
         backgroundColor: c.green, borderRadius: 3 }]
     },
@@ -391,7 +413,7 @@ function renderRunnerDashboard() {
         '</div>').join('') +
     '</div>' +
     '<div class="runner-subpanel">' +
-      '<div class="subpanel-title">' + (runner ? esc(runner) + "'s monthly runs" : 'Faction monthly runs') + '</div>' +
+      '<div class="subpanel-title">' + (runner ? runnerHTML(runner) + "'s monthly runs" : 'Faction monthly runs') + '</div>' +
       '<div class="subpanel-subtitle">' + (runner
         ? 'Their runs each month. Dashed line is the faction average runs per runner per month.'
         : 'Total runs each month. Dashed line is the average runs per runner per month.') + '</div>' +
@@ -426,17 +448,17 @@ function computeRunnerView(runner) {
 
     return {
       tiles: [
-        { value: formatCompact(totalXanax), label: 'Total xanax', compare: 'Top: <strong>' + esc(xanaxLb[0].name) + '</strong>' },
-        { value: formatMoney(totalEarned), label: 'Total earned', compare: 'Top: <strong>' + esc(earnedLb[0].name) + '</strong>' },
+        { value: formatCompact(totalXanax), label: 'Total xanax', compare: 'Top: <strong>' + runnerHTML(xanaxLb[0].name) + '</strong>' },
+        { value: formatMoney(totalEarned), label: 'Total earned', compare: 'Top: <strong>' + runnerHTML(earnedLb[0].name) + '</strong>' },
         { value: totalRuns.toLocaleString(), label: 'Run count', compare: '<strong>' + avgRuns + '</strong> per runner' },
-        { value: formatShortDate(first), label: 'First deposit', compare: 'By <strong>' + esc(sorted[0].runner) + '</strong>' },
+        { value: formatShortDate(first), label: 'First deposit', compare: 'By <strong>' + runnerHTML(sorted[0].runner) + '</strong>' },
         { value: formatShortDate(last), label: 'Last deposit', compare: daysSinceLabel(last) },
         { value: totalRunners, label: 'Contributors', compare: 'All-time runners' }
       ],
       callouts: [
         { label: 'Busiest month', value: busiestMonthLabel(all), detail: 'Across all runners' },
         { label: 'Top 10 share', value: topNShare(runsLb, 10) + '%', detail: 'Of all runs by top 10 runners' },
-        { label: 'Most recent run', value: esc(sorted[sorted.length - 1].runner), detail: formatShortDate(last) }
+        { label: 'Most recent run', value: runnerHTML(sorted[sorted.length - 1].runner), detail: formatShortDate(last) }
       ],
       tableHTML: leaderboardTable(runsLb.slice(0, 20))
     };
@@ -522,7 +544,7 @@ function renderRunnerActivityChart() {
 
 function leaderboardTable(rows) {
   return '<table class="mini-table"><thead><tr><th>#</th><th>Runner</th><th>Runs</th></tr></thead><tbody>' +
-    rows.map((r, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(r.name) + '</td><td>' + r.runs + '</td></tr>').join('') +
+    rows.map((r, i) => '<tr><td>' + (i + 1) + '</td><td>' + runnerHTML(r.name) + '</td><td>' + r.runs + '</td></tr>').join('') +
     '</tbody></table>';
 }
 
@@ -764,7 +786,7 @@ function renderRawTable() {
   document.getElementById('rawTableBody').innerHTML = display.map(r =>
     '<tr>' +
       '<td>' + formatShortDate(r.date) + '</td>' +
-      '<td>' + esc(r.runner) + '</td>' +
+      '<td>' + runnerHTML(r.runner) + '</td>' +
       '<td>' + esc(r.ticket) + '</td>' +
       '<td>' + formatMoney(r.cheapest_run) + '</td>' +
       '<td>' + r.qty + '</td>' +
@@ -793,6 +815,16 @@ function wireUI() {
     });
   });
 
+  // Contribution concentration period filter
+  document.querySelectorAll('#paretoPeriodFilter .filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#paretoPeriodFilter .filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.runnersPeriod = btn.dataset.period;
+      renderParetoChart();
+    });
+  });
+
   // Runner search autocomplete
   const input = document.getElementById('runnerSearch');
   const suggestions = document.getElementById('runnerSuggestions');
@@ -808,7 +840,7 @@ function wireUI() {
     } else {
       suggestions.innerHTML = matches.map(n => {
         const runs = state.deposits.filter(d => d.runner === n).length;
-        return '<div class="runner-suggestion" data-name="' + esc(n) + '"><span>' + esc(n) +
+        return '<div class="runner-suggestion" data-name="' + esc(n) + '"><span>' + runnerHTML(n) +
           '</span><span class="runner-suggestion-meta">' + runs + ' runs</span></div>';
       }).join('');
     }
@@ -1047,6 +1079,24 @@ function hexA(hex, a) {
 // =====================================================================
 function sum(arr, fn) { return arr.reduce((s, x) => s + (fn(x) || 0), 0); }
 
+// A runner is "former" if there is a roster and they are not on it.
+function isFormer(name) { return state.activeRunners.size > 0 && !state.activeRunners.has(name); }
+function runnerText(name) { return isFormer(name) ? name + ' *' : name; } // plain text (chart labels)
+function runnerHTML(name) {
+  return esc(name) + (isFormer(name) ? '<span class="former-mark" title="No longer in the faction">*</span>' : '');
+}
+
+function ymd(date) {
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+}
+
+function depositsInPeriod(period) {
+  if (period === 'week') { const s = ymd(mondayOf(new Date())); return state.deposits.filter(d => d.date >= s); }
+  if (period === 'month') { const n = new Date(); const s = ymd(new Date(n.getFullYear(), n.getMonth(), 1)); return state.deposits.filter(d => d.date >= s); }
+  return state.deposits;
+}
+function periodLabel(period) { return period === 'week' ? 'this week' : period === 'month' ? 'this month' : 'all time'; }
+
 function mondayOf(date) {
   const d = new Date(date);
   const diff = (d.getDay() + 6) % 7;
@@ -1105,3 +1155,4 @@ function esc(s) {
 }
 
 function setText(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
+function setHTML(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
