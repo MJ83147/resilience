@@ -28,7 +28,6 @@ const state = {
   sales: [],            // all sales (negatives kept)
   activeRunners: new Set(), // current roster, used to flag former members
   activityRange: 12,
-  runnersPeriod: 'all', // contribution concentration window: week | month | all
   selectedRunner: null,
   runnerTableSort: { key: 'date', dir: 'desc' },
   rawSort: { key: 'date', dir: 'desc' },
@@ -73,6 +72,7 @@ function buildOnce() {
 function renderAll() {
   renderLastUpdated();
   renderKPIs();
+  renderSnapshot();
   renderCumulativeChart();
   renderHeatmap();
   renderOverviewCallouts();
@@ -80,9 +80,12 @@ function renderAll() {
   renderParetoChart();
   renderCohortChart();
   renderRunnerDashboard();
+  renderReimbursementChart();
+  renderReimbursementCallouts();
   renderPriceChart();
   renderPricingCallouts();
   renderPharmacistChart();
+  renderSalesTimeChart();
   renderBuyersChart();
   renderSalesScatter();
   renderSalesCallouts();
@@ -97,10 +100,20 @@ function showTab(name) {
   document.querySelectorAll('.tab-buttons button').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   document.getElementById('tabBtn-' + name).classList.add('active');
-  requestAnimationFrame(() => {
-    Object.values(state.charts).forEach(c => c && c.resize && c.resize());
-  });
+  // Charts created while their tab was display:none render at zero width and
+  // resize() will not recover them. Once the revealed tab has laid out, re-render
+  // its charts so they size to the now-visible container.
+  setTimeout(() => (TAB_CHARTS[name] || []).forEach(fn => { try { fn(); } catch (e) {} }), 60);
 }
+
+// Chart render functions grouped by the tab that contains them.
+const TAB_CHARTS = {
+  overview: [() => renderCumulativeChart(), () => renderActivityChart()],
+  runners: [() => renderParetoChart(), () => renderCohortChart(), () => renderReimbursementChart()],
+  lookup: [() => renderRunnerActivityChart()],
+  pricing: [() => renderPriceChart(), () => renderPharmacistChart()],
+  sales: [() => renderSalesTimeChart(), () => renderBuyersChart(), () => renderSalesScatter()]
+};
 window.showTab = showTab;
 
 // =====================================================================
@@ -126,6 +139,55 @@ function renderKPIs() {
   setText('kpiNet', formatMoney(estNet));
   setText('kpiPrice', formatMoney(XANAX_PRICE));
   setText('kpiRunners', contributors);
+}
+
+// =====================================================================
+// Overview: recent-activity snapshot (rolling 7 / 30 days)
+// =====================================================================
+function renderSnapshot() {
+  renderSnapshotColumn('snapWeek', 7, 'This week', 'last 7 days');
+  renderSnapshotColumn('snapMonth', 30, 'This month', 'last 30 days');
+}
+
+function renderSnapshotColumn(elId, days, title, sub) {
+  const curStart = daysAgoStr(days);
+  const prevStart = daysAgoStr(days * 2);
+  const cur = state.deposits.filter(d => d.date >= curStart);
+  const prev = state.deposits.filter(d => d.date >= prevStart && d.date < curStart);
+
+  const runners = new Set(cur.map(d => d.runner)).size;
+  const stats = [
+    { v: cur.length.toLocaleString(), l: 'Runs' },
+    { v: runners.toLocaleString(), l: 'Runners' },
+    { v: formatCompact(sum(cur, d => d.qty)), l: 'Xanax' },
+    { v: formatMoney(sum(cur, d => d.reimbursement)), l: 'Reimbursed' }
+  ];
+
+  const byRunner = groupBy(cur, 'runner');
+  const contributors = Object.entries(byRunner)
+    .map(([name, d]) => ({ name, count: d.length }))
+    .sort((a, b) => b.count - a.count);
+
+  const chips = contributors.length
+    ? '<div class="snapshot-chips">' + contributors.map(r =>
+        '<span class="snap-chip">' + runnerHTML(r.name) + '<strong>' + r.count + '</strong></span>').join('') + '</div>'
+    : '<div class="snapshot-empty">No runs recorded yet. Runs usually land on a Saturday.</div>';
+
+  document.getElementById(elId).innerHTML =
+    '<div class="snap-col-head"><span class="snap-col-title">' + title + '</span><span class="snap-col-sub">' + sub + '</span></div>' +
+    '<div class="snap-stat-row">' +
+      stats.map(s => '<div class="snap-stat"><div class="snap-stat-v">' + s.v + '</div><div class="snap-stat-l">' + s.l + '</div></div>').join('') +
+    '</div>' +
+    '<div class="snap-delta">' + deltaHTML(cur.length, prev.length, days) + '</div>' +
+    '<div class="snapshot-runners-label">Who ran</div>' + chips;
+}
+
+function deltaHTML(cur, prev, days) {
+  const d = cur - prev;
+  if (d === 0) return '<span class="snap-flat">No change vs the prior ' + days + ' days</span>';
+  const cls = d > 0 ? 'snap-up' : 'snap-down';
+  const arrow = d > 0 ? '▲' : '▼';
+  return '<span class="' + cls + '">' + arrow + ' ' + Math.abs(d) + ' runs</span> vs the prior ' + days + ' days';
 }
 
 // =====================================================================
@@ -257,8 +319,8 @@ function renderActivityChart() {
         { type: 'bar', label: 'Tickets', data: monthly.map(m => m.tickets),
           backgroundColor: c.green, borderRadius: 4, yAxisID: 'y', order: 2 },
         { type: 'line', label: 'Avg run price', data: monthly.map(m => m.avgPrice),
-          borderColor: c.greenLight, backgroundColor: c.greenLight, borderWidth: 2,
-          pointRadius: 3, pointBackgroundColor: c.greenLight, tension: 0.3,
+          borderColor: c.gold, backgroundColor: c.gold, borderWidth: 2,
+          pointRadius: 3, pointBackgroundColor: c.gold, tension: 0.3,
           yAxisID: 'y1', spanGaps: true, order: 1 }
       ]
     },
@@ -288,31 +350,14 @@ function renderActivityChart() {
 // Runners: contribution concentration (horizontal bars, top 15)
 // =====================================================================
 function renderParetoChart() {
-  const period = state.runnersPeriod;
-  const deps = depositsInPeriod(period);
-  const byRunner = groupBy(deps, 'runner');
+  const byRunner = groupBy(state.deposits, 'runner');
   const top = Object.entries(byRunner)
     .map(([name, d]) => ({ name, count: d.length }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 15);
   const c = themeColors();
-  const label = periodLabel(period);
-
-  const runners = Object.keys(byRunner).length;
-  setHTML('paretoSummary', deps.length.toLocaleString() + ' run' + (deps.length === 1 ? '' : 's') +
-    ' by ' + runners + ' runner' + (runners === 1 ? '' : 's') + ' ' + label + '.');
-
-  const canvas = document.getElementById('paretoChart');
-  const emptyEl = document.getElementById('paretoEmpty');
-  if (!top.length) {
-    destroyChart('pareto');
-    canvas.style.display = 'none';
-    emptyEl.style.display = 'flex';
-    emptyEl.textContent = 'No runs recorded ' + label + ' yet.';
-    return;
-  }
-  canvas.style.display = '';
-  emptyEl.style.display = 'none';
+  // Former members get a muted grey bar and label; current members stay green.
+  const barColors = top.map(r => isFormer(r.name) ? hexA(c.textLight, 0.55) : c.green);
 
   destroyChart('pareto');
   state.charts.pareto = new Chart(ctx('paretoChart'), {
@@ -320,7 +365,7 @@ function renderParetoChart() {
     data: {
       labels: top.map(r => runnerText(r.name)),
       datasets: [{ label: 'Runs', data: top.map(r => r.count),
-        backgroundColor: c.green, borderRadius: 3 }]
+        backgroundColor: barColors, borderRadius: 3 }]
     },
     options: baseOptions(c, {
       indexAxis: 'y',
@@ -331,7 +376,7 @@ function renderParetoChart() {
       scales: {
         x: { beginAtZero: true, title: axisTitle(c, 'Runs'),
              ticks: { color: c.textLight, precision: 0 }, grid: { color: c.grid } },
-        y: { ticks: { color: c.text, autoSkip: false }, grid: { display: false } }
+        y: { ticks: { autoSkip: false, color: tc => isFormer(top[tc.index] && top[tc.index].name) ? c.textLight : c.text }, grid: { display: false } }
       }
     })
   });
@@ -385,6 +430,63 @@ function renderCohortChart() {
       }
     })
   });
+}
+
+// =====================================================================
+// Runners: reimbursement over time + callouts
+// =====================================================================
+function renderReimbursementChart() {
+  const months = new Map();
+  state.deposits.forEach(d => {
+    const key = d.date.slice(0, 7);
+    months.set(key, (months.get(key) || 0) + (d.reimbursement || 0));
+  });
+  const sortedMonths = [...months.keys()].sort();
+  const c = themeColors();
+
+  destroyChart('reimbursement');
+  state.charts.reimbursement = new Chart(ctx('reimbursementChart'), {
+    type: 'bar',
+    data: {
+      labels: sortedMonths.map(monthLabel),
+      datasets: [{ label: 'Reimbursed', data: sortedMonths.map(m => months.get(m)),
+        backgroundColor: c.teal, borderRadius: 3 }]
+    },
+    options: baseOptions(c, {
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ci => 'Reimbursed: ' + formatMoney(ci.parsed.y) } }
+      },
+      scales: {
+        x: { title: axisTitle(c, 'Month'), ticks: { color: c.textLight, maxTicksLimit: 12 }, grid: { display: false } },
+        y: { title: axisTitle(c, 'Reimbursed ($)'), beginAtZero: true, ticks: { color: c.textLight, callback: v => formatMoney(v) }, grid: { color: c.grid } }
+      }
+    })
+  });
+}
+
+function renderReimbursementCallouts() {
+  const deps = state.deposits;
+  const total = sum(deps, d => d.reimbursement);
+  const avg = deps.length ? total / deps.length : 0;
+  setText('reAvg', formatMoney(avg));
+  setText('reAvgDetail', 'Across ' + deps.length.toLocaleString() + ' runs');
+
+  const byRunner = groupBy(deps, 'runner');
+  let topName = null, topVal = -1;
+  Object.entries(byRunner).forEach(([name, d]) => {
+    const v = sum(d, x => x.reimbursement);
+    if (v > topVal) { topVal = v; topName = name; }
+  });
+  setHTML('reTopEarner', topName ? runnerHTML(topName) : 'n/a');
+  setText('reTopEarnerDetail', topName ? formatMoney(topVal) + ' reimbursed all-time' : '');
+
+  let biggest = null;
+  deps.forEach(d => { if (!biggest || d.reimbursement > biggest.reimbursement) biggest = d; });
+  if (biggest) {
+    setText('reBiggest', formatMoney(biggest.reimbursement));
+    setHTML('reBiggestDetail', runnerHTML(biggest.runner) + ' on ' + formatShortDate(biggest.date));
+  }
 }
 
 // =====================================================================
@@ -601,7 +703,7 @@ function renderPriceChart() {
     data: {
       datasets: [
         { label: 'Daily lowest price', data: points, borderColor: 'transparent',
-          backgroundColor: hexA(c.green, 0.35), pointRadius: 2, pointBackgroundColor: hexA(c.green, 0.35), showLine: false },
+          backgroundColor: hexA(c.slate, 0.55), pointRadius: 2.5, pointBackgroundColor: hexA(c.slate, 0.55), showLine: false },
         { label: '30-day moving average', data: ma, borderColor: c.green,
           backgroundColor: 'transparent', borderWidth: 2.5, pointRadius: 0, tension: 0.2 }
       ]
@@ -682,6 +784,47 @@ function renderPharmacistChart() {
 // =====================================================================
 // Sales
 // =====================================================================
+function renderSalesTimeChart() {
+  // Monthly xanax sold and value, real purchases only (exclude refunds).
+  const months = new Map(); // monthKey -> { qty, value }
+  state.sales.forEach(s => {
+    if (s.price_per <= 0 || s.qty <= 0 || !s.date) return;
+    const key = s.date.slice(0, 7);
+    if (!months.has(key)) months.set(key, { qty: 0, value: 0 });
+    const m = months.get(key);
+    m.qty += s.qty; m.value += (s.total_value || 0);
+  });
+  const sortedMonths = [...months.keys()].sort();
+  const c = themeColors();
+
+  destroyChart('salesTime');
+  state.charts.salesTime = new Chart(ctx('salesTimeChart'), {
+    data: {
+      labels: sortedMonths.map(monthLabel),
+      datasets: [
+        { type: 'bar', label: 'Xanax sold', data: sortedMonths.map(m => months.get(m).qty),
+          backgroundColor: c.gold, borderRadius: 3, yAxisID: 'y', order: 2 },
+        { type: 'line', label: 'Sale value', data: sortedMonths.map(m => months.get(m).value),
+          borderColor: c.green, backgroundColor: c.green, borderWidth: 2, pointRadius: 2, tension: 0.3, yAxisID: 'y1', order: 1 }
+      ]
+    },
+    options: baseOptions(c, {
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { color: c.text, boxWidth: 12, padding: 10 } },
+        tooltip: { callbacks: { label: ci => ci.dataset.yAxisID === 'y1'
+          ? 'Value: ' + formatMoney(ci.parsed.y)
+          : 'Xanax sold: ' + ci.parsed.y.toLocaleString() } }
+      },
+      scales: {
+        x: { title: axisTitle(c, 'Month'), ticks: { color: c.textLight, maxTicksLimit: 12 }, grid: { display: false } },
+        y: { position: 'left', beginAtZero: true, title: axisTitle(c, 'Xanax sold'), ticks: { color: c.textLight, callback: v => formatCompact(v) }, grid: { color: c.grid } },
+        y1: { position: 'right', beginAtZero: true, title: axisTitle(c, 'Value ($)'), ticks: { color: c.textLight, callback: v => formatMoney(v) }, grid: { display: false } }
+      }
+    })
+  });
+}
+
 function renderBuyersChart() {
   const byBuyer = new Map();
   state.sales.forEach(s => {
@@ -812,16 +955,6 @@ function wireUI() {
       btn.classList.add('active');
       state.activityRange = btn.dataset.range === 'all' ? 'all' : Number(btn.dataset.range);
       renderActivityChart();
-    });
-  });
-
-  // Contribution concentration period filter
-  document.querySelectorAll('#paretoPeriodFilter .filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#paretoPeriodFilter .filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.runnersPeriod = btn.dataset.period;
-      renderParetoChart();
     });
   });
 
@@ -1054,8 +1187,12 @@ function destroyChart(key) { if (state.charts[key]) { state.charts[key].destroy(
 function themeColors() {
   const r = getComputedStyle(document.documentElement);
   return {
-    green: r.getPropertyValue('--green').trim(),
-    greenLight: r.getPropertyValue('--text-light').trim(),
+    green: r.getPropertyValue('--c-green').trim() || r.getPropertyValue('--green').trim(),
+    teal: r.getPropertyValue('--c-teal').trim(),
+    gold: r.getPropertyValue('--c-gold').trim(),
+    olive: r.getPropertyValue('--c-olive').trim(),
+    slate: r.getPropertyValue('--c-slate').trim(),
+    rust: r.getPropertyValue('--c-rust').trim(),
     red: r.getPropertyValue('--red').trim(),
     text: r.getPropertyValue('--text').trim(),
     textLight: r.getPropertyValue('--text-light').trim(),
@@ -1086,16 +1223,6 @@ function runnerHTML(name) {
   return esc(name) + (isFormer(name) ? '<span class="former-mark" title="No longer in the faction">*</span>' : '');
 }
 
-function ymd(date) {
-  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
-}
-
-function depositsInPeriod(period) {
-  if (period === 'week') { const s = ymd(mondayOf(new Date())); return state.deposits.filter(d => d.date >= s); }
-  if (period === 'month') { const n = new Date(); const s = ymd(new Date(n.getFullYear(), n.getMonth(), 1)); return state.deposits.filter(d => d.date >= s); }
-  return state.deposits;
-}
-function periodLabel(period) { return period === 'week' ? 'this week' : period === 'month' ? 'this month' : 'all time'; }
 
 function mondayOf(date) {
   const d = new Date(date);

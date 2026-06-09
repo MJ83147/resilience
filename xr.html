@@ -9,6 +9,16 @@
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="styles.css">
   <style>
+    /* ---- Expanded accent palette (used for KPIs, snapshot, multi-series charts) ---- */
+    :root {
+      --c-green: #2E7D32; --c-teal: #00897B; --c-gold: #B7891B;
+      --c-olive: #557A1E; --c-slate: #4F6B7A; --c-rust: #B85C38;
+    }
+    [data-theme="dark"] {
+      --c-green: #5DBB63; --c-teal: #2EC4B6; --c-gold: #E0B23A;
+      --c-olive: #9CCC65; --c-slate: #9DB4C0; --c-rust: #E0825A;
+    }
+
     /* ---- Loading / error ---- */
     .setup-section { background: var(--gray-100); padding: 16px; border-radius: var(--radius); margin-bottom: 16px; }
     .dashboard-content { display: none; }
@@ -31,18 +41,23 @@
     /* ---- KPI tiles ---- */
     .kpi-row {
       display: grid; grid-template-columns: repeat(6, 1fr);
-      gap: 12px; margin-bottom: 16px;
+      gap: 14px; margin-bottom: 20px;
     }
     @media (max-width: 1100px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 600px)  { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
     .kpi {
       background: var(--white); border-radius: var(--radius);
-      box-shadow: var(--shadow); padding: 16px 12px; text-align: center;
+      box-shadow: var(--shadow); padding: 20px 18px; text-align: center;
+      transition: transform 0.15s, box-shadow 0.15s;
     }
-    .kpi-value { font-size: 24px; font-weight: 600; color: var(--green); line-height: 1.15; }
+    .kpi:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+    .kpi-value {
+      font-size: 28px; font-weight: 700; color: var(--kpi-accent, var(--green));
+      line-height: 1.05; letter-spacing: -0.5px;
+    }
     .kpi-label {
-      font-size: 11px; color: var(--text-light); margin-top: 6px;
-      text-transform: uppercase; letter-spacing: 0.5px;
+      font-size: 10.5px; color: var(--text-light); margin-top: 9px;
+      text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600;
     }
 
     /* ---- Per-tab grid (3 columns, span N) ---- */
@@ -85,6 +100,7 @@
     .chart-box.tall { height: 380px; }
     .chart-box.short { height: 230px; }
     .chart-box.pareto { height: 440px; }
+    .chart-box.mini { height: 250px; }
     .chart-empty {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       text-align: center; color: var(--text-light); font-size: 13px; padding: 16px;
@@ -93,6 +109,36 @@
     /* ---- Former-member marker ---- */
     .former-mark { color: var(--text-light); font-weight: normal; margin-left: 1px; cursor: help; }
     .former-note { font-size: 11px; color: var(--text-light); margin-top: 10px; }
+
+    /* ---- Snapshot panel (top of Overview): week and month shown together ---- */
+    .snapshot-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 760px) { .snapshot-2col { grid-template-columns: 1fr; } }
+    .snapshot-col {
+      background: var(--gray-100); border-radius: var(--radius); padding: 18px;
+    }
+    .snap-col-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
+    .snap-col-title { font-weight: 700; font-size: 16px; color: var(--snap-accent, var(--green)); }
+    .snap-col-sub { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+    .snap-stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+    @media (max-width: 480px) { .snap-stat-row { grid-template-columns: repeat(2, 1fr); } }
+    .snap-stat-v { font-size: 21px; font-weight: 700; color: var(--snap-accent, var(--green)); line-height: 1.1; }
+    .snap-stat-l { font-size: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+    .snap-delta { font-size: 12px; color: var(--text-light); margin-bottom: 14px; }
+    .snap-up { color: var(--green); font-weight: 600; }
+    .snap-down { color: var(--red); font-weight: 600; }
+    .snap-flat { color: var(--text-light); }
+    .snapshot-runners-label { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .snapshot-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .snap-chip { background: var(--white); border: 1px solid var(--gray-200); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; color: var(--text); white-space: nowrap; }
+    .snap-chip strong { color: var(--snap-accent, var(--green)); margin-left: 5px; }
+    .snapshot-empty { color: var(--text-light); font-size: 13px; padding: 6px 0; }
+
+    /* ---- Runner lookup (dedicated tab) ---- */
+    .lookup-hero { text-align: center; max-width: 560px; margin: 8px auto 4px; }
+    .lookup-hero .panel-title { font-size: 20px; }
+    .lookup-hero .panel-subtitle { margin-bottom: 16px; }
+    .runner-search-wrapper.big .runner-search { padding: 15px 44px 15px 18px; font-size: 16px; box-shadow: var(--shadow); }
+    .runner-search-wrapper.big .runner-clear { font-size: 22px; }
 
     /* ---- Callout tiles ---- */
     .callout {
@@ -237,18 +283,19 @@
     <div class="dashboard-content" id="dashboardContent">
       <!-- KPI tiles -->
       <div class="kpi-row">
-        <div class="kpi"><div class="kpi-value" id="kpiXanax">0</div><div class="kpi-label">Xanax deposited</div></div>
-        <div class="kpi"><div class="kpi-value" id="kpiReimbursed">$0</div><div class="kpi-label">Reimbursed to runners</div></div>
-        <div class="kpi"><div class="kpi-value" id="kpiRevenue">$0</div><div class="kpi-label">Est. revenue</div></div>
-        <div class="kpi"><div class="kpi-value" id="kpiNet">$0</div><div class="kpi-label">Est. net</div></div>
-        <div class="kpi"><div class="kpi-value" id="kpiPrice">$0</div><div class="kpi-label">Xanax market price</div></div>
-        <div class="kpi"><div class="kpi-value" id="kpiRunners">0</div><div class="kpi-label">Contributors</div></div>
+        <div class="kpi" style="--kpi-accent:var(--c-green)"><div class="kpi-value" id="kpiXanax">0</div><div class="kpi-label">Xanax deposited</div></div>
+        <div class="kpi" style="--kpi-accent:var(--c-teal)"><div class="kpi-value" id="kpiReimbursed">$0</div><div class="kpi-label">Reimbursed to runners</div></div>
+        <div class="kpi" style="--kpi-accent:var(--c-gold)"><div class="kpi-value" id="kpiRevenue">$0</div><div class="kpi-label">Est. revenue</div></div>
+        <div class="kpi" style="--kpi-accent:var(--c-olive)"><div class="kpi-value" id="kpiNet">$0</div><div class="kpi-label">Est. net</div></div>
+        <div class="kpi" style="--kpi-accent:var(--c-slate)"><div class="kpi-value" id="kpiPrice">$0</div><div class="kpi-label">Xanax market price</div></div>
+        <div class="kpi" style="--kpi-accent:var(--c-rust)"><div class="kpi-value" id="kpiRunners">0</div><div class="kpi-label">Contributors</div></div>
       </div>
 
       <div class="tab-container">
         <div class="tab-buttons">
           <button id="tabBtn-overview" class="active" onclick="showTab('overview')">Overview</button>
           <button id="tabBtn-runners" onclick="showTab('runners')">Runners</button>
+          <button id="tabBtn-lookup" onclick="showTab('lookup')">Runner lookup</button>
           <button id="tabBtn-pricing" onclick="showTab('pricing')">Pricing</button>
           <button id="tabBtn-sales" onclick="showTab('sales')">Sales</button>
           <button id="tabBtn-raw" onclick="showTab('raw')">Raw data</button>
@@ -257,20 +304,23 @@
         <!-- OVERVIEW -->
         <div id="tab-overview" class="tab-section active">
           <div class="tab-grid">
-            <div class="panel span-3">
+            <div class="panel span-3" id="snapshotPanel">
               <div class="panel-header"><div>
-                <div class="panel-title">Cumulative xanax deposited</div>
-                <div class="panel-subtitle">Total xanax delivered to the armoury, day by day.</div>
+                <div class="panel-title">Recent activity</div>
+                <div class="panel-subtitle">How the operation is running over the last 7 and 30 days.</div>
               </div></div>
-              <div class="chart-box tall"><canvas id="cumulativeChart"></canvas></div>
+              <div class="snapshot-2col">
+                <div class="snapshot-col" id="snapWeek" style="--snap-accent:var(--c-green)"></div>
+                <div class="snapshot-col" id="snapMonth" style="--snap-accent:var(--c-teal)"></div>
+              </div>
             </div>
 
             <div class="panel span-2">
               <div class="panel-header"><div>
-                <div class="panel-title">Activity heatmap</div>
-                <div class="panel-subtitle">Deposits over the last 26 weeks. Darker means more activity.</div>
+                <div class="panel-title">Cumulative xanax deposited</div>
+                <div class="panel-subtitle">Total xanax delivered to the armoury, day by day.</div>
               </div></div>
-              <div id="heatmap"></div>
+              <div class="chart-box mini"><canvas id="cumulativeChart"></canvas></div>
             </div>
 
             <div class="span-1 callout-stack">
@@ -289,6 +339,14 @@
                 <div class="callout-value" id="coLast30">-</div>
                 <div class="callout-detail" id="coLast30Detail"></div>
               </div>
+            </div>
+
+            <div class="panel span-3">
+              <div class="panel-header"><div>
+                <div class="panel-title">Activity heatmap</div>
+                <div class="panel-subtitle">Deposits over the last 26 weeks. Darker means more activity.</div>
+              </div></div>
+              <div id="heatmap"></div>
             </div>
 
             <div class="panel span-3">
@@ -312,44 +370,64 @@
         <div id="tab-runners" class="tab-section">
           <div class="tab-grid">
             <div class="panel span-2">
-              <div class="panel-header">
-                <div>
-                  <div class="panel-title">Contribution concentration</div>
-                  <div class="panel-subtitle">The 15 most active runners by runs. <span id="paretoSummary"></span></div>
-                </div>
-                <div class="panel-filters" id="paretoPeriodFilter">
-                  <button class="filter-btn" data-period="week">This week</button>
-                  <button class="filter-btn" data-period="month">This month</button>
-                  <button class="filter-btn active" data-period="all">All time</button>
-                </div>
-              </div>
-              <div class="chart-box pareto">
-                <canvas id="paretoChart"></canvas>
-                <div id="paretoEmpty" class="chart-empty" style="display:none"></div>
-              </div>
+              <div class="panel-header"><div>
+                <div class="panel-title">Contribution concentration</div>
+                <div class="panel-subtitle">The 15 most active runners by total runs.</div>
+              </div></div>
+              <div class="chart-box pareto"><canvas id="paretoChart"></canvas></div>
               <div class="former-note">Names marked <span class="former-mark">*</span> are no longer in the faction. Their history is kept.</div>
             </div>
 
             <div class="panel span-1">
               <div class="panel-header"><div>
                 <div class="panel-title">New vs returning runners</div>
-                <div class="panel-subtitle">Each month's runs split by whether the runner is in their first 90 days.</div>
+                <div class="panel-subtitle">Each month's runs split by new runners (in their first 90 days) and established runners.</div>
               </div></div>
               <div class="chart-box pareto"><canvas id="cohortChart"></canvas></div>
+              <div class="former-note">What to look for: a healthy band of new runners (light) feeding the established core (dark) means the op keeps attracting fresh recruits. A shrinking light band means it is leaning on its veterans.</div>
             </div>
 
-            <div class="panel span-3">
+            <div class="panel span-2">
               <div class="panel-header"><div>
-                <div class="panel-title">Runner lookup</div>
-                <div class="panel-subtitle">Search any runner for their personal dashboard. Leave empty for the faction-wide view.</div>
+                <div class="panel-title">Reimbursement over time</div>
+                <div class="panel-subtitle">Total paid back to runners each month for their cheapest-run costs.</div>
               </div></div>
-              <div class="runner-search-wrapper">
+              <div class="chart-box"><canvas id="reimbursementChart"></canvas></div>
+            </div>
+
+            <div class="span-1 callout-stack">
+              <div class="callout">
+                <div class="callout-label">Avg reimbursed per run</div>
+                <div class="callout-value" id="reAvg">-</div>
+                <div class="callout-detail" id="reAvgDetail"></div>
+              </div>
+              <div class="callout">
+                <div class="callout-label">Top earner</div>
+                <div class="callout-value" id="reTopEarner">-</div>
+                <div class="callout-detail" id="reTopEarnerDetail"></div>
+              </div>
+              <div class="callout">
+                <div class="callout-label">Biggest single reimbursement</div>
+                <div class="callout-value" id="reBiggest">-</div>
+                <div class="callout-detail" id="reBiggestDetail"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RUNNER LOOKUP -->
+        <div id="tab-lookup" class="tab-section">
+          <div class="panel">
+            <div class="lookup-hero">
+              <div class="panel-title">Runner lookup</div>
+              <div class="panel-subtitle">Search any runner for their personal dashboard. Leave empty for the faction-wide view.</div>
+              <div class="runner-search-wrapper big">
                 <input type="text" class="runner-search" id="runnerSearch" placeholder="Type a runner name..." autocomplete="off">
                 <button class="runner-clear" id="runnerClear" style="display:none">&times;</button>
                 <div class="runner-suggestions" id="runnerSuggestions"></div>
               </div>
-              <div id="runnerDashboard"></div>
             </div>
+            <div id="runnerDashboard"></div>
           </div>
         </div>
 
@@ -393,6 +471,14 @@
         <!-- SALES -->
         <div id="tab-sales" class="tab-section">
           <div class="tab-grid cols-2">
+            <div class="panel span-2">
+              <div class="panel-header"><div>
+                <div class="panel-title">Sales over time</div>
+                <div class="panel-subtitle">Xanax sold to buyers each month (bars) with the monthly value (line). Chain watch refunds are excluded.</div>
+              </div></div>
+              <div class="chart-box"><canvas id="salesTimeChart"></canvas></div>
+            </div>
+
             <div class="panel span-1">
               <div class="panel-header"><div>
                 <div class="panel-title">Top buyers</div>
