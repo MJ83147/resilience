@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>War Performance Capture</title>
+<style>
+  :root {
+    --bg: #14171c;
+    --panel: #1c2026;
+    --border: #2c323b;
+    --text: #e6e8eb;
+    --muted: #8a929c;
+    --accent: #3fae6b;
+    --danger: #d36b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1rem;
+    background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  .card {
+    max-width: 520px; margin: 0 auto;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.75rem;
+  }
+  h1 { margin: 0 0 0.25rem; font-size: 1.25rem; }
+  p.sub { margin: 0 0 1.5rem; color: var(--muted); font-size: 0.9rem; }
+  label { display: block; margin: 1rem 0 0.4rem; font-size: 0.85rem; color: var(--muted); }
+  select, input {
+    width: 100%; padding: 0.6rem 0.7rem;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem;
+  }
+  .buttons { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+  button {
+    flex: 1; padding: 0.7rem; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--bg); color: var(--text);
+    font-size: 0.9rem; cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  #status {
+    margin-top: 1.25rem; padding: 0.75rem 0.9rem;
+    border-radius: 6px; font-size: 0.9rem; display: none;
+    white-space: pre-wrap;
+  }
+  #status.show { display: block; }
+  #status.ok { background: rgba(63,174,107,0.12); border: 1px solid var(--accent); }
+  #status.err { background: rgba(211,107,107,0.12); border: 1px solid var(--danger); }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>War Performance Capture</h1>
+  <p class="sub">Resilience &middot; one capture per phase, written to this sheet.</p>
+
+  <label for="war">War</label>
+  <select id="war"><option>Loading wars&hellip;</option></select>
+
+  <label for="target">Target respect</label>
+  <input id="target" type="number" inputmode="numeric" placeholder="e.g. 15000">
+
+  <div class="buttons">
+    <button id="btn-snapshot" disabled>Get 24h Snapshot</button>
+    <button id="btn-complete" disabled>Add Complete War</button>
+  </div>
+
+  <div id="status"></div>
+</div>
+
+<script>
+// Paste the deployed Apps Script web app URL here.
+const API_URL = 'https://script.google.com/macros/s/AKfycbzfYmCcgpt8NSxt9qyXWjnavUt9ldvIDzJ9n79HzF4h0CPb47shNbz-y7M3OBqSTTlsHA/exec';
+
+const $war = document.getElementById('war');
+const $target = document.getElementById('target');
+const $snap = document.getElementById('btn-snapshot');
+const $complete = document.getElementById('btn-complete');
+const $status = document.getElementById('status');
+
+function setStatus(msg, kind) {
+  $status.textContent = msg;
+  $status.className = 'show ' + kind;
+}
+
+function lockButtons(locked) {
+  $snap.disabled = locked;
+  $complete.disabled = locked;
+}
+
+async function loadWars() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    $war.innerHTML = '';
+    if (!data.wars.length) {
+      $war.innerHTML = '<option>No wars found</option>';
+      return;
+    }
+    data.wars.forEach(w => {
+      const opt = document.createElement('option');
+      opt.value = w.id;
+      opt.textContent = 'vs ' + w.opponent + (w.active ? ' (active)' : ' (ended)');
+      $war.appendChild(opt);
+    });
+    lockButtons(false);
+  } catch (err) {
+    $war.innerHTML = '<option>Failed to load</option>';
+    setStatus('Could not load wars: ' + err.message, 'err');
+  }
+}
+
+async function capture(mode) {
+  const warId = $war.value;
+  const target = $target.value;
+  if (!warId) { setStatus('Select a war first.', 'err'); return; }
+
+  lockButtons(true);
+  setStatus('Capturing\u2026 this can take a few seconds.', 'ok');
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ mode: mode, warId: warId, target: target })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    const s = data.summary;
+    setStatus(
+      s.tab + ' created.\n' +
+      'Opponent: ' + s.opponent + '\n' +
+      'Members with war hits: ' + s.members + '\n' +
+      'War hits counted: ' + s.hits,
+      'ok'
+    );
+  } catch (err) {
+    setStatus(err.message, 'err');
+  } finally {
+    lockButtons(false);
+  }
+}
+
+$snap.addEventListener('click', () => capture('snapshot'));
+$complete.addEventListener('click', () => capture('complete'));
+
+loadWars();
+</script>
+</body>
+</html>
