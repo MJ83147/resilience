@@ -1,3 +1,7 @@
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -84,6 +88,7 @@ const $target = document.getElementById('target');
 const $snap = document.getElementById('btn-snapshot');
 const $complete = document.getElementById('btn-complete');
 const $status = document.getElementById('status');
+let warsById = {};
 
 function setStatus(msg, kind) {
   $status.textContent = msg;
@@ -106,16 +111,31 @@ async function loadWars() {
       $war.innerHTML = '<option>No wars found</option>';
       return;
     }
+    warsById = {};
     data.wars.forEach(w => {
+      warsById[w.id] = w;
       const opt = document.createElement('option');
       opt.value = w.id;
       opt.textContent = 'vs ' + w.opponent + (w.active ? ' (active)' : ' (ended)');
       $war.appendChild(opt);
     });
-    lockButtons(false);
+    reflectWarState();
   } catch (err) {
     $war.innerHTML = '<option>Failed to load</option>';
     setStatus('Could not load wars: ' + err.message, 'err');
+  }
+}
+
+// Adjust buttons to the selected war's capture state.
+function reflectWarState() {
+  const w = warsById[$war.value];
+  if (!w) return;
+  if (w.finalised) {
+    $snap.disabled = true;
+    $snap.title = 'Snapshot finalised, the complete war has been added.';
+  } else {
+    $snap.disabled = false;
+    $snap.title = '';
   }
 }
 
@@ -137,20 +157,27 @@ async function capture(mode) {
 
     const s = data.summary;
     setStatus(
-      s.tab + ' created.\n' +
+      s.stage + ' written to "' + s.tab + '".\n' +
       'Opponent: ' + s.opponent + '\n' +
-      'Members with war hits: ' + s.members + '\n' +
-      'War hits counted: ' + s.hits,
+      'Members: ' + s.members,
       'ok'
     );
+    loadWars();   // refresh capture state so buttons reflect the new tab
   } catch (err) {
     setStatus(err.message, 'err');
   } finally {
-    lockButtons(false);
+    $complete.disabled = false;
+    reflectWarState();   // governs the snapshot button per current state
   }
 }
 
-$snap.addEventListener('click', () => capture('snapshot'));
+$war.addEventListener('change', reflectWarState);
+
+$snap.addEventListener('click', () => {
+  const w = warsById[$war.value];
+  if (w && w.hasSnapshot && !confirm('This will overwrite the existing 24h snapshot. Continue?')) return;
+  capture('snapshot');
+});
 $complete.addEventListener('click', () => capture('complete'));
 
 loadWars();
