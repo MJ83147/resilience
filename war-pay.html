@@ -1,9 +1,3 @@
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,16 +59,16 @@
   <label for="war">War</label>
   <select id="war"><option>Loading wars&hellip;</option></select>
 
-  <label for="target">Target respect</label>
-  <input id="target" type="number" inputmode="numeric" placeholder="e.g. 15000">
+  <label for="target">Target respect per person</label>
+  <input id="target" type="number" inputmode="numeric" placeholder="e.g. 159">
 
   <label for="rate">Pay per respect ($)</label>
-  <input id="rate" type="number" inputmode="numeric" placeholder="e.g. 1000000">
+  <input id="rate" type="number" inputmode="numeric" placeholder="Can leave blank until the rate is known">
 
   <div class="buttons">
-    <button id="btn-snapshot" disabled>Get 24h Snapshot</button>
-    <button id="btn-cutoff" disabled>Stop Hits</button>
-    <button id="btn-complete" disabled>Add Complete War</button>
+    <button id="btn-snapshot">Capture 24h snapshot</button>
+    <button id="btn-cutoff">Set hits cutoff &amp; capture war</button>
+    <button id="btn-complete">Generate payout</button>
   </div>
 
   <div id="cutoff-choice" style="display:none;margin-top:1rem;padding:0.9rem;border:1px solid var(--border);border-radius:6px;">
@@ -158,23 +152,10 @@ async function loadWars() {
   }
 }
 
-// Adjust buttons to the selected war's capture state.
-function reflectWarState() {
-  const w = warsById[$war.value];
-  if (!w) return;
-  // Snapshot: disabled once finalised.
-  $snap.disabled = w.finalised;
-  $snap.title = w.finalised ? 'Snapshot finalised, the complete war has been added.' : '';
-  // Stop Hits: needs a snapshot, blocked once finalised.
-  $cutoff.disabled = !w.hasSnapshot || w.finalised;
-  $cutoff.title = !w.hasSnapshot ? 'Take the 24h snapshot first.'
-    : (w.finalised ? 'War already finalised.' : (w.hasCutoff ? 'A cutoff is already set, pressing again moves it.' : ''));
-  // Complete: only for an ended war that has a snapshot and is not finalised.
-  $complete.disabled = w.active || !w.hasSnapshot || w.finalised;
-  $complete.title = w.active ? 'War still active.'
-    : (!w.hasSnapshot ? 'Take the 24h snapshot first.'
-    : (w.finalised ? 'Complete war already added.' : ''));
-}
+// Buttons are always clickable. The backend is the source of truth on press:
+// it knows the real war state from the API call and returns a clear message
+// if an action is not allowed yet.
+function reflectWarState() { /* no-op: state is decided server-side on press */ }
 
 async function capture(mode, cutoffEpoch) {
   const warId = $war.value;
@@ -195,11 +176,11 @@ async function capture(mode, cutoffEpoch) {
 
     const s = data.summary;
     if (s.stage === 'Cutoff') {
-      setStatus('Hits cutoff set at ' + s.cutoff + ' for "' + s.tab + '".\nWar hits after this are excluded from the complete war.', 'ok');
-    } else if (s.stage === 'Complete') {
-      setStatus('Complete war written to "' + s.tab + '".\n' +
-        'Opponent: ' + s.opponent + '\nMembers: ' + s.members + '\n' +
-        (s.usedCutoff ? 'Window ended at the recorded hits cutoff.' : 'No cutoff set, window ended at war end.'), 'ok');
+      setStatus('Hits cutoff set at ' + s.cutoff + ' for "' + s.tab + '".\n' +
+        'Full war respect captured up to the cutoff for ' + s.members + ' members.\n' +
+        'Hits after the cutoff are excluded.', 'ok');
+    } else if (s.stage === 'Pay') {
+      setStatus('Payout links written for ' + s.members + ' members in "' + s.tab + '".', 'ok');
     } else {
       setStatus(s.stage + ' written to "' + s.tab + '".\n' +
         'Opponent: ' + s.opponent + '\nMembers: ' + s.members, 'ok');
@@ -209,7 +190,7 @@ async function capture(mode, cutoffEpoch) {
   } catch (err) {
     setStatus(err.message, 'err');
   } finally {
-    reflectWarState();
+    lockButtons(false);
   }
 }
 
@@ -249,9 +230,11 @@ $cutoffConfirm.addEventListener('click', () => {
   capture('cutoff', epoch);
 });
 
-$complete.addEventListener('click', () => capture('complete'));
+$complete.addEventListener('click', () => capture('pay'));
 
 loadWars();
 </script>
 </body>
 </html>
+
+
