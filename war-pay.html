@@ -2,6 +2,8 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -66,9 +68,29 @@
   <label for="target">Target respect</label>
   <input id="target" type="number" inputmode="numeric" placeholder="e.g. 15000">
 
+  <label for="rate">Pay per respect ($)</label>
+  <input id="rate" type="number" inputmode="numeric" placeholder="e.g. 1000000">
+
   <div class="buttons">
     <button id="btn-snapshot" disabled>Get 24h Snapshot</button>
+    <button id="btn-cutoff" disabled>Stop Hits</button>
     <button id="btn-complete" disabled>Add Complete War</button>
+  </div>
+
+  <div id="cutoff-choice" style="display:none;margin-top:1rem;padding:0.9rem;border:1px solid var(--border);border-radius:6px;">
+    <p style="margin:0 0 0.6rem;font-size:0.9rem;">When should hits stop counting?</p>
+    <div class="buttons" style="margin-top:0;">
+      <button id="cutoff-now" type="button">Record now</button>
+      <button id="cutoff-pick" type="button">Set a time</button>
+    </div>
+    <div id="cutoff-time-wrap" style="display:none;margin-top:0.8rem;">
+      <label for="cutoff-time" style="margin-top:0;">Cutoff time (Torn / UTC)</label>
+      <input id="cutoff-time" type="datetime-local" step="1">
+      <div class="buttons" style="margin-top:0.6rem;">
+        <button id="cutoff-confirm" type="button">Confirm time</button>
+        <button id="cutoff-cancel" type="button">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <div id="status"></div>
@@ -86,7 +108,16 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby6OTLbQnbrWhQGm5S0LCri
 const $war = document.getElementById('war');
 const $target = document.getElementById('target');
 const $snap = document.getElementById('btn-snapshot');
+const $cutoff = document.getElementById('btn-cutoff');
 const $complete = document.getElementById('btn-complete');
+const $rate = document.getElementById('rate');
+const $cutoffChoice = document.getElementById('cutoff-choice');
+const $cutoffNow = document.getElementById('cutoff-now');
+const $cutoffPick = document.getElementById('cutoff-pick');
+const $cutoffTimeWrap = document.getElementById('cutoff-time-wrap');
+const $cutoffTime = document.getElementById('cutoff-time');
+const $cutoffConfirm = document.getElementById('cutoff-confirm');
+const $cutoffCancel = document.getElementById('cutoff-cancel');
 const $status = document.getElementById('status');
 let warsById = {};
 
@@ -97,6 +128,7 @@ function setStatus(msg, kind) {
 
 function lockButtons(locked) {
   $snap.disabled = locked;
+  $cutoff.disabled = locked;
   $complete.disabled = locked;
 }
 
@@ -130,54 +162,93 @@ async function loadWars() {
 function reflectWarState() {
   const w = warsById[$war.value];
   if (!w) return;
-  if (w.finalised) {
-    $snap.disabled = true;
-    $snap.title = 'Snapshot finalised, the complete war has been added.';
-  } else {
-    $snap.disabled = false;
-    $snap.title = '';
-  }
+  // Snapshot: disabled once finalised.
+  $snap.disabled = w.finalised;
+  $snap.title = w.finalised ? 'Snapshot finalised, the complete war has been added.' : '';
+  // Stop Hits: needs a snapshot, blocked once finalised.
+  $cutoff.disabled = !w.hasSnapshot || w.finalised;
+  $cutoff.title = !w.hasSnapshot ? 'Take the 24h snapshot first.'
+    : (w.finalised ? 'War already finalised.' : (w.hasCutoff ? 'A cutoff is already set, pressing again moves it.' : ''));
+  // Complete: only for an ended war that has a snapshot and is not finalised.
+  $complete.disabled = w.active || !w.hasSnapshot || w.finalised;
+  $complete.title = w.active ? 'War still active.'
+    : (!w.hasSnapshot ? 'Take the 24h snapshot first.'
+    : (w.finalised ? 'Complete war already added.' : ''));
 }
 
-async function capture(mode) {
+async function capture(mode, cutoffEpoch) {
   const warId = $war.value;
   const target = $target.value;
+  const payRate = $rate.value;
   if (!warId) { setStatus('Select a war first.', 'err'); return; }
 
   lockButtons(true);
-  setStatus('Capturing\u2026 this can take a few seconds.', 'ok');
+  setStatus('Working\u2026 this can take a few seconds.', 'ok');
 
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ mode: mode, warId: warId, target: target })
+      body: JSON.stringify({ mode: mode, warId: warId, target: target, payRate: payRate, cutoffEpoch: cutoffEpoch || '' })
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);
 
     const s = data.summary;
-    setStatus(
-      s.stage + ' written to "' + s.tab + '".\n' +
-      'Opponent: ' + s.opponent + '\n' +
-      'Members: ' + s.members,
-      'ok'
-    );
-    loadWars();   // refresh capture state so buttons reflect the new tab
+    if (s.stage === 'Cutoff') {
+      setStatus('Hits cutoff set at ' + s.cutoff + ' for "' + s.tab + '".\nWar hits after this are excluded from the complete war.', 'ok');
+    } else if (s.stage === 'Complete') {
+      setStatus('Complete war written to "' + s.tab + '".\n' +
+        'Opponent: ' + s.opponent + '\nMembers: ' + s.members + '\n' +
+        (s.usedCutoff ? 'Window ended at the recorded hits cutoff.' : 'No cutoff set, window ended at war end.'), 'ok');
+    } else {
+      setStatus(s.stage + ' written to "' + s.tab + '".\n' +
+        'Opponent: ' + s.opponent + '\nMembers: ' + s.members, 'ok');
+    }
+    loadWars();
+    hideCutoffChoice();
   } catch (err) {
     setStatus(err.message, 'err');
   } finally {
-    $complete.disabled = false;
-    reflectWarState();   // governs the snapshot button per current state
+    reflectWarState();
   }
 }
 
-$war.addEventListener('change', reflectWarState);
+$war.addEventListener('change', () => { reflectWarState(); hideCutoffChoice(); });
 
+// Snapshot: in-page overwrite warning shown in the status line, second press confirms.
+let snapArmed = false;
 $snap.addEventListener('click', () => {
   const w = warsById[$war.value];
-  if (w && w.hasSnapshot && !confirm('This will overwrite the existing 24h snapshot. Continue?')) return;
+  if (w && w.hasSnapshot && !snapArmed) {
+    snapArmed = true;
+    setStatus('This will overwrite the existing 24h snapshot. Press Get 24h Snapshot again to confirm.', 'err');
+    return;
+  }
+  snapArmed = false;
   capture('snapshot');
 });
+
+// Stop Hits: open the in-page choice (Record now / Set a time).
+function hideCutoffChoice() {
+  $cutoffChoice.style.display = 'none';
+  $cutoffTimeWrap.style.display = 'none';
+}
+$cutoff.addEventListener('click', () => {
+  $cutoffChoice.style.display = 'block';
+  $cutoffTimeWrap.style.display = 'none';
+});
+$cutoffNow.addEventListener('click', () => capture('cutoff'));
+$cutoffPick.addEventListener('click', () => {
+  $cutoffTimeWrap.style.display = 'block';
+});
+$cutoffCancel.addEventListener('click', hideCutoffChoice);
+$cutoffConfirm.addEventListener('click', () => {
+  if (!$cutoffTime.value) { setStatus('Enter a cutoff time first.', 'err'); return; }
+  const epoch = Math.floor(Date.parse($cutoffTime.value + 'Z') / 1000); // read as Torn/UTC
+  if (isNaN(epoch)) { setStatus('That cutoff time is not valid.', 'err'); return; }
+  capture('cutoff', epoch);
+});
+
 $complete.addEventListener('click', () => capture('complete'));
 
 loadWars();
