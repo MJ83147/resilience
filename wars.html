@@ -88,23 +88,11 @@
   .below{color:var(--loss)}
 
   .slack-wrap{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
-  .slack-table{flex:1 1 360px;min-width:340px}
-  .slack-matrix{flex:1 1 380px;min-width:340px}
-  .matrix-scroll{overflow:auto;max-height:440px;border:1px solid var(--line);border-radius:6px}
-  .matrix{display:grid;gap:2px;padding:8px;align-items:center}
-  .mhead{height:8px}
-  .mcolh{width:12px;height:8px;background:var(--line);border-radius:2px}
-  .mname{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px;cursor:pointer}
-  .mname.leaver{color:var(--muted)}
-  .mname.leaver::after{content:' *';color:var(--faint)}
-  .mname:hover{color:var(--gold)}
-  .mcell{width:12px;height:14px;border-radius:2px;background:#2a271f}
-  .mcell.absent{background:transparent}
-  .mcell.z{background:#3a2622}
-  .mcell.h1{background:#5a4a18}
-  .mcell.h2{background:#8a7012}
-  .mcell.h3{background:#cca60a}
-  .mcell.h4{background:#ffd700}
+  .slack-table{flex:1 1 360px;min-width:320px}
+  .slack-quad{flex:1 1 380px;min-width:320px}
+
+  .board-scroll{max-height:360px;overflow-y:auto;border-radius:6px}
+  .board-scroll table.board th{position:sticky;top:0;background:var(--panel);z-index:1}
 
   .note{color:var(--faint);font-size:12px;margin-top:10px}
   .note.click{cursor:pointer}
@@ -295,21 +283,22 @@ function renderOverview(){
       panel('','Participation per war','Share of the roster that put in at least one hit.','<div class="chartbox"><canvas id="cPart"></canvas></div>')+
       panel('','Respect per war','Total respect the faction earned each war.','<div class="chartbox"><canvas id="cResp"></canvas></div>')+
       panel('','Participation: wins vs losses','Average turnout in wars won against wars lost.','<div class="chartbox"><canvas id="cWL"></canvas></div>')+
-      panel('wide','Hit concentration','Members ranked by total hits. A steep early climb means a few carry the load; a straight climb means an even spread.','<div class="chartbox"><canvas id="cPareto"></canvas></div>')+
+      panel('','Hits distribution','Every war performance pooled. A long tail to the right means a few carry the hits; a fat middle means an even spread. No-shows excluded.','<div class="chartbox"><canvas id="cHistHits"></canvas></div>')+
+      panel('','Respect distribution','Same, for respect earned per war performance.','<div class="chartbox"><canvas id="cHistResp"></canvas></div>')+
     '</div>'+
     '<div class="grid charts" style="margin-top:16px">'+
-      panel('wide','Not pulling their weight','Current roster, weakest turnout first. The matrix shows hits per war: dark cells are no-shows.','<div class="slack-wrap"><div class="slack-table" id="lbSlack"></div><div class="slack-matrix" id="slackMatrix"></div></div>')+
+      panel('wide','Not pulling their weight','Current roster, weakest turnout first. The 2x2 places each member by hits and turnout against the faction average.','<div class="slack-wrap"><div class="slack-table" id="lbSlack"></div><div class="slack-quad" id="slackQuad"><div class="chartbox" style="height:340px"><canvas id="cQuad"></canvas></div><p class="note" id="quadNote"></p></div></div>')+
     '</div>'+
     '<div class="grid charts" style="margin-top:16px">'+
       panel('','Best participation','Wars fought against wars present.','<div id="lbPart"></div>')+
       panel('','Most wars fought','Count of wars with at least one hit.','<div id="lbWars"></div>')+
       panel('','Top hitters','Average hits per war present.','<div id="lbHits"></div>')+
-      panel('','Top respect earners','Average respect per war present.','<div id="lbResp"></div>')+
+      panel('','Top respect earners','Average respect per hit, so quality not volume.','<div id="lbResp"></div>')+
     '</div>';
 
   drawFormStrip();
-  drawRank(); drawParticipation(); drawRespect(); drawWinLoss(); drawPareto();
-  drawLeaderboards(); renderSlackers(); drawSlackMatrix();
+  drawRank(); drawParticipation(); drawRespect(); drawWinLoss(); drawHistograms();
+  drawLeaderboards(); renderSlackers(); drawQuadrant();
 }
 
 function cardsBlock(c){return '<div class="grid cards">'+c.join('')+'</div>';}
@@ -351,28 +340,63 @@ function drawWinLoss(){
     options:barOpts(baseScales('Result','Avg participation %',{max:100,ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}}),
       {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.parsed.y+'%';}}})})});
 }
-function drawPareto(){
-  var ranked=Object.keys(PLAYERS).map(function(id){return PLAYERS[id];})
-    .filter(function(p){return p.totalHits>0;})
-    .sort(function(a,b){return b.totalHits-a.totalHits;});
-  var grand=sum(ranked.map(function(p){return p.totalHits;}))||1;
-  var top=ranked.slice(0,25);
-  var labels=top.map(function(p){return p.name;});
-  var shares=top.map(function(p){return round1(p.totalHits/grand*100);});
-  var cum=[], running=0;
-  top.forEach(function(p){running+=p.totalHits/grand*100;cum.push(round1(running));});
-  charts.pareto=new Chart(document.getElementById('cPareto'),{
-    data:{labels:labels,datasets:[
-      {type:'bar',label:'Share of hits',data:shares,backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1,yAxisID:'y',order:2},
-      {type:'line',label:'Cumulative',data:cum,borderColor:'#988f7c',borderWidth:2,pointRadius:2,pointHoverRadius:4,pointBackgroundColor:'#988f7c',tension:.2,yAxisID:'y1',order:1}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y+'%';}}})},
+function histogram(values,bandSize){
+  if(!values.length)return {labels:[],counts:[]};
+  var maxv=Math.max.apply(null,values);
+  var nb=Math.max(1,Math.ceil((maxv+1)/bandSize));
+  var counts=new Array(nb).fill(0);
+  values.forEach(function(v){counts[Math.min(nb-1,Math.floor(v/bandSize))]++;});
+  var labels=counts.map(function(_,i){return (i*bandSize)+'-'+((i+1)*bandSize-1);});
+  return {labels:labels,counts:counts};
+}
+function drawHistograms(){
+  var hitVals=[], respVals=[];
+  WARS.forEach(function(w){w.members.forEach(function(m){if(m.hits>0){hitVals.push(m.hits);respVals.push(m.respect);}});});
+  var hh=histogram(hitVals,5);
+  charts.histHits=new Chart(document.getElementById('cHistHits'),{type:'bar',
+    data:{labels:hh.labels,datasets:[{data:hh.counts,backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1}]},
+    options:barOpts(baseScales('Hits in a war','Performances',{},{ticks:{color:TICK,font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:12}}),
+      {tooltip:Object.assign(tip(),{callbacks:{title:function(c){return c[0].label+' hits';},label:function(c){return c.parsed.y+' performances';}}})})});
+  var rh=histogram(respVals,50);
+  charts.histResp=new Chart(document.getElementById('cHistResp'),{type:'bar',
+    data:{labels:rh.labels,datasets:[{data:rh.counts,backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1}]},
+    options:barOpts(baseScales('Respect in a war','Performances',{},{ticks:{color:TICK,font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:12}}),
+      {tooltip:Object.assign(tip(),{callbacks:{title:function(c){return c[0].label+' respect';},label:function(c){return c.parsed.y+' performances';}}})})});
+}
+
+function drawQuadrant(){
+  var elig=rosterPlayers().filter(function(p){return p.warsPresent>=10;});
+  document.getElementById('quadNote').textContent='Members with 10+ wars present. Lines are the faction average for each axis.';
+  var avgHitsLine=mean(elig.map(function(p){return p.avgHits;}));
+  var avgPartLine=mean(elig.map(function(p){return p.participation;}));
+  var pts=elig.map(function(p){return {x:round1(p.avgHits),y:pct(p.participation),name:p.name,id:p.id};});
+  charts.quad=new Chart(document.getElementById('cQuad'),{type:'scatter',
+    data:{datasets:[{data:pts,backgroundColor:'#ffd700cc',borderColor:GOLD,pointRadius:5,pointHoverRadius:8}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:Object.assign(tip(),{callbacks:{label:function(c){var r=c.raw;return r.name+': '+r.x+' hits/war, '+r.y+'% turnout';}}})},
       scales:{
-        x:axis('Members, highest first',{ticks:{color:TICK,font:{size:9},maxRotation:60,minRotation:60,autoSkip:false}}),
-        y:axis('Share of hits %',{beginAtZero:true,position:'left',ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}}),
-        y1:axis('Cumulative %',{beginAtZero:true,max:100,position:'right',grid:{drawOnChartArea:false},ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}})
-      }}});
+        x:axis('Avg hits per war',{beginAtZero:true}),
+        y:axis('Participation %',{beginAtZero:true,max:100,ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}})
+      }},
+    plugins:[quadLines(avgHitsLine,avgPartLine*100)]});
+}
+function quadLines(xLine,yLine){
+  return {id:'quadLines',beforeDatasetsDraw:function(chart){
+    var ctx=chart.ctx, xa=chart.scales.x, ya=chart.scales.y;
+    var px=xa.getPixelForValue(xLine), py=ya.getPixelForValue(yLine);
+    ctx.save();
+    ctx.strokeStyle='#988f7c'; ctx.lineWidth=1; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(px,ya.top); ctx.lineTo(px,ya.bottom); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(xa.left,py); ctx.lineTo(xa.right,py); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#6b6353'; ctx.font='11px Inter'; ctx.textBaseline='top';
+    ctx.fillText('carrying',xa.right-58,ya.top+4);
+    ctx.fillText('soft',xa.left+4,ya.top+4);
+    ctx.textBaseline='bottom';
+    ctx.fillText('hits, absent',xa.right-72,ya.bottom-4);
+    ctx.fillText('slacking',xa.left+4,ya.bottom-4);
+    ctx.restore();
+  }};
 }
 
 /* ---------- leaderboards + slackers ---------- */
@@ -392,10 +416,10 @@ function drawLeaderboards(){
     {h:'Avg hits',n:true,f:function(p){return fmt(p.avgHits,1);}},
     {h:'Total',n:true,f:function(p){return fmt(p.totalHits);}},
     {h:'Wars',n:true,f:function(p){return p.warsPresent;}}]);
-  board('lbResp',all.slice().sort(by('avgRespect',true)),[
+  board('lbResp',all.slice().sort(by('avgRph',true)),[
     {h:'Player',f:nameCell},
-    {h:'Avg resp.',n:true,f:function(p){return fmt(p.avgRespect,1);}},
-    {h:'Total',n:true,f:function(p){return fmt(p.totalRespect);}},
+    {h:'Resp / hit',n:true,f:function(p){return fmt(p.avgRph,2);}},
+    {h:'Total resp.',n:true,f:function(p){return fmt(p.totalRespect);}},
     {h:'Wars',n:true,f:function(p){return p.warsPresent;}}]);
 }
 
@@ -414,43 +438,12 @@ function renderSlackers(){
 }
 function belowCell(text,isBelow){return isBelow?'<span class="below">'+text+'</span>':text;}
 
-function drawSlackMatrix(){
-  var el=document.getElementById('slackMatrix'); if(!el)return;
-  var rows=rosterPlayers().slice().sort(function(a,b){
-    if(a.participation!==b.participation)return a.participation-b.participation;
-    return a.avgHits-b.avgHits;
-  });
-  var warIds=WARS.map(function(w){return w.warId;});
-  var histById={};
-  rows.forEach(function(p){histById[p.id]={};p.history.forEach(function(h){histById[p.id][h.warId]=h.hits;});});
-  var html='<div class="matrix-scroll"><div class="matrix" style="grid-template-columns:120px repeat('+warIds.length+',12px)">';
-  // header row of war labels (rotated dots only; tooltip carries detail)
-  html+='<div class="mhead"></div>';
-  WARS.forEach(function(w){html+='<div class="mcolh" data-tip="'+escapeHtml(warLabel(w))+'|'+w.result+'"></div>';});
-  rows.forEach(function(p){
-    html+='<div class="mname pname '+(isLeaver(p.id)?'leaver':'')+'" data-pid="'+p.id+'">'+escapeHtml(p.name)+'</div>';
-    WARS.forEach(function(w){
-      var present=histById[p.id].hasOwnProperty(w.warId);
-      var hits=present?histById[p.id][w.warId]:null;
-      var cls='mcell', tipExtra;
-      if(!present){cls+=' absent';tipExtra='not in faction';}
-      else if(hits===0){cls+=' z';tipExtra='no-show';}
-      else{cls+=' h'+(hits>=20?4:hits>=10?3:hits>=5?2:1);tipExtra=hits+' hits';}
-      html+='<div class="'+cls+'" data-tip="'+escapeHtml(p.name)+' &middot; '+escapeHtml(warLabel(w))+'|'+tipExtra+'"></div>';
-    });
-  });
-  html+='</div></div>';
-  el.innerHTML=html;
-}
-
 function by(key,desc){return function(a,b){return desc?b[key]-a[key]:a[key]-b[key];};}
 function nameCell(p){return '<span class="'+(isLeaver(p.id)?'pname leaver':'pname')+'" data-pid="'+p.id+'">'+escapeHtml(p.name)+'</span>';}
 
 function board(elId,rows,cols){
-  var limit=10, shown=rows.slice(0,limit);
-  var html='<table class="board"><thead><tr><th class="rank"></th>'+cols.map(function(c){return '<th class="'+(c.n?'num':'')+'">'+c.h+'</th>';}).join('')+'</tr></thead><tbody>'+renderRows(shown,cols,0)+'</tbody></table>';
-  if(rows.length>limit)html+='<div class="note click" data-expand="'+elId+'">Show all '+rows.length+'</div>';
-  var el=document.getElementById(elId); el.innerHTML=html; el._rows=rows; el._cols=cols;
+  var html='<div class="board-scroll"><table class="board"><thead><tr><th class="rank"></th>'+cols.map(function(c){return '<th class="'+(c.n?'num':'')+'">'+c.h+'</th>';}).join('')+'</tr></thead><tbody>'+renderRows(rows,cols,0)+'</tbody></table></div>';
+  document.getElementById(elId).innerHTML=html;
 }
 function renderRows(rows,cols,offset){
   return rows.map(function(p,i){return '<tr><td class="rank">'+(offset+i+1)+'</td>'+cols.map(function(c){return '<td class="'+(c.n?'num':'')+'">'+c.f(p)+'</td>';}).join('')+'</tr>';}).join('');
