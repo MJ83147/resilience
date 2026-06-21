@@ -87,6 +87,25 @@
   .leaver::after{content:' *';color:var(--faint)}
   .below{color:var(--loss)}
 
+  .slack-wrap{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+  .slack-table{flex:1 1 360px;min-width:340px}
+  .slack-matrix{flex:1 1 380px;min-width:340px}
+  .matrix-scroll{overflow:auto;max-height:440px;border:1px solid var(--line);border-radius:6px}
+  .matrix{display:grid;gap:2px;padding:8px;align-items:center}
+  .mhead{height:8px}
+  .mcolh{width:12px;height:8px;background:var(--line);border-radius:2px}
+  .mname{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px;cursor:pointer}
+  .mname.leaver{color:var(--muted)}
+  .mname.leaver::after{content:' *';color:var(--faint)}
+  .mname:hover{color:var(--gold)}
+  .mcell{width:12px;height:14px;border-radius:2px;background:#2a271f}
+  .mcell.absent{background:transparent}
+  .mcell.z{background:#3a2622}
+  .mcell.h1{background:#5a4a18}
+  .mcell.h2{background:#8a7012}
+  .mcell.h3{background:#cca60a}
+  .mcell.h4{background:#ffd700}
+
   .note{color:var(--faint);font-size:12px;margin-top:10px}
   .note.click{cursor:pointer}
   .note.click:hover{color:var(--muted)}
@@ -142,7 +161,6 @@
 var DATA_URL = "https://script.google.com/macros/s/AKfycbwIL60E_q7Qtv9AAXJk9FxvU4Wbq6JyI63M9xFNXA9w8wnx4pZNx0Vbg6L7KdmhEe-Mgw/exec";
 
 var DATA=null, WARS=[], PLAYERS={}, CURRENT_IDS={}, charts={};
-var TARGET={mode:'hits',value:20};
 
 /* ---------- loading ---------- */
 function boot(){
@@ -206,15 +224,10 @@ function aggregate(){
     p.avgHits=p.warsPresent?p.totalHits/p.warsPresent:0;
     p.avgRespect=p.warsPresent?p.totalRespect/p.warsPresent:0;
     p.avgRph=p.totalHits?p.totalRespect/p.totalHits:0;
-    p.clearance=playerClearance(p);
+    var fought=p.history.filter(function(h){return h.hits>0;});
+    p.aboveHits=fought.length?fought.filter(function(h){return h.hits>h.facAvgHits;}).length/fought.length:null;
+    p.aboveResp=fought.length?fought.filter(function(h){return h.respect>h.facAvgRespect;}).length/fought.length:null;
   });
-}
-
-function playerClearance(p){
-  var fought=p.history.filter(function(h){return h.hits>0;});
-  if(!fought.length)return null;
-  var c=fought.filter(function(h){return (TARGET.mode==='hits'?h.hits:h.respect)>=TARGET.value;}).length;
-  return c/fought.length;
 }
 
 function factionBenchmarks(){
@@ -222,10 +235,7 @@ function factionBenchmarks(){
   var part=mean(roster.map(function(p){return p.participation;}));
   var totH=sum(roster.map(function(p){return p.totalHits;}));
   var totR=sum(roster.map(function(p){return p.totalRespect;}));
-  var rph=totH?totR/totH:0;
-  var cleared=0,fought=0;
-  roster.forEach(function(p){p.history.forEach(function(h){if(h.hits>0){fought++;if((TARGET.mode==='hits'?h.hits:h.respect)>=TARGET.value)cleared++;}});});
-  return {participation:part,rph:rph,clearance:fought?cleared/fought:0};
+  return {participation:part,rph:totH?totR/totH:0,avgHits:mean(roster.map(function(p){return p.avgHits;}))};
 }
 function rosterPlayers(){return Object.keys(PLAYERS).map(function(id){return PLAYERS[id];}).filter(function(p){return !isLeaver(p.id);});}
 
@@ -285,11 +295,10 @@ function renderOverview(){
       panel('','Participation per war','Share of the roster that put in at least one hit.','<div class="chartbox"><canvas id="cPart"></canvas></div>')+
       panel('','Respect per war','Total respect the faction earned each war.','<div class="chartbox"><canvas id="cResp"></canvas></div>')+
       panel('','Participation: wins vs losses','Average turnout in wars won against wars lost.','<div class="chartbox"><canvas id="cWL"></canvas></div>')+
-      panel('wide','Target clearance per war','Share of members who fought that cleared the target. Set it below.',
-        targetControls()+'<div class="chartbox"><canvas id="cTarget"></canvas></div>')+
+      panel('wide','Hit concentration','Members ranked by total hits. A steep early climb means a few carry the load; a straight climb means an even spread.','<div class="chartbox"><canvas id="cPareto"></canvas></div>')+
     '</div>'+
     '<div class="grid charts" style="margin-top:16px">'+
-      panel('wide','Not pulling their weight','Current roster, weakest turnout first. Target clearance follows the control above.','<div id="lbSlack"></div>')+
+      panel('wide','Not pulling their weight','Current roster, weakest turnout first. The matrix shows hits per war: dark cells are no-shows.','<div class="slack-wrap"><div class="slack-table" id="lbSlack"></div><div class="slack-matrix" id="slackMatrix"></div></div>')+
     '</div>'+
     '<div class="grid charts" style="margin-top:16px">'+
       panel('','Best participation','Wars fought against wars present.','<div id="lbPart"></div>')+
@@ -299,15 +308,13 @@ function renderOverview(){
     '</div>';
 
   drawFormStrip();
-  drawRank(); drawParticipation(); drawRespect(); drawWinLoss(); drawTarget();
-  wireTargetControls();
-  drawLeaderboards(); renderSlackers();
+  drawRank(); drawParticipation(); drawRespect(); drawWinLoss(); drawPareto();
+  drawLeaderboards(); renderSlackers(); drawSlackMatrix();
 }
 
 function cardsBlock(c){return '<div class="grid cards">'+c.join('')+'</div>';}
 function card(label,value,sub,gold){return '<div class="panel card"><div class="label">'+label+'</div><div class="value'+(gold?' gold':'')+'">'+value+'</div>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';}
 function panel(cls,title,cap,inner){return '<div class="panel '+(cls||'')+'"><h3>'+title+'</h3>'+(cap?'<p class="cap">'+cap+'</p>':'')+inner+'</div>';}
-function targetControls(){return '<div class="controls"><label>Target</label><input type="number" id="tgtVal" min="0" step="1" value="'+TARGET.value+'"><div class="seg" id="tgtMode"><button data-m="hits" class="on">Hits</button><button data-m="respect">Respect</button></div></div>';}
 
 function drawFormStrip(){
   document.getElementById('formStrip').innerHTML=WARS.map(function(w){
@@ -344,33 +351,28 @@ function drawWinLoss(){
     options:barOpts(baseScales('Result','Avg participation %',{max:100,ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}}),
       {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.parsed.y+'%';}}})})});
 }
-function drawTarget(){
-  var data=WARS.map(function(w){
-    var f=w._fighters; if(!f.length)return 0;
-    var cleared=f.filter(function(m){return (TARGET.mode==='hits'?m.hits:m.respect)>=TARGET.value;}).length;
-    return pct(cleared/f.length);
-  });
-  if(charts.target){charts.target.data.datasets[0].data=data;charts.target.update();return;}
-  charts.target=new Chart(document.getElementById('cTarget'),{type:'line',
-    data:{labels:WARS.map(warLabel),datasets:[Object.assign(goldLine(data),{fill:true})]},
-    options:lineOpts(baseScales('War','% of fighters cleared',{max:100,ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}}),
-      {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.parsed.y+'% cleared';}}})})});
-}
-function wireTargetControls(){
-  var val=document.getElementById('tgtVal');
-  val.addEventListener('input',function(){TARGET.value=Number(val.value)||0;onTargetChange();});
-  document.querySelectorAll('#tgtMode button').forEach(function(b){
-    b.addEventListener('click',function(){
-      TARGET.mode=b.getAttribute('data-m');
-      document.querySelectorAll('#tgtMode button').forEach(function(x){x.classList.toggle('on',x===b);});
-      val.value=TARGET.mode==='hits'?20:500; TARGET.value=Number(val.value);
-      onTargetChange();
-    });
-  });
-}
-function onTargetChange(){
-  Object.keys(PLAYERS).forEach(function(id){PLAYERS[id].clearance=playerClearance(PLAYERS[id]);});
-  drawTarget(); renderSlackers();
+function drawPareto(){
+  var ranked=Object.keys(PLAYERS).map(function(id){return PLAYERS[id];})
+    .filter(function(p){return p.totalHits>0;})
+    .sort(function(a,b){return b.totalHits-a.totalHits;});
+  var grand=sum(ranked.map(function(p){return p.totalHits;}))||1;
+  var top=ranked.slice(0,25);
+  var labels=top.map(function(p){return p.name;});
+  var shares=top.map(function(p){return round1(p.totalHits/grand*100);});
+  var cum=[], running=0;
+  top.forEach(function(p){running+=p.totalHits/grand*100;cum.push(round1(running));});
+  charts.pareto=new Chart(document.getElementById('cPareto'),{
+    data:{labels:labels,datasets:[
+      {type:'bar',label:'Share of hits',data:shares,backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1,yAxisID:'y',order:2},
+      {type:'line',label:'Cumulative',data:cum,borderColor:'#988f7c',borderWidth:2,pointRadius:2,pointHoverRadius:4,pointBackgroundColor:'#988f7c',tension:.2,yAxisID:'y1',order:1}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y+'%';}}})},
+      scales:{
+        x:axis('Members, highest first',{ticks:{color:TICK,font:{size:9},maxRotation:60,minRotation:60,autoSkip:false}}),
+        y:axis('Share of hits %',{beginAtZero:true,position:'left',ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}}),
+        y1:axis('Cumulative %',{beginAtZero:true,max:100,position:'right',grid:{drawOnChartArea:false},ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}})
+      }}});
 }
 
 /* ---------- leaderboards + slackers ---------- */
@@ -406,11 +408,40 @@ function renderSlackers(){
   board('lbSlack',rows,[
     {h:'Player',f:nameCell},
     {h:'Part.',n:true,f:function(p){return belowCell(pct(p.participation)+'%',p.participation<bench.participation);}},
-    {h:'Avg hits',n:true,f:function(p){return fmt(p.avgHits,1);}},
-    {h:'Clearance',n:true,f:function(p){return p.clearance==null?'-':belowCell(pct(p.clearance)+'%',p.clearance<bench.clearance);}},
+    {h:'Avg hits',n:true,f:function(p){return belowCell(fmt(p.avgHits,1),p.avgHits<bench.avgHits);}},
+    {h:'> Avg',n:true,f:function(p){return p.aboveHits==null?'-':pct(p.aboveHits)+'%';}},
     {h:'Wars',n:true,f:function(p){return p.warsFought+'/'+p.warsPresent;}}]);
 }
 function belowCell(text,isBelow){return isBelow?'<span class="below">'+text+'</span>':text;}
+
+function drawSlackMatrix(){
+  var el=document.getElementById('slackMatrix'); if(!el)return;
+  var rows=rosterPlayers().slice().sort(function(a,b){
+    if(a.participation!==b.participation)return a.participation-b.participation;
+    return a.avgHits-b.avgHits;
+  });
+  var warIds=WARS.map(function(w){return w.warId;});
+  var histById={};
+  rows.forEach(function(p){histById[p.id]={};p.history.forEach(function(h){histById[p.id][h.warId]=h.hits;});});
+  var html='<div class="matrix-scroll"><div class="matrix" style="grid-template-columns:120px repeat('+warIds.length+',12px)">';
+  // header row of war labels (rotated dots only; tooltip carries detail)
+  html+='<div class="mhead"></div>';
+  WARS.forEach(function(w){html+='<div class="mcolh" data-tip="'+escapeHtml(warLabel(w))+'|'+w.result+'"></div>';});
+  rows.forEach(function(p){
+    html+='<div class="mname pname '+(isLeaver(p.id)?'leaver':'')+'" data-pid="'+p.id+'">'+escapeHtml(p.name)+'</div>';
+    WARS.forEach(function(w){
+      var present=histById[p.id].hasOwnProperty(w.warId);
+      var hits=present?histById[p.id][w.warId]:null;
+      var cls='mcell', tipExtra;
+      if(!present){cls+=' absent';tipExtra='not in faction';}
+      else if(hits===0){cls+=' z';tipExtra='no-show';}
+      else{cls+=' h'+(hits>=20?4:hits>=10?3:hits>=5?2:1);tipExtra=hits+' hits';}
+      html+='<div class="'+cls+'" data-tip="'+escapeHtml(p.name)+' &middot; '+escapeHtml(warLabel(w))+'|'+tipExtra+'"></div>';
+    });
+  });
+  html+='</div></div>';
+  el.innerHTML=html;
+}
 
 function by(key,desc){return function(a,b){return desc?b[key]-a[key]:a[key]-b[key];};}
 function nameCell(p){return '<span class="'+(isLeaver(p.id)?'pname leaver':'pname')+'" data-pid="'+p.id+'">'+escapeHtml(p.name)+'</span>';}
@@ -453,6 +484,10 @@ function showWar(warId){
       card('Fighters',w._fighters.length+' / '+w._size,'put in a hit'),
       card('Participation',pct(w._participation)+'%')
     ])+
+    '<div class="grid charts">'+
+      panel('','Top contributors','Hits by member this war, highest first.','<div class="chartbox"><canvas id="wcTop"></canvas></div>')+
+      panel('','Hits by level','Each fighter as a point: their level against their hits this war.','<div class="chartbox"><canvas id="wcScatter"></canvas></div>')+
+    '</div>'+
     '<div class="panel"><h3>Members</h3><p class="cap">Sorted by respect. Leavers are marked *.</p>'+
     '<table class="board"><thead><tr><th class="rank"></th><th>Player</th><th class="num">Level</th><th class="num">Hits</th><th class="num">Respect</th></tr></thead><tbody>'+
     rows.map(function(m,i){
@@ -461,6 +496,20 @@ function showWar(warId){
     }).join('')+
     '</tbody></table></div>';
   document.getElementById('warPanel').innerHTML=html;
+  drawWarCharts(w);
+}
+
+function drawWarCharts(w){
+  ['wcTop','wcScatter'].forEach(function(k){if(charts[k]){try{charts[k].destroy();}catch(e){}delete charts[k];}});
+  var top=w.members.filter(function(m){return m.hits>0;}).sort(function(a,b){return b.hits-a.hits;}).slice(0,20);
+  charts.wcTop=new Chart(document.getElementById('wcTop'),{type:'bar',
+    data:{labels:top.map(function(m){return m.name;}),datasets:[{data:top.map(function(m){return m.hits;}),backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1}]},
+    options:Object.assign(barOpts(baseScales('Member','Hits',{},{ticks:{color:TICK,font:{size:9},maxRotation:60,minRotation:60,autoSkip:false}})),{indexAxis:'x'})});
+  var pts=w.members.filter(function(m){return m.hits>0;}).map(function(m){return {x:m.level,y:m.hits};});
+  charts.wcScatter=new Chart(document.getElementById('wcScatter'),{type:'scatter',
+    data:{datasets:[{data:pts,backgroundColor:'#ffd70099',borderColor:GOLD,pointRadius:4,pointHoverRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:Object.assign(tip(),{callbacks:{label:function(c){return 'Lvl '+c.parsed.x+', '+c.parsed.y+' hits';}}})},
+      scales:{x:axis('Level',{beginAtZero:true}),y:axis('Hits',{beginAtZero:true})}}});
 }
 
 /* ---------- player lookup ---------- */
@@ -474,8 +523,8 @@ function buildPlayerLookup(){
 }
 function renderResults(q){
   var box=document.getElementById('pResults');
-  var list=Object.keys(PLAYERS).map(function(id){return PLAYERS[id];});
-  if(q)list=list.filter(function(p){return p.name.toLowerCase().indexOf(q)>-1;});
+  if(!q){box.innerHTML='';return;}
+  var list=Object.keys(PLAYERS).map(function(id){return PLAYERS[id];}).filter(function(p){return p.name.toLowerCase().indexOf(q)>-1;});
   list.sort(function(a,b){return a.name.toLowerCase()<b.name.toLowerCase()?-1:1;});
   list=list.slice(0,40);
   box.innerHTML=list.map(function(p){return '<button data-pid="'+p.id+'">'+escapeHtml(p.name)+(isLeaver(p.id)?' *':'')+'</button>';}).join('')||'<span class="note">No match.</span>';
@@ -497,7 +546,8 @@ function openPlayer(id){
       card('Participation',pct(p.participation)+'%','<b>Faction '+pct(bench.participation)+'%</b>'),
       card('Current level',p.level),
       card('Avg respect / hit',fmt(p.avgRph,2),'<b>Faction '+fmt(bench.rph,2)+'</b>',true),
-      card('Target clearance',p.clearance==null?'-':pct(p.clearance)+'%','<b>Faction '+pct(bench.clearance)+'%</b> at '+TARGET.value+' '+TARGET.mode)
+      card('Hits above avg',p.aboveHits==null?'-':pct(p.aboveHits)+'%','of fought wars beat that war'),
+      card('Respect above avg',p.aboveResp==null?'-':pct(p.aboveResp)+'%','of fought wars beat that war')
     ])+
     '<div class="grid charts">'+
       panel('','Hits per war','Their hits each war, against the average fighter that war.','<div class="chartbox"><canvas id="pcHits"></canvas></div>')+
