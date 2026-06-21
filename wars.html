@@ -292,9 +292,9 @@ function renderOverview(){
       panel('wide','Not pulling their weight','Current roster, weakest turnout first. The 2x2 places each member by hits and turnout against the faction average.','<div class="slack-wrap"><div class="slack-table" id="lbSlack"></div><div class="slack-quad" id="slackQuad"><div class="chartbox" style="height:340px"><canvas id="cQuad"></canvas></div><p class="note" id="quadNote"></p></div></div>')+
     '</div>'+
     '<div class="grid charts" style="margin-top:16px">'+
-      panel('','Best participation','Wars fought against wars present.','<div id="lbPart"></div>')+
+      panel('','Best participation','Wars fought against wars present. Minimum 10 wars present.','<div id="lbPart"></div>')+
       panel('','Most wars fought','Count of wars with at least one hit.','<div id="lbWars"></div>')+
-      panel('','Top hitters','Average hits per war present.','<div id="lbHits"></div>')+
+      panel('','Top hitters','Average hits per war present. Minimum 10 wars present.','<div id="lbHits"></div>')+
       panel('','Top respect earners','Average respect per hit, so quality not volume.','<div id="lbResp"></div>')+
     '</div>';
 
@@ -422,7 +422,8 @@ function quadLines(xLine,yLine){
 /* ---------- leaderboards + slackers ---------- */
 function drawLeaderboards(){
   var all=rosterPlayers();
-  board('lbPart',all.slice().sort(by('participation',true)),[
+  var vet=all.filter(function(p){return p.warsPresent>=10;});
+  board('lbPart',vet.slice().sort(by('participation',true)),[
     {h:'Player',f:nameCell},
     {h:'Part.',n:true,f:function(p){return pct(p.participation)+'%';}},
     {h:'Fought',n:true,f:function(p){return p.warsFought;}},
@@ -431,7 +432,7 @@ function drawLeaderboards(){
     {h:'Player',f:nameCell},
     {h:'Fought',n:true,f:function(p){return p.warsFought;}},
     {h:'Present',n:true,f:function(p){return p.warsPresent;}}]);
-  board('lbHits',all.slice().sort(by('avgHits',true)),[
+  board('lbHits',vet.slice().sort(by('avgHits',true)),[
     {h:'Player',f:nameCell},
     {h:'Avg hits',n:true,f:function(p){return fmt(p.avgHits,1);}},
     {h:'Total',n:true,f:function(p){return fmt(p.totalHits);}},
