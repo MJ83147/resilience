@@ -285,8 +285,8 @@ function renderOverview(){
       panel('','Participation per war','Share of the roster that put in at least one hit.','<div class="chartbox"><canvas id="cPart"></canvas></div>')+
       panel('','Respect per war','Total respect the faction earned each war.','<div class="chartbox"><canvas id="cResp"></canvas></div>')+
       panel('','Participation: wins vs losses','Average turnout in wars won against wars lost.','<div class="chartbox"><canvas id="cWL"></canvas></div>')+
-      panel('','Hits distribution','Every war performance pooled. A long tail to the right means a few carry the hits; a fat middle means an even spread. No-shows excluded.','<div class="chartbox"><canvas id="cHistHits"></canvas></div>')+
-      panel('','Respect distribution','Same, for respect earned per war performance.','<div class="chartbox"><canvas id="cHistResp"></canvas></div>')+
+      panel('','Hit concentration','Members ranked by hits, split into groups. Each bar is that group\'s share of all hits. Even spread means a bar roughly matches its group size; a tall top bar means a few carry it.','<div class="chartbox"><canvas id="cHistHits"></canvas></div>')+
+      panel('','Respect concentration','Same, by respect earned.','<div class="chartbox"><canvas id="cHistResp"></canvas></div>')+
     '</div>'+
     '<div class="grid charts" style="margin-top:16px">'+
       panel('wide','Not pulling their weight','Current roster, weakest turnout first. The 2x2 places each member by hits and turnout against the faction average.','<div class="slack-wrap"><div class="slack-table" id="lbSlack"></div><div class="slack-quad" id="slackQuad"><div class="chartbox" style="height:340px"><canvas id="cQuad"></canvas></div><p class="note" id="quadNote"></p></div></div>')+
@@ -299,7 +299,7 @@ function renderOverview(){
     '</div>';
 
   drawFormStrip();
-  drawRank(); drawParticipation(); drawRespect(); drawWinLoss(); drawHistograms();
+  drawRank(); drawParticipation(); drawRespect(); drawWinLoss(); drawConcentration();
   drawLeaderboards(); renderSlackers(); drawQuadrant();
 }
 
@@ -342,28 +342,38 @@ function drawWinLoss(){
     options:barOpts(baseScales('Result','Avg participation %',{max:100,ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}}),
       {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.parsed.y+'%';}}})})});
 }
-function histogram(values,bandSize){
-  if(!values.length)return {labels:[],counts:[]};
-  var maxv=Math.max.apply(null,values);
-  var nb=Math.max(1,Math.ceil((maxv+1)/bandSize));
-  var counts=new Array(nb).fill(0);
-  values.forEach(function(v){counts[Math.min(nb-1,Math.floor(v/bandSize))]++;});
-  var labels=counts.map(function(_,i){return (i*bandSize)+'-'+((i+1)*bandSize-1);});
-  return {labels:labels,counts:counts};
+function bandedShares(values){
+  var sorted=values.slice().sort(function(a,b){return b-a;});
+  var n=sorted.length, grand=sum(sorted)||1;
+  var fr=[0,0.01,0.05,0.10,0.25,0.50,1.00];
+  var labels=['Top 1%','1-5%','5-10%','10-25%','25-50%','Bottom 50%'];
+  var cut=fr.map(function(f){return Math.round(n*f);});
+  for(var i=1;i<cut.length;i++){if(cut[i]<cut[i-1])cut[i]=cut[i-1];}
+  cut[cut.length-1]=n;
+  var shares=[];
+  for(var b=0;b<labels.length;b++){
+    var s=0; for(var k=cut[b];k<cut[b+1];k++)s+=sorted[k];
+    shares.push(round1(s/grand*100));
+  }
+  return {labels:labels,shares:shares};
 }
-function drawHistograms(){
-  var hitVals=[], respVals=[];
-  WARS.forEach(function(w){w.members.forEach(function(m){if(m.hits>0){hitVals.push(m.hits);respVals.push(m.respect);}});});
-  var hh=histogram(hitVals,5);
-  charts.histHits=new Chart(document.getElementById('cHistHits'),{type:'bar',
-    data:{labels:hh.labels,datasets:[{data:hh.counts,backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1}]},
-    options:barOpts(baseScales('Hits in a war','Performances',{},{ticks:{color:TICK,font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:12}}),
-      {tooltip:Object.assign(tip(),{callbacks:{title:function(c){return c[0].label+' hits';},label:function(c){return c.parsed.y+' performances';}}})})});
-  var rh=histogram(respVals,50);
-  charts.histResp=new Chart(document.getElementById('cHistResp'),{type:'bar',
-    data:{labels:rh.labels,datasets:[{data:rh.counts,backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1}]},
-    options:barOpts(baseScales('Respect in a war','Performances',{},{ticks:{color:TICK,font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:12}}),
-      {tooltip:Object.assign(tip(),{callbacks:{title:function(c){return c[0].label+' respect';},label:function(c){return c.parsed.y+' performances';}}})})});
+function drawConcentration(){
+  var hitTotals=[], respTotals=[];
+  Object.keys(PLAYERS).forEach(function(id){
+    var p=PLAYERS[id];
+    if(p.totalHits>0)hitTotals.push(p.totalHits);
+    if(p.totalRespect>0)respTotals.push(p.totalRespect);
+  });
+  var hb=bandedShares(hitTotals);
+  charts.concHits=new Chart(document.getElementById('cHistHits'),{type:'bar',
+    data:{labels:hb.labels,datasets:[{data:hb.shares,backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1}]},
+    options:barOpts(baseScales('Member group, top hitters first','Share of all hits %',{ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}},{ticks:{color:TICK,font:{size:10},maxRotation:0,autoSkip:false}}),
+      {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.parsed.y+'% of all hits';}}})})});
+  var rb=bandedShares(respTotals);
+  charts.concResp=new Chart(document.getElementById('cHistResp'),{type:'bar',
+    data:{labels:rb.labels,datasets:[{data:rb.shares,backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1}]},
+    options:barOpts(baseScales('Member group, top earners first','Share of all respect %',{ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}},{ticks:{color:TICK,font:{size:10},maxRotation:0,autoSkip:false}}),
+      {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.parsed.y+'% of all respect';}}})})});
 }
 
 function drawQuadrant(){
