@@ -10,151 +10,105 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
-    --ink:#14130f;
-    --panel:#1d1b16;
-    --panel-2:#232019;
-    --line:#332f26;
-    --text:#f1ede4;
-    --muted:#988f7c;
-    --faint:#6b6353;
-    --gold:#ffd700;
-    --win:#5fb87a;
-    --loss:#d8584e;
+    --ink:#14130f; --panel:#1d1b16; --panel-2:#232019; --line:#332f26;
+    --text:#f1ede4; --muted:#988f7c; --faint:#6b6353;
+    --gold:#ffd700; --win:#5fb87a; --loss:#d8584e;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
-  body{
-    background:var(--ink);
-    color:var(--text);
-    font-family:'Inter',system-ui,sans-serif;
-    font-size:15px;
-    line-height:1.5;
-    -webkit-font-smoothing:antialiased;
-  }
+  body{background:var(--ink);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
   a{color:var(--gold);text-decoration:none}
   a:hover{text-decoration:underline}
   .mono{font-family:'JetBrains Mono',monospace}
 
-  header.top{
-    border-bottom:1px solid var(--line);
-    padding:22px 28px 18px;
-    display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
-  }
-  .brand{
-    font-family:'Barlow Condensed',sans-serif;
-    font-weight:700;font-size:30px;letter-spacing:.04em;text-transform:uppercase;
-    margin:0;
-  }
+  header.top{border-bottom:1px solid var(--line);padding:22px 32px 18px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+  .brand{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:30px;letter-spacing:.04em;text-transform:uppercase;margin:0}
   .brand b{color:var(--gold)}
   .crumb{color:var(--muted);font-size:13px}
   .gen{margin-left:auto;color:var(--faint);font-size:12px}
 
-  nav.tabs{
-    display:flex;gap:4px;padding:0 28px;border-bottom:1px solid var(--line);
-    position:sticky;top:0;background:var(--ink);z-index:5;
-  }
-  nav.tabs button{
-    background:none;border:none;color:var(--muted);
-    font-family:'Barlow Condensed',sans-serif;font-weight:600;
-    font-size:17px;letter-spacing:.05em;text-transform:uppercase;
-    padding:14px 16px;cursor:pointer;border-bottom:2px solid transparent;
-  }
+  nav.tabs{display:flex;gap:4px;padding:0 32px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink);z-index:5}
+  nav.tabs button{background:none;border:none;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:17px;letter-spacing:.05em;text-transform:uppercase;padding:14px 16px;cursor:pointer;border-bottom:2px solid transparent}
   nav.tabs button:hover{color:var(--text)}
   nav.tabs button.active{color:var(--gold);border-bottom-color:var(--gold)}
 
-  main{padding:24px 28px 80px;max-width:1240px}
+  main{padding:24px 32px 80px}
   section.view{display:none}
   section.view.active{display:block}
 
   .grid{display:grid;gap:16px}
-  .cards{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:8px}
+  .cards{grid-template-columns:repeat(auto-fit,minmax(165px,1fr));margin-bottom:8px}
   .charts{grid-template-columns:repeat(2,1fr)}
   .charts .wide{grid-column:1 / -1}
-  @media(max-width:860px){.charts{grid-template-columns:1fr}}
+  @media(max-width:900px){.charts{grid-template-columns:1fr}}
 
-  .panel{
-    background:var(--panel);border:1px solid var(--line);border-radius:8px;
-    padding:18px 18px 16px;
-  }
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px 18px 16px}
   .card .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
-  .card .value{
-    font-family:'Barlow Condensed',sans-serif;font-weight:700;
-    font-size:34px;line-height:1.05;margin-top:6px;
-  }
+  .card .value{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:34px;line-height:1.05;margin-top:6px}
   .card .value.gold{color:var(--gold)}
-  .card .sub{color:var(--faint);font-size:12px;margin-top:2px}
+  .card .sub{color:var(--faint);font-size:12px;margin-top:3px}
+  .card .sub b{color:var(--muted);font-weight:600}
 
-  .panel h3{
-    font-family:'Barlow Condensed',sans-serif;font-weight:600;
-    font-size:19px;letter-spacing:.03em;text-transform:uppercase;
-    margin:0 0 2px;
-  }
+  .panel h3{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:19px;letter-spacing:.03em;text-transform:uppercase;margin:0 0 2px}
   .panel .cap{color:var(--muted);font-size:12.5px;margin:0 0 14px}
-  .chartbox{position:relative;height:230px}
-  .chartbox.tall{height:280px}
+  .chartbox{position:relative;height:240px}
 
   .controls{display:flex;gap:10px;align-items:center;margin:0 0 12px;flex-wrap:wrap}
   .controls label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
-  .controls input[type=number]{
-    width:78px;background:var(--ink);border:1px solid var(--line);color:var(--text);
-    border-radius:5px;padding:6px 8px;font-family:'JetBrains Mono',monospace;
-  }
+  .controls input[type=number],.controls select{background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:5px;padding:6px 8px;font-family:'JetBrains Mono',monospace}
+  .controls input[type=number]{width:84px}
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
-  .seg button{
-    background:var(--ink);border:none;color:var(--muted);padding:6px 12px;cursor:pointer;
-    font-size:13px;
-  }
+  .seg button{background:var(--ink);border:none;color:var(--muted);padding:6px 12px;cursor:pointer;font-size:13px}
   .seg button.on{background:var(--gold);color:#1a1814;font-weight:600}
 
-  .form-strip{display:flex;flex-wrap:wrap;gap:3px}
-  .form-cell{width:15px;height:24px;border-radius:2px;background:var(--faint)}
-  .form-cell.w{background:var(--win)}
-  .form-cell.l{background:var(--loss)}
-  .form-cell.p{background:var(--gold)}
+  .legend{display:flex;gap:16px;align-items:center;margin:0 0 12px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:13px;height:13px;border-radius:3px;display:inline-block}
+  .sw.win{background:var(--win)} .sw.loss{background:var(--loss)}
+
+  .form-strip{display:flex;flex-wrap:wrap;gap:4px}
+  .form-cell{width:17px;height:26px;border-radius:3px;cursor:pointer;transition:transform .08s}
+  .form-cell:hover{transform:translateY(-2px)}
+  .form-cell.w{background:var(--win)} .form-cell.l{background:var(--loss)}
 
   .strip-row{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
-  .pcell{width:13px;height:20px;border-radius:2px;border:1px solid var(--line);background:transparent}
+  .pcell{width:14px;height:22px;border-radius:2px;border:1px solid var(--line);background:transparent}
   .pcell.on{background:var(--gold);border-color:var(--gold)}
 
   table.board{width:100%;border-collapse:collapse;font-size:13.5px}
-  table.board th{
-    text-align:left;color:var(--muted);font-weight:600;font-size:11.5px;
-    text-transform:uppercase;letter-spacing:.05em;padding:7px 10px;border-bottom:1px solid var(--line);
-    cursor:default;
-  }
+  table.board th{text-align:left;color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;padding:7px 10px;border-bottom:1px solid var(--line)}
   table.board td{padding:7px 10px;border-bottom:1px solid #26241d}
   table.board td.num,table.board th.num{text-align:right;font-family:'JetBrains Mono',monospace}
   table.board tr:hover td{background:var(--panel-2)}
-  .rank{color:var(--faint);font-family:'Barlow Condensed',sans-serif;font-weight:700;width:28px}
+  .rank{color:var(--faint);font-family:'Barlow Condensed',sans-serif;font-weight:700;width:30px}
   .pname{cursor:pointer}
   .pname:hover{color:var(--gold)}
   .leaver{color:var(--muted)}
   .leaver::after{content:' *';color:var(--faint)}
+  .below{color:var(--loss)}
 
   .note{color:var(--faint);font-size:12px;margin-top:10px}
+  .note.click{cursor:pointer}
+  .note.click:hover{color:var(--muted)}
 
   .lookup{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
-  .lookup input{
-    flex:1;min-width:220px;max-width:340px;background:var(--ink);border:1px solid var(--line);
-    color:var(--text);border-radius:6px;padding:10px 12px;font-size:14px;
-  }
+  .lookup input{flex:1;min-width:220px;max-width:340px;background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:10px 12px;font-size:14px}
   .results{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
-  .results button{
-    background:var(--panel-2);border:1px solid var(--line);color:var(--text);
-    border-radius:5px;padding:6px 11px;cursor:pointer;font-size:13px;
-  }
+  .results button{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:5px;padding:6px 11px;cursor:pointer;font-size:13px}
   .results button:hover{border-color:var(--gold)}
 
-  .player-head{display:flex;align-items:baseline;gap:14px;margin-bottom:14px;flex-wrap:wrap}
-  .player-head .pn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px}
-  .player-head .meta{color:var(--muted);font-size:13px}
+  .player-head,.war-head{display:flex;align-items:baseline;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+  .player-head .pn,.war-head .wn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px}
+  .player-head .meta,.war-head .meta{color:var(--muted);font-size:13px}
+  .war-head .res{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:20px}
+  .war-head .res.w{color:var(--win)} .war-head .res.l{color:var(--loss)}
 
-  .loading,.empty{color:var(--muted);padding:40px 0;text-align:center}
-  .loader-box{
-    border:1px dashed var(--line);border-radius:8px;padding:28px;text-align:center;color:var(--muted);
-  }
-  .loader-box input[type=file]{margin-top:12px;color:var(--muted)}
+  .empty{color:var(--muted);padding:40px 0;text-align:center}
+  .loader-box{border:1px dashed var(--line);border-radius:8px;padding:28px;text-align:center;color:var(--muted)}
   .hidden{display:none !important}
+
+  #floatTip{position:fixed;pointer-events:none;background:#0c0b08;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:12.5px;color:var(--text);z-index:50;opacity:0;transition:opacity .08s;max-width:240px}
+  #floatTip .t{color:var(--muted);font-size:11px}
 </style>
 </head>
 <body>
@@ -167,529 +121,453 @@
 
 <nav class="tabs">
   <button data-tab="overview" class="active">Overview</button>
+  <button data-tab="wars">Wars</button>
   <button data-tab="players">Player lookup</button>
 </nav>
 
 <main>
-  <div id="bootstrap" class="loader-box">
-    <div id="bootMsg">Loading current war data &hellip;</div>
-  </div>
-
+  <div id="bootstrap" class="loader-box"><div id="bootMsg">Loading current war data &hellip;</div></div>
   <section class="view active" id="view-overview" data-view></section>
+  <section class="view" id="view-wars" data-view></section>
   <section class="view" id="view-players" data-view></section>
 </main>
+
+<div id="floatTip"></div>
 
 <script>
 "use strict";
 
 /* Paste your Apps Script web app URL here (Deploy > Web app).
    Leave as-is to fall back to a local resilience-wars.json for preview. */
-var DATA_URL = "https://script.google.com/macros/s/AKfycbwIL60E_q7Qtv9AAXJk9FxvU4Wbq6JyI63M9xFNXA9w8wnx4pZNx0Vbg6L7KdmhEe-Mgw/exec";
+var DATA_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
 
-var DATA = null;       // raw payload
-var WARS = [];         // chronological
-var PLAYERS = {};      // id -> aggregate
-var CURRENT_IDS = {};  // ids in the most recent war roster
-var charts = {};       // live Chart instances by key
-var TARGET = { mode:'hits', value:20 };
+var DATA=null, WARS=[], PLAYERS={}, CURRENT_IDS={}, charts={};
+var TARGET={mode:'hits',value:20};
 
 /* ---------- loading ---------- */
-
 function boot(){
-  var url = (DATA_URL && DATA_URL.indexOf('http')===0) ? DATA_URL : './resilience-wars.json';
+  var url=(DATA_URL&&DATA_URL.indexOf('http')===0)?DATA_URL:'./resilience-wars.json';
   fetch(url,{cache:'no-store'})
-    .then(function(r){ if(!r.ok) throw new Error('http'); return r.json(); })
-    .then(function(j){ ingest(j); })
-    .catch(function(){
-      document.getElementById('bootMsg').textContent = 'Could not reach the data source.';
-    });
+    .then(function(r){if(!r.ok)throw new Error('http');return r.json();})
+    .then(function(j){ingest(j);})
+    .catch(function(){document.getElementById('bootMsg').textContent='Could not reach the data source.';});
 }
 
 function ingest(payload){
-  DATA = payload;
-  WARS = (payload.wars||[]).slice().sort(function(a,b){
-    return (a.start||a.warId) - (b.start||b.warId);
-  });
+  DATA=payload;
+  WARS=(payload.wars||[]).slice().sort(function(a,b){return (a.start||a.warId)-(b.start||b.warId);});
   document.getElementById('bootstrap').classList.add('hidden');
   if(payload.generated){
-    document.getElementById('genStamp').textContent =
-      'Updated ' + new Date(payload.generated*1000).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    document.getElementById('genStamp').textContent='Updated '+new Date(payload.generated*1000).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
   }
   computeCurrentRoster();
   aggregate();
   renderOverview();
+  renderWars();
   buildPlayerLookup();
 }
 
 function computeCurrentRoster(){
-  CURRENT_IDS = {};
-  if(!WARS.length) return;
-  var latest = WARS[WARS.length-1];
-  latest.members.forEach(function(m){ CURRENT_IDS[m.id]=true; });
+  CURRENT_IDS={};
+  if(!WARS.length)return;
+  WARS[WARS.length-1].members.forEach(function(m){CURRENT_IDS[m.id]=true;});
 }
-function isLeaver(id){ return !CURRENT_IDS[id]; }
+function isLeaver(id){return !CURRENT_IDS[id];}
 
 /* ---------- aggregation ---------- */
-
 function aggregate(){
-  PLAYERS = {};
+  PLAYERS={};
   WARS.forEach(function(war){
-    war._fighters = war.members.filter(function(m){ return m.hits>0; });
-    var fh = war._fighters.map(function(m){return m.hits;});
-    var fr = war._fighters.map(function(m){return m.respect;});
-    war._avgHits = mean(fh);
-    war._avgRespect = mean(fr);
-    war._avgRph = sum(fr) / (sum(fh)||1);
-    war._participation = war.members.length ? war._fighters.length/war.members.length : 0;
-    // rank by respect within the war (1 = highest)
-    var ranked = war.members.slice().sort(function(a,b){return b.respect-a.respect;});
-    war._rankById = {};
-    ranked.forEach(function(m,i){ war._rankById[m.id]=i+1; });
-    war._size = war.members.length;
-
+    war._fighters=war.members.filter(function(m){return m.hits>0;});
+    var fh=war._fighters.map(function(m){return m.hits;});
+    var fr=war._fighters.map(function(m){return m.respect;});
+    war._avgHits=mean(fh);
+    war._avgRespect=mean(fr);
+    war._avgRph=sum(fr)/(sum(fh)||1);
+    war._participation=war.members.length?war._fighters.length/war.members.length:0;
+    var ranked=war.members.slice().sort(function(a,b){return b.respect-a.respect;});
+    war._rankById={};
+    ranked.forEach(function(m,i){war._rankById[m.id]=i+1;});
+    war._size=war.members.length;
+    war._totalRespect=sum(war.members.map(function(m){return m.respect;}));
     war.members.forEach(function(m){
-      var p = PLAYERS[m.id] || (PLAYERS[m.id]={
-        id:m.id, name:m.name, level:m.level,
-        warsPresent:0, warsFought:0, totalHits:0, totalRespect:0,
-        history:[]
-      });
-      p.name = m.name; p.level = m.level; // latest seen wins (chronological)
+      var p=PLAYERS[m.id]||(PLAYERS[m.id]={id:m.id,name:m.name,level:m.level,warsPresent:0,warsFought:0,totalHits:0,totalRespect:0,history:[]});
+      p.name=m.name; p.level=m.level;
       p.warsPresent++;
-      if(m.hits>0) p.warsFought++;
-      p.totalHits += m.hits;
-      p.totalRespect += m.respect;
-      p.history.push({
-        warId:war.warId, start:war.start, opponent:war.opponent, result:war.result,
-        hits:m.hits, respect:m.respect, rank:war._rankById[m.id], size:war._size,
-        facAvgHits:war._avgHits, facAvgRespect:war._avgRespect, facAvgRph:war._avgRph
-      });
+      if(m.hits>0)p.warsFought++;
+      p.totalHits+=m.hits;
+      p.totalRespect+=m.respect;
+      p.history.push({warId:war.warId,start:war.start,opponent:war.opponent,result:war.result,hits:m.hits,respect:m.respect,rank:war._rankById[m.id],size:war._size,facAvgHits:war._avgHits,facAvgRespect:war._avgRespect,facAvgRph:war._avgRph});
     });
   });
-
   Object.keys(PLAYERS).forEach(function(id){
-    var p = PLAYERS[id];
-    p.participation = p.warsPresent ? p.warsFought/p.warsPresent : 0;
-    p.avgHits = p.warsPresent ? p.totalHits/p.warsPresent : 0;
-    p.avgRespect = p.warsPresent ? p.totalRespect/p.warsPresent : 0;
-    p.avgRph = p.totalHits ? p.totalRespect/p.totalHits : 0;
+    var p=PLAYERS[id];
+    p.participation=p.warsPresent?p.warsFought/p.warsPresent:0;
+    p.avgHits=p.warsPresent?p.totalHits/p.warsPresent:0;
+    p.avgRespect=p.warsPresent?p.totalRespect/p.warsPresent:0;
+    p.avgRph=p.totalHits?p.totalRespect/p.totalHits:0;
+    p.clearance=playerClearance(p);
   });
 }
 
+function playerClearance(p){
+  var fought=p.history.filter(function(h){return h.hits>0;});
+  if(!fought.length)return null;
+  var c=fought.filter(function(h){return (TARGET.mode==='hits'?h.hits:h.respect)>=TARGET.value;}).length;
+  return c/fought.length;
+}
+
+function factionBenchmarks(){
+  var roster=rosterPlayers();
+  var part=mean(roster.map(function(p){return p.participation;}));
+  var totH=sum(roster.map(function(p){return p.totalHits;}));
+  var totR=sum(roster.map(function(p){return p.totalRespect;}));
+  var rph=totH?totR/totH:0;
+  var cleared=0,fought=0;
+  roster.forEach(function(p){p.history.forEach(function(h){if(h.hits>0){fought++;if((TARGET.mode==='hits'?h.hits:h.respect)>=TARGET.value)cleared++;}});});
+  return {participation:part,rph:rph,clearance:fought?cleared/fought:0};
+}
+function rosterPlayers(){return Object.keys(PLAYERS).map(function(id){return PLAYERS[id];}).filter(function(p){return !isLeaver(p.id);});}
+
 /* ---------- helpers ---------- */
-
 function sum(a){return a.reduce(function(x,y){return x+y;},0);}
-function mean(a){return a.length? sum(a)/a.length : 0;}
+function mean(a){return a.length?sum(a)/a.length:0;}
 function pct(x){return Math.round(x*100);}
-function fmt(n,d){ if(n==null||isNaN(n)) return '-'; return Number(n).toLocaleString('en-GB',{minimumFractionDigits:d||0,maximumFractionDigits:d||0}); }
-function warLabel(w){
-  var d = w.start ? new Date(w.start) : null;
-  var when = d ? d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}) : ('#'+w.warId);
-  return w.opponent + ' ' + when;
-}
-function clearCharts(){ Object.keys(charts).forEach(function(k){ try{charts[k].destroy();}catch(e){} }); charts={}; }
+function fmt(n,d){if(n==null||isNaN(n))return '-';return Number(n).toLocaleString('en-GB',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});}
+function round1(n){return Math.round(n*10)/10;}
+function round2(n){return Math.round(n*100)/100;}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function warLabel(w){var d=w.start?new Date(w.start):null;var when=d?d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}):('#'+w.warId);return w.opponent+' '+when;}
+function dateLong(ts){return ts?new Date(ts).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'?';}
 
-/* shared Chart.js theme */
+/* ---------- Chart.js theme ---------- */
 var GRID='#2a271f', TICK='#988f7c';
-function baseScales(extra){
-  var s = {
-    x:{ grid:{color:GRID,drawBorder:false}, ticks:{color:TICK,font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:10} },
-    y:{ grid:{color:GRID,drawBorder:false}, ticks:{color:TICK,font:{size:10}}, beginAtZero:true }
-  };
-  if(extra) Object.keys(extra).forEach(function(k){ s[k]=Object.assign(s[k]||{},extra[k]); });
-  return s;
+Chart.defaults.font.family="Inter, sans-serif";
+function tip(){return {backgroundColor:'#0c0b08',borderColor:'#332f26',borderWidth:1,titleColor:'#f1ede4',bodyColor:'#cfc7b5',padding:10,cornerRadius:6,displayColors:true,boxWidth:10,boxHeight:10};}
+function axis(title,o){o=o||{};var t=title?{display:true,text:title,color:TICK,font:{size:11}}:{display:false};return Object.assign({grid:{color:GRID},ticks:{color:TICK,font:{size:10}},title:t},o);}
+function baseScales(xTitle,yTitle,yo,xo){
+  var y=axis(yTitle,Object.assign({beginAtZero:true},yo||{}));
+  var x=axis(xTitle,Object.assign({ticks:{color:TICK,font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:12}},xo||{}));
+  return {x:x,y:y};
 }
-var NO_LEGEND={legend:{display:false}};
-function legendTop(){return{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}}};}
+function lineOpts(scales,extra){return {responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:Object.assign({legend:{display:false},tooltip:tip()},extra||{}),scales:scales};}
+function barOpts(scales,extra){return {responsive:true,maintainAspectRatio:false,plugins:Object.assign({legend:{display:false},tooltip:tip()},extra||{}),scales:scales};}
+var GOLD='#ffd700', GOLDFILL='#ffd70022';
+function goldLine(data){return {data:data,borderColor:GOLD,backgroundColor:GOLDFILL,tension:.25,borderWidth:2,pointRadius:2.5,pointHoverRadius:5,pointBackgroundColor:GOLD,fill:false,spanGaps:true};}
 
 /* ---------- overview ---------- */
-
 function renderOverview(){
-  var v = document.getElementById('view-overview');
-  if(!WARS.length){ v.innerHTML='<div class="empty">No wars in the data.</div>'; return; }
+  var v=document.getElementById('view-overview');
+  if(!WARS.length){v.innerHTML='<div class="empty">No wars in the data.</div>';return;}
 
-  var played = WARS.filter(function(w){return w.result==='Won'||w.result==='Lost';});
-  var wins = played.filter(function(w){return w.result==='Won';}).length;
-  var losses = played.length-wins;
-  var winRate = played.length? pct(wins/played.length):0;
-  var lastRanked = played.length? played[played.length-1] : null;
-  var currentRank = lastRanked ? (lastRanked.rankAfter||'-') : '-';
-  var facPart = pct(mean(WARS.map(function(w){return w._participation;})));
-  var totalHits = sum(WARS.map(function(w){return sum(w.members.map(function(m){return m.hits;}));}));
-  var totalResp = sum(WARS.map(function(w){return sum(w.members.map(function(m){return m.respect;}));}));
-  var currentCount = Object.keys(CURRENT_IDS).length;
+  var wins=WARS.filter(function(w){return w.result==='Won';}).length;
+  var losses=WARS.filter(function(w){return w.result==='Lost';}).length;
+  var winRate=(wins+losses)?pct(wins/(wins+losses)):0;
+  var currentRank=WARS[WARS.length-1].rankAfter||'-';
+  var facPart=pct(mean(WARS.map(function(w){return w._participation;})));
+  var totalHits=sum(WARS.map(function(w){return sum(w.members.map(function(m){return m.hits;}));}));
+  var totalResp=sum(WARS.map(function(w){return w._totalRespect;}));
 
-  v.innerHTML =
+  v.innerHTML=
     cardsBlock([
-      card('Wars logged', fmt(WARS.length), null, true),
-      card('Win rate', winRate+'%', wins+'W &middot; '+losses+'L'),
-      card('Current rank', currentRank, null, true),
-      card('Avg participation', facPart+'%', 'fighters per roster, per war'),
-      card('Total hits', fmt(totalHits)),
-      card('Total respect', fmt(totalResp), null, true),
-      card('Members now', fmt(currentCount), 'in the latest roster')
-    ]) +
-
-    '<div class="grid charts">' +
-      panel('wide','Campaign record','Every war oldest to newest. Gold is the war in progress.',
-            '<div class="form-strip" id="formStrip"></div>') +
-      panel('','Rank over time','Faction rank after each completed war.','<div class="chartbox"><canvas id="cRank"></canvas></div>') +
-      panel('','Participation per war','Share of the roster that put in at least one hit.','<div class="chartbox"><canvas id="cPart"></canvas></div>') +
-      panel('','Respect per war','Total respect the faction earned each war.','<div class="chartbox"><canvas id="cResp"></canvas></div>') +
-      panel('','Participation spread','Members grouped by their own participation rate, in ten point bands.','<div class="chartbox"><canvas id="cDist"></canvas></div>') +
-      panel('wide','Target clearance per war',
-            'Share of members who fought that cleared the target. Set the target below.',
-            targetControls()+'<div class="chartbox"><canvas id="cTarget"></canvas></div>') +
-    '</div>' +
-
-    '<div class="grid charts" style="margin-top:16px">' +
-      panel('','Best participation','Wars fought against wars present. Newcomers and veterans sit side by side, counts shown.','<div id="lbPart"></div>') +
-      panel('','Most wars fought','Raw count of wars with at least one hit.','<div id="lbWars"></div>') +
-      panel('','Top hitters','Average hits per war present.','<div id="lbHits"></div>') +
-      panel('','Top respect earners','Average respect per war present.','<div id="lbResp"></div>') +
-    '</div>' +
-    '<div class="note">Names marked * have left the faction. Their history is kept.</div>';
+      card('Wars logged',fmt(WARS.length),null,true),
+      card('Win rate',winRate+'%',wins+'W &middot; '+losses+'L'),
+      card('Current rank',currentRank,null,true),
+      card('Avg participation',facPart+'%','fighters per roster, per war'),
+      card('Total hits',fmt(totalHits)),
+      card('Total respect',fmt(totalResp),null,true),
+      card('Members now',fmt(Object.keys(CURRENT_IDS).length),'latest roster')
+    ])+
+    '<div class="grid charts">'+
+      panel('wide','Campaign record','Every war, oldest to newest. Click a box to open that war.',
+        '<div class="legend"><span><i class="sw win"></i> Won</span><span><i class="sw loss"></i> Lost</span></div><div class="form-strip" id="formStrip"></div>')+
+      panel('','Rank over time','Faction rank after each war.','<div class="chartbox"><canvas id="cRank"></canvas></div>')+
+      panel('','Participation per war','Share of the roster that put in at least one hit.','<div class="chartbox"><canvas id="cPart"></canvas></div>')+
+      panel('','Respect per war','Total respect the faction earned each war.','<div class="chartbox"><canvas id="cResp"></canvas></div>')+
+      panel('','Participation: wins vs losses','Average turnout in wars won against wars lost.','<div class="chartbox"><canvas id="cWL"></canvas></div>')+
+      panel('wide','Target clearance per war','Share of members who fought that cleared the target. Set it below.',
+        targetControls()+'<div class="chartbox"><canvas id="cTarget"></canvas></div>')+
+    '</div>'+
+    '<div class="grid charts" style="margin-top:16px">'+
+      panel('wide','Not pulling their weight','Current roster, weakest turnout first. Target clearance follows the control above.','<div id="lbSlack"></div>')+
+    '</div>'+
+    '<div class="grid charts" style="margin-top:16px">'+
+      panel('','Best participation','Wars fought against wars present.','<div id="lbPart"></div>')+
+      panel('','Most wars fought','Count of wars with at least one hit.','<div id="lbWars"></div>')+
+      panel('','Top hitters','Average hits per war present.','<div id="lbHits"></div>')+
+      panel('','Top respect earners','Average respect per war present.','<div id="lbResp"></div>')+
+    '</div>';
 
   drawFormStrip();
-  drawRank();
-  drawParticipation();
-  drawRespect();
-  drawDistribution();
-  drawTarget();
+  drawRank(); drawParticipation(); drawRespect(); drawWinLoss(); drawTarget();
   wireTargetControls();
-  drawLeaderboards();
+  drawLeaderboards(); renderSlackers();
 }
 
-function cardsBlock(cards){ return '<div class="grid cards">'+cards.join('')+'</div>'; }
-function card(label,value,sub,gold){
-  return '<div class="panel card"><div class="label">'+label+'</div>'+
-         '<div class="value'+(gold?' gold':'')+'">'+value+'</div>'+
-         (sub?'<div class="sub">'+sub+'</div>':'')+'</div>';
-}
-function panel(cls,title,cap,inner){
-  return '<div class="panel '+(cls||'')+'"><h3>'+title+'</h3>'+
-         (cap?'<p class="cap">'+cap+'</p>':'')+inner+'</div>';
-}
-function targetControls(){
-  return '<div class="controls">'+
-    '<label>Target</label>'+
-    '<input type="number" id="tgtVal" min="0" step="1" value="'+TARGET.value+'">'+
-    '<div class="seg" id="tgtMode">'+
-      '<button data-m="hits" class="on">Hits</button>'+
-      '<button data-m="respect">Respect</button>'+
-    '</div></div>';
-}
+function cardsBlock(c){return '<div class="grid cards">'+c.join('')+'</div>';}
+function card(label,value,sub,gold){return '<div class="panel card"><div class="label">'+label+'</div><div class="value'+(gold?' gold':'')+'">'+value+'</div>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';}
+function panel(cls,title,cap,inner){return '<div class="panel '+(cls||'')+'"><h3>'+title+'</h3>'+(cap?'<p class="cap">'+cap+'</p>':'')+inner+'</div>';}
+function targetControls(){return '<div class="controls"><label>Target</label><input type="number" id="tgtVal" min="0" step="1" value="'+TARGET.value+'"><div class="seg" id="tgtMode"><button data-m="hits" class="on">Hits</button><button data-m="respect">Respect</button></div></div>';}
 
 function drawFormStrip(){
-  var html = WARS.map(function(w){
-    var c = w.result==='Won'?'w':(w.result==='Lost'?'l':'p');
-    var t = warLabel(w)+' — '+w.result;
-    return '<div class="form-cell '+c+'" title="'+t.replace(/"/g,'')+'"></div>';
+  document.getElementById('formStrip').innerHTML=WARS.map(function(w){
+    var c=w.result==='Won'?'w':'l';
+    return '<div class="form-cell '+c+'" data-war="'+w.warId+'" data-tip="'+escapeHtml(w.opponent)+'|'+w.result+', '+dateLong(w.start)+'"></div>';
   }).join('');
-  document.getElementById('formStrip').innerHTML = html;
 }
 
 function drawRank(){
-  var played = WARS.filter(function(w){return w.result==='Won'||w.result==='Lost';});
-  var labels = played.map(warLabel);
-  var ranks = played.map(function(w){return rankToNum(w.rankAfter);});
-  charts.rank = new Chart(document.getElementById('cRank'),{
-    type:'line',
-    data:{labels:labels,datasets:[{data:ranks,borderColor:'#ffd700',backgroundColor:'#ffd70022',
-      stepped:true,tension:0,pointRadius:0,borderWidth:2,fill:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:NO_LEGEND,
-      scales:baseScales({y:{reverse:false,ticks:{callback:function(v){return numToRank(v);},color:TICK,font:{size:10}},beginAtZero:false}}),
-      plugins:Object.assign({},{legend:{display:false}},{tooltip:{callbacks:{label:function(c){return numToRank(c.parsed.y);}}}})
-    }
-  });
+  var labels=WARS.map(warLabel);
+  var ranks=WARS.map(function(w){return rankToNum(w.rankAfter);});
+  charts.rank=new Chart(document.getElementById('cRank'),{type:'line',
+    data:{labels:labels,datasets:[Object.assign(goldLine(ranks),{stepped:true,tension:0,fill:false})]},
+    options:lineOpts(baseScales('War','Rank',{beginAtZero:false,ticks:{color:TICK,font:{size:10},callback:function(v){return numToRank(v);}}}),
+      {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return numToRank(c.parsed.y);}}})})});
 }
-
 function drawParticipation(){
-  charts.part = new Chart(document.getElementById('cPart'),{
-    type:'line',
-    data:{labels:WARS.map(warLabel),datasets:[{data:WARS.map(function(w){return pct(w._participation);}),
-      borderColor:'#ffd700',backgroundColor:'#ffd70022',tension:.25,pointRadius:0,borderWidth:2,fill:true}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:NO_LEGEND,
-      scales:baseScales({y:{max:100,ticks:{callback:function(v){return v+'%';},color:TICK,font:{size:10}}}})}
-  });
+  charts.part=new Chart(document.getElementById('cPart'),{type:'line',
+    data:{labels:WARS.map(warLabel),datasets:[Object.assign(goldLine(WARS.map(function(w){return pct(w._participation);})),{fill:true})]},
+    options:lineOpts(baseScales('War','Participation %',{max:100,ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}}),
+      {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.parsed.y+'%';}}})})});
 }
-
 function drawRespect(){
-  charts.resp = new Chart(document.getElementById('cResp'),{
-    type:'bar',
-    data:{labels:WARS.map(warLabel),datasets:[{data:WARS.map(function(w){return Math.round(sum(w.members.map(function(m){return m.respect;})));}),
-      backgroundColor:'#ffd70099',borderColor:'#ffd700',borderWidth:1}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:NO_LEGEND,scales:baseScales()}
-  });
+  charts.resp=new Chart(document.getElementById('cResp'),{type:'bar',
+    data:{labels:WARS.map(warLabel),datasets:[{data:WARS.map(function(w){return Math.round(w._totalRespect);}),backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1}]},
+    options:barOpts(baseScales('War','Total respect'))});
 }
-
-function drawDistribution(){
-  var bands = [0,0,0,0,0,0,0,0,0,0];
-  Object.keys(PLAYERS).forEach(function(id){
-    var r = PLAYERS[id].participation;
-    var b = Math.min(9,Math.floor(r*10));
-    bands[b]++;
-  });
-  var labels = bands.map(function(_,i){return (i*10)+'-'+((i+1)*10)+'%';});
-  charts.dist = new Chart(document.getElementById('cDist'),{
-    type:'bar',
-    data:{labels:labels,datasets:[{data:bands,backgroundColor:'#ffd70099',borderColor:'#ffd700',borderWidth:1}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:NO_LEGEND,
-      scales:baseScales({x:{ticks:{color:TICK,font:{size:9},maxRotation:0,autoSkip:false}}})}
-  });
+function drawWinLoss(){
+  var won=WARS.filter(function(w){return w.result==='Won';});
+  var lost=WARS.filter(function(w){return w.result==='Lost';});
+  var data=[pct(mean(won.map(function(w){return w._participation;}))),pct(mean(lost.map(function(w){return w._participation;})))];
+  charts.wl=new Chart(document.getElementById('cWL'),{type:'bar',
+    data:{labels:['Wars won','Wars lost'],datasets:[{data:data,backgroundColor:['#5fb87a','#d8584e'],borderWidth:0}]},
+    options:barOpts(baseScales('Result','Avg participation %',{max:100,ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}}),
+      {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.parsed.y+'%';}}})})});
 }
-
 function drawTarget(){
-  var data = WARS.map(function(w){
-    var f = w._fighters;
-    if(!f.length) return 0;
-    var cleared = f.filter(function(m){
-      return (TARGET.mode==='hits'? m.hits : m.respect) >= TARGET.value;
-    }).length;
+  var data=WARS.map(function(w){
+    var f=w._fighters; if(!f.length)return 0;
+    var cleared=f.filter(function(m){return (TARGET.mode==='hits'?m.hits:m.respect)>=TARGET.value;}).length;
     return pct(cleared/f.length);
   });
-  if(charts.target){ charts.target.data.labels=WARS.map(warLabel); charts.target.data.datasets[0].data=data; charts.target.update(); return; }
-  charts.target = new Chart(document.getElementById('cTarget'),{
-    type:'line',
-    data:{labels:WARS.map(warLabel),datasets:[{data:data,borderColor:'#ffd700',backgroundColor:'#ffd70022',
-      tension:.25,pointRadius:0,borderWidth:2,fill:true}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:NO_LEGEND,
-      scales:baseScales({y:{max:100,ticks:{callback:function(v){return v+'%';},color:TICK,font:{size:10}}}})}
-  });
+  if(charts.target){charts.target.data.datasets[0].data=data;charts.target.update();return;}
+  charts.target=new Chart(document.getElementById('cTarget'),{type:'line',
+    data:{labels:WARS.map(warLabel),datasets:[Object.assign(goldLine(data),{fill:true})]},
+    options:lineOpts(baseScales('War','% of fighters cleared',{max:100,ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}}),
+      {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.parsed.y+'% cleared';}}})})});
 }
-
 function wireTargetControls(){
-  var val = document.getElementById('tgtVal');
-  val.addEventListener('input',function(){ TARGET.value=Number(val.value)||0; drawTarget(); });
+  var val=document.getElementById('tgtVal');
+  val.addEventListener('input',function(){TARGET.value=Number(val.value)||0;onTargetChange();});
   document.querySelectorAll('#tgtMode button').forEach(function(b){
     b.addEventListener('click',function(){
       TARGET.mode=b.getAttribute('data-m');
       document.querySelectorAll('#tgtMode button').forEach(function(x){x.classList.toggle('on',x===b);});
-      val.value = TARGET.mode==='hits'?20:500;
-      TARGET.value=Number(val.value);
-      drawTarget();
+      val.value=TARGET.mode==='hits'?20:500; TARGET.value=Number(val.value);
+      onTargetChange();
     });
   });
 }
+function onTargetChange(){
+  Object.keys(PLAYERS).forEach(function(id){PLAYERS[id].clearance=playerClearance(PLAYERS[id]);});
+  drawTarget(); renderSlackers();
+}
 
-/* ---------- leaderboards ---------- */
-
+/* ---------- leaderboards + slackers ---------- */
 function drawLeaderboards(){
-  var all = Object.keys(PLAYERS).map(function(id){return PLAYERS[id];});
-
-  board('lbPart', all.slice().sort(by('participation')), [
+  var all=rosterPlayers();
+  board('lbPart',all.slice().sort(by('participation',true)),[
     {h:'Player',f:nameCell},
     {h:'Part.',n:true,f:function(p){return pct(p.participation)+'%';}},
     {h:'Fought',n:true,f:function(p){return p.warsFought;}},
-    {h:'Present',n:true,f:function(p){return p.warsPresent;}}
-  ]);
-
-  board('lbWars', all.slice().sort(by('warsFought')), [
+    {h:'Present',n:true,f:function(p){return p.warsPresent;}}]);
+  board('lbWars',all.slice().sort(by('warsFought',true)),[
     {h:'Player',f:nameCell},
     {h:'Fought',n:true,f:function(p){return p.warsFought;}},
-    {h:'Present',n:true,f:function(p){return p.warsPresent;}}
-  ]);
-
-  board('lbHits', all.slice().sort(by('avgHits')), [
+    {h:'Present',n:true,f:function(p){return p.warsPresent;}}]);
+  board('lbHits',all.slice().sort(by('avgHits',true)),[
     {h:'Player',f:nameCell},
     {h:'Avg hits',n:true,f:function(p){return fmt(p.avgHits,1);}},
     {h:'Total',n:true,f:function(p){return fmt(p.totalHits);}},
-    {h:'Wars',n:true,f:function(p){return p.warsPresent;}}
-  ]);
-
-  board('lbResp', all.slice().sort(by('avgRespect')), [
+    {h:'Wars',n:true,f:function(p){return p.warsPresent;}}]);
+  board('lbResp',all.slice().sort(by('avgRespect',true)),[
     {h:'Player',f:nameCell},
     {h:'Avg resp.',n:true,f:function(p){return fmt(p.avgRespect,1);}},
     {h:'Total',n:true,f:function(p){return fmt(p.totalRespect);}},
-    {h:'Wars',n:true,f:function(p){return p.warsPresent;}}
-  ]);
+    {h:'Wars',n:true,f:function(p){return p.warsPresent;}}]);
 }
 
-function by(key){ return function(a,b){ return b[key]-a[key]; }; }
-function nameCell(p){
-  var cls = isLeaver(p.id)?'pname leaver':'pname';
-  return '<span class="'+cls+'" data-pid="'+p.id+'">'+escapeHtml(p.name)+'</span>';
+function renderSlackers(){
+  var bench=factionBenchmarks();
+  var rows=rosterPlayers().slice().sort(function(a,b){
+    if(a.participation!==b.participation)return a.participation-b.participation;
+    return a.avgHits-b.avgHits;
+  });
+  board('lbSlack',rows,[
+    {h:'Player',f:nameCell},
+    {h:'Part.',n:true,f:function(p){return belowCell(pct(p.participation)+'%',p.participation<bench.participation);}},
+    {h:'Avg hits',n:true,f:function(p){return fmt(p.avgHits,1);}},
+    {h:'Clearance',n:true,f:function(p){return p.clearance==null?'-':belowCell(pct(p.clearance)+'%',p.clearance<bench.clearance);}},
+    {h:'Wars',n:true,f:function(p){return p.warsFought+'/'+p.warsPresent;}}]);
 }
+function belowCell(text,isBelow){return isBelow?'<span class="below">'+text+'</span>':text;}
 
-function board(elId, rows, cols){
-  var limit = 10;
-  var shown = rows.slice(0,limit);
-  var html = '<table class="board"><thead><tr><th class="rank"></th>'+
-    cols.map(function(c){return '<th class="'+(c.n?'num':'')+'">'+c.h+'</th>';}).join('')+
-    '</tr></thead><tbody>';
-  html += renderRows(shown,cols,0);
-  html += '</tbody></table>';
-  if(rows.length>limit){
-    html += '<div class="note" style="cursor:pointer" data-expand="'+elId+'">Show all '+rows.length+'</div>';
-  }
-  var el = document.getElementById(elId);
-  el.innerHTML = html;
-  el._rows = rows; el._cols = cols;
+function by(key,desc){return function(a,b){return desc?b[key]-a[key]:a[key]-b[key];};}
+function nameCell(p){return '<span class="'+(isLeaver(p.id)?'pname leaver':'pname')+'" data-pid="'+p.id+'">'+escapeHtml(p.name)+'</span>';}
+
+function board(elId,rows,cols){
+  var limit=10, shown=rows.slice(0,limit);
+  var html='<table class="board"><thead><tr><th class="rank"></th>'+cols.map(function(c){return '<th class="'+(c.n?'num':'')+'">'+c.h+'</th>';}).join('')+'</tr></thead><tbody>'+renderRows(shown,cols,0)+'</tbody></table>';
+  if(rows.length>limit)html+='<div class="note click" data-expand="'+elId+'">Show all '+rows.length+'</div>';
+  var el=document.getElementById(elId); el.innerHTML=html; el._rows=rows; el._cols=cols;
 }
 function renderRows(rows,cols,offset){
-  return rows.map(function(p,i){
-    return '<tr><td class="rank">'+(offset+i+1)+'</td>'+
-      cols.map(function(c){return '<td class="'+(c.n?'num':'')+'">'+c.f(p)+'</td>';}).join('')+'</tr>';
-  }).join('');
+  return rows.map(function(p,i){return '<tr><td class="rank">'+(offset+i+1)+'</td>'+cols.map(function(c){return '<td class="'+(c.n?'num':'')+'">'+c.f(p)+'</td>';}).join('')+'</tr>';}).join('');
 }
 
-/* expand + name clicks (delegated) */
-document.addEventListener('click',function(e){
-  var ex = e.target.closest('[data-expand]');
-  if(ex){
-    var el = document.getElementById(ex.getAttribute('data-expand'));
-    el.querySelector('tbody').innerHTML = renderRows(el._rows, el._cols, 0);
-    ex.remove();
-    return;
-  }
-  var nm = e.target.closest('.pname');
-  if(nm){ openPlayer(Number(nm.getAttribute('data-pid'))); }
-});
+/* ---------- per-war view ---------- */
+function renderWars(){
+  var v=document.getElementById('view-wars');
+  if(!WARS.length){v.innerHTML='<div class="empty">No wars in the data.</div>';return;}
+  var opts=WARS.slice().reverse().map(function(w){return '<option value="'+w.warId+'">'+escapeHtml(warLabel(w))+' &mdash; '+w.result+'</option>';}).join('');
+  v.innerHTML=
+    '<div class="panel"><h3>Per-war detail</h3><p class="cap">Pick a war to see its result and every member who was in the faction for it.</p>'+
+    '<div class="controls"><label>War</label><select id="warPick">'+opts+'</select></div></div>'+
+    '<div id="warPanel"></div>';
+  var sel=document.getElementById('warPick');
+  sel.addEventListener('change',function(){showWar(Number(sel.value));});
+  showWar(WARS[WARS.length-1].warId);
+}
+function showWar(warId){
+  var w=WARS.filter(function(x){return x.warId===warId;})[0]; if(!w)return;
+  var resClass=w.result==='Won'?'w':(w.result==='Lost'?'l':'');
+  var rows=w.members.slice().sort(function(a,b){return b.respect-a.respect;});
+  var html=
+    '<div class="war-head"><span class="wn">Resilience vs '+escapeHtml(w.opponent)+'</span>'+
+      '<span class="res '+resClass+'">'+w.result+'</span>'+
+      '<span class="meta">'+dateLong(w.start)+(w.end?(' to '+dateLong(w.end)):'')+'</span></div>'+
+    cardsBlock([
+      card('Our respect',fmt(w.ourScore),null,true),
+      card(escapeHtml(w.opponent)+' respect',fmt(w.oppScore)),
+      card('Rank',(w.rankBefore||'-')+' &rarr; '+(w.rankAfter||'-')),
+      card('Fighters',w._fighters.length+' / '+w._size,'put in a hit'),
+      card('Participation',pct(w._participation)+'%')
+    ])+
+    '<div class="panel"><h3>Members</h3><p class="cap">Sorted by respect. Leavers are marked *.</p>'+
+    '<table class="board"><thead><tr><th class="rank"></th><th>Player</th><th class="num">Level</th><th class="num">Hits</th><th class="num">Respect</th></tr></thead><tbody>'+
+    rows.map(function(m,i){
+      var nm='<span class="'+(isLeaver(m.id)?'pname leaver':'pname')+'" data-pid="'+m.id+'">'+escapeHtml(m.name)+'</span>';
+      return '<tr><td class="rank">'+(i+1)+'</td><td>'+nm+'</td><td class="num">'+m.level+'</td><td class="num">'+m.hits+'</td><td class="num">'+fmt(m.respect,2)+'</td></tr>';
+    }).join('')+
+    '</tbody></table></div>';
+  document.getElementById('warPanel').innerHTML=html;
+}
 
 /* ---------- player lookup ---------- */
-
 function buildPlayerLookup(){
-  var v = document.getElementById('view-players');
-  v.innerHTML =
-    '<div class="panel">'+
-      '<h3>Player lookup</h3>'+
-      '<p class="cap">Search any member for their war record. Leavers are marked *.</p>'+
-      '<div class="lookup"><input id="pSearch" placeholder="Type a name&hellip;" autocomplete="off"></div>'+
-      '<div class="results" id="pResults"></div>'+
-    '</div>'+
-    '<div id="playerPanel"></div>';
-
-  var input = document.getElementById('pSearch');
-  input.addEventListener('input',function(){ renderResults(input.value.trim().toLowerCase()); });
+  var v=document.getElementById('view-players');
+  v.innerHTML='<div class="panel"><h3>Player lookup</h3><p class="cap">Search any member for their war record. Leavers are marked *.</p>'+
+    '<div class="lookup"><input id="pSearch" placeholder="Type a name&hellip;" autocomplete="off"></div><div class="results" id="pResults"></div></div><div id="playerPanel"></div>';
+  var input=document.getElementById('pSearch');
+  input.addEventListener('input',function(){renderResults(input.value.trim().toLowerCase());});
   renderResults('');
 }
-
 function renderResults(q){
-  var box = document.getElementById('pResults');
-  var list = Object.keys(PLAYERS).map(function(id){return PLAYERS[id];});
-  if(q){ list = list.filter(function(p){return p.name.toLowerCase().indexOf(q)>-1;}); }
+  var box=document.getElementById('pResults');
+  var list=Object.keys(PLAYERS).map(function(id){return PLAYERS[id];});
+  if(q)list=list.filter(function(p){return p.name.toLowerCase().indexOf(q)>-1;});
   list.sort(function(a,b){return a.name.toLowerCase()<b.name.toLowerCase()?-1:1;});
-  list = list.slice(0,40);
-  box.innerHTML = list.map(function(p){
-    return '<button data-pid="'+p.id+'">'+escapeHtml(p.name)+(isLeaver(p.id)?' *':'')+'</button>';
-  }).join('') || '<span class="note">No match.</span>';
-  box.querySelectorAll('button').forEach(function(b){
-    b.addEventListener('click',function(){ openPlayer(Number(b.getAttribute('data-pid'))); });
-  });
+  list=list.slice(0,40);
+  box.innerHTML=list.map(function(p){return '<button data-pid="'+p.id+'">'+escapeHtml(p.name)+(isLeaver(p.id)?' *':'')+'</button>';}).join('')||'<span class="note">No match.</span>';
+  box.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){openPlayer(Number(b.getAttribute('data-pid')));});});
 }
 
 function openPlayer(id){
   setTab('players');
-  var p = PLAYERS[id]; if(!p) return;
-  var hist = p.history.slice().sort(function(a,b){return (a.start||a.warId)-(b.start||b.warId);});
+  var p=PLAYERS[id]; if(!p)return;
+  var bench=factionBenchmarks();
+  var hist=p.history.slice().sort(function(a,b){return (a.start||a.warId)-(b.start||b.warId);});
 
-  var clearance = (function(){
-    var fought = hist.filter(function(h){return h.hits>0;});
-    if(!fought.length) return null;
-    var c = fought.filter(function(h){return (TARGET.mode==='hits'?h.hits:h.respect)>=TARGET.value;}).length;
-    return pct(c/fought.length);
-  })();
-
-  var panelEl = document.getElementById('playerPanel');
-  panelEl.innerHTML =
-    '<div class="player-head">'+
-      '<span class="pn">'+escapeHtml(p.name)+(isLeaver(p.id)?' <span class="meta">(left)</span>':'')+'</span>'+
-      '<span class="meta mono">ID '+p.id+'</span>'+
-    '</div>'+
+  var panelEl=document.getElementById('playerPanel');
+  panelEl.innerHTML=
+    '<div class="player-head"><span class="pn">'+escapeHtml(p.name)+(isLeaver(p.id)?' <span class="meta">(left)</span>':'')+'</span><span class="meta mono">ID '+p.id+'</span></div>'+
     cardsBlock([
-      card('Wars present', p.warsPresent),
-      card('Wars fought', p.warsFought, null, true),
-      card('Participation', pct(p.participation)+'%'),
-      card('Current level', p.level),
-      card('Avg respect / hit', fmt(p.avgRph,2), null, true),
-      card('Target clearance', clearance==null?'-':clearance+'%', TARGET.value+' '+TARGET.mode)
+      card('Wars present',p.warsPresent),
+      card('Wars fought',p.warsFought,null,true),
+      card('Participation',pct(p.participation)+'%','<b>Faction '+pct(bench.participation)+'%</b>'),
+      card('Current level',p.level),
+      card('Avg respect / hit',fmt(p.avgRph,2),'<b>Faction '+fmt(bench.rph,2)+'</b>',true),
+      card('Target clearance',p.clearance==null?'-':pct(p.clearance)+'%','<b>Faction '+pct(bench.clearance)+'%</b> at '+TARGET.value+' '+TARGET.mode)
     ])+
     '<div class="grid charts">'+
       panel('','Hits per war','Their hits each war, against the average fighter that war.','<div class="chartbox"><canvas id="pcHits"></canvas></div>')+
       panel('','Respect per war','Their respect each war, against the average fighter that war.','<div class="chartbox"><canvas id="pcResp"></canvas></div>')+
       panel('','Respect per hit','Hit quality each war, against the faction average.','<div class="chartbox"><canvas id="pcRph"></canvas></div>')+
-      panel('','Standing','Their rank in the faction each war. Higher on the chart is better.','<div class="chartbox"><canvas id="pcRank"></canvas></div>')+
-      panel('wide','Turnout','One block per war oldest to newest, filled when they fought.','<div class="strip-row" id="pStrip"></div>')+
+      panel('','Standing','Their rank in the faction each war. Higher is better.','<div class="chartbox"><canvas id="pcRank"></canvas></div>')+
+      panel('wide','Turnout','One block per war, oldest to newest, filled when they fought.','<div class="strip-row" id="pStrip"></div>')+
     '</div>';
 
-  var labels = hist.map(function(h){ return labelFor(h); });
+  var labels=hist.map(labelFor);
   destroyPlayerCharts();
+  charts.pcHits=vsChart('pcHits',labels,hist.map(function(h){return h.hits;}),hist.map(function(h){return round1(h.facAvgHits);}),'Hits','Hits');
+  charts.pcResp=vsChart('pcResp',labels,hist.map(function(h){return round1(h.respect);}),hist.map(function(h){return round1(h.facAvgRespect);}),'Respect','Respect');
+  charts.pcRph=vsChart('pcRph',labels,hist.map(function(h){return h.hits?round2(h.respect/h.hits):null;}),hist.map(function(h){return round2(h.facAvgRph);}),'Resp/hit','Respect per hit');
+  charts.pcRank=new Chart(document.getElementById('pcRank'),{type:'line',
+    data:{labels:labels,datasets:[goldLine(hist.map(function(h){return h.rank;}))]},
+    options:lineOpts(baseScales('War','Faction rank',{reverse:true,beginAtZero:false,ticks:{color:TICK,font:{size:10},precision:0}}),
+      {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return 'Rank '+c.parsed.y;}}})})});
 
-  charts.pcHits = vsChart('pcHits',labels,
-     hist.map(function(h){return h.hits;}),
-     hist.map(function(h){return round1(h.facAvgHits);}),'Hits');
-
-  charts.pcResp = vsChart('pcResp',labels,
-     hist.map(function(h){return round1(h.respect);}),
-     hist.map(function(h){return round1(h.facAvgRespect);}),'Respect');
-
-  charts.pcRph = vsChart('pcRph',labels,
-     hist.map(function(h){return h.hits? round2(h.respect/h.hits): null;}),
-     hist.map(function(h){return round2(h.facAvgRph);}),'Resp/hit');
-
-  charts.pcRank = new Chart(document.getElementById('pcRank'),{
-    type:'line',
-    data:{labels:labels,datasets:[{data:hist.map(function(h){return h.rank;}),
-      borderColor:'#ffd700',backgroundColor:'#ffd70022',tension:.25,pointRadius:2,
-      pointBackgroundColor:'#ffd700',borderWidth:2,fill:false,spanGaps:true}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:NO_LEGEND,
-      scales:baseScales({y:{reverse:true,beginAtZero:false,ticks:{color:TICK,font:{size:10},precision:0}}})}
-  });
-
-  var strip = hist.map(function(h){
-    return '<div class="pcell'+(h.hits>0?' on':'')+'" title="'+escapeHtml(labelFor(h))+'"></div>';
-  }).join('');
-  document.getElementById('pStrip').innerHTML = strip;
-
+  document.getElementById('pStrip').innerHTML=hist.map(function(h){return '<div class="pcell'+(h.hits>0?' on':'')+'" data-tip="'+escapeHtml(labelFor(h))+'|'+(h.hits>0?(h.hits+' hits'):'no-show')+'"></div>';}).join('');
   panelEl.scrollIntoView({behavior:'smooth',block:'start'});
 }
-
-function labelFor(h){
-  var d = h.start? new Date(h.start): null;
-  var when = d? d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}) : ('#'+h.warId);
-  return h.opponent+' '+when;
-}
-function vsChart(canvasId,labels,mine,fac,name){
-  return new Chart(document.getElementById(canvasId),{
-    type:'line',
+function labelFor(h){var d=h.start?new Date(h.start):null;var when=d?d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}):('#'+h.warId);return h.opponent+' '+when;}
+function vsChart(id,labels,mine,fac,name,yTitle){
+  return new Chart(document.getElementById(id),{type:'line',
     data:{labels:labels,datasets:[
-      {label:name,data:mine,borderColor:'#ffd700',backgroundColor:'#ffd70022',tension:.25,pointRadius:2,pointBackgroundColor:'#ffd700',borderWidth:2,fill:false,spanGaps:true},
+      Object.assign(goldLine(mine),{label:name}),
       {label:'Faction avg',data:fac,borderColor:'#988f7c',borderDash:[5,4],tension:.25,pointRadius:0,borderWidth:1.5,fill:false,spanGaps:true}
     ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:legendTop(),scales:baseScales()}
-  });
+    options:lineOpts(baseScales('War',yTitle),{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}}})});
 }
-function destroyPlayerCharts(){
-  ['pcHits','pcResp','pcRph','pcRank'].forEach(function(k){ if(charts[k]){try{charts[k].destroy();}catch(e){} delete charts[k];} });
-}
+function destroyPlayerCharts(){['pcHits','pcResp','pcRph','pcRank'].forEach(function(k){if(charts[k]){try{charts[k].destroy();}catch(e){}delete charts[k];}});}
 
-/* ---------- rank helpers ---------- */
-var RANK_ORDER = ['Unranked','Bronze III','Bronze II','Bronze I','Silver III','Silver II','Silver I',
-  'Gold III','Gold II','Gold I','Platinum III','Platinum II','Platinum I',
-  'Diamond III','Diamond II','Diamond I','Master'];
-function rankToNum(r){
-  if(!r) return null;
-  // tolerate "Platinum" with no tier
-  var i = RANK_ORDER.indexOf(r);
-  if(i>-1) return i;
-  var base = RANK_ORDER.findIndex(function(x){return x.indexOf(r)===0 || r.indexOf(x.split(' ')[0])===0;});
-  return base>-1?base:null;
-}
-function numToRank(n){ var i=Math.round(n); return (i>=0&&i<RANK_ORDER.length)?RANK_ORDER[i]:''; }
+/* ---------- rank ladder ---------- */
+var RANK_ORDER=['Unranked','Bronze III','Bronze II','Bronze I','Silver III','Silver II','Silver I','Gold III','Gold II','Gold I','Platinum III','Platinum II','Platinum I','Diamond III','Diamond II','Diamond I','Master'];
+function rankToNum(r){if(!r)return null;var i=RANK_ORDER.indexOf(r);if(i>-1)return i;for(var k=0;k<RANK_ORDER.length;k++){if(RANK_ORDER[k].indexOf(r)===0)return k;}return null;}
+function numToRank(n){var i=Math.round(n);return (i>=0&&i<RANK_ORDER.length)?RANK_ORDER[i]:'';}
 
-/* ---------- misc ---------- */
-function round1(n){return Math.round(n*10)/10;}
-function round2(n){return Math.round(n*100)/100;}
-function escapeHtml(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-
-/* ---------- tabs ---------- */
+/* ---------- tabs + delegated events ---------- */
 function setTab(name){
   document.querySelectorAll('nav.tabs button').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-tab')===name);});
   document.querySelectorAll('section.view').forEach(function(s){s.classList.toggle('active',s.id==='view-'+name);});
   window.scrollTo({top:0,behavior:'smooth'});
 }
-document.querySelectorAll('nav.tabs button').forEach(function(b){
-  b.addEventListener('click',function(){ setTab(b.getAttribute('data-tab')); });
+document.querySelectorAll('nav.tabs button').forEach(function(b){b.addEventListener('click',function(){setTab(b.getAttribute('data-tab'));});});
+
+document.addEventListener('click',function(e){
+  var ex=e.target.closest('[data-expand]');
+  if(ex){var el=document.getElementById(ex.getAttribute('data-expand'));el.querySelector('tbody').innerHTML=renderRows(el._rows,el._cols,0);ex.remove();return;}
+  var fc=e.target.closest('.form-cell');
+  if(fc){var wid=Number(fc.getAttribute('data-war'));setTab('wars');var sel=document.getElementById('warPick');if(sel){sel.value=wid;showWar(wid);}return;}
+  var nm=e.target.closest('.pname');
+  if(nm){openPlayer(Number(nm.getAttribute('data-pid')));}
 });
+
+/* floating tooltip for the form strip and turnout strip */
+var floatTip=document.getElementById('floatTip');
+document.addEventListener('mouseover',function(e){
+  var t=e.target.closest('[data-tip]'); if(!t)return;
+  var parts=t.getAttribute('data-tip').split('|');
+  floatTip.innerHTML='<div>'+escapeHtml(parts[0])+'</div>'+(parts[1]?'<div class="t">'+escapeHtml(parts[1])+'</div>':'');
+  floatTip.style.opacity='1';
+});
+document.addEventListener('mousemove',function(e){
+  if(floatTip.style.opacity!=='1')return;
+  var x=e.clientX+14, y=e.clientY+14;
+  if(x+250>window.innerWidth)x=e.clientX-250;
+  floatTip.style.left=x+'px'; floatTip.style.top=y+'px';
+});
+document.addEventListener('mouseout',function(e){var t=e.target.closest('[data-tip]');if(t)floatTip.style.opacity='0';});
 
 boot();
 </script>
