@@ -21,13 +21,14 @@
   a:hover{text-decoration:underline}
   .mono{font-family:'JetBrains Mono',monospace}
 
+  .topbar{position:sticky;top:0;z-index:6;background:var(--ink)}
   header.top{border-bottom:1px solid var(--line);padding:22px 32px 18px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
   .brand{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:30px;letter-spacing:.04em;text-transform:uppercase;margin:0}
   .brand b{color:var(--gold)}
   .crumb{color:var(--muted);font-size:13px}
   .gen{margin-left:auto;color:var(--faint);font-size:12px}
 
-  nav.tabs{display:flex;gap:4px;padding:0 32px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink);z-index:5}
+  nav.tabs{display:flex;gap:4px;padding:0 32px;border-bottom:1px solid var(--line);background:var(--ink);z-index:5}
   nav.tabs button{background:none;border:none;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:17px;letter-spacing:.05em;text-transform:uppercase;padding:14px 16px;cursor:pointer;border-bottom:2px solid transparent}
   nav.tabs button:hover{color:var(--text)}
   nav.tabs button.active{color:var(--gold);border-bottom-color:var(--gold)}
@@ -138,20 +139,17 @@
   .signout{font-size:12px;color:var(--muted);cursor:pointer;font-weight:400;text-transform:none;letter-spacing:0;margin-left:10px}
   .signout:hover{color:var(--gold)}
   .modeswitch{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;margin-left:auto}
-  .modeswitch button{background:none;border:none;color:var(--muted);font:inherit;font-size:12.5px;padding:6px 13px;cursor:pointer}
+  .modeswitch button{background:none;border:none;color:var(--muted);font:inherit;font-size:12px;padding:5px 12px;cursor:pointer}
   .modeswitch button.on{background:var(--gold);color:#1a1814;font-weight:600}
   .modeswitch button:not(.on):hover{color:var(--text)}
 </style>
 </head>
 <body>
 
+<div class="topbar">
 <header class="top">
   <h1 class="brand">Resilience <b>war room</b></h1>
   <span class="crumb"><a href="https://resilience.systoned.cc/index.html">&larr; Resilience dashboard</a></span>
-  <div class="modeswitch" id="modeSwitch">
-    <button data-mode="all" class="on">All wars</button>
-    <button data-mode="mandatory">Mandatory only</button>
-  </div>
   <span class="gen" id="genStamp"></span>
 </header>
 
@@ -161,6 +159,7 @@
   <button data-tab="players">Player lookup</button>
   <button data-tab="manage">Manage wars</button>
 </nav>
+</div>
 
 <main>
   <div id="bootstrap" class="loader-box"><div id="bootMsg">Loading current war data &hellip;</div></div>
@@ -179,7 +178,7 @@
    Leave as-is to fall back to a local resilience-wars.json for preview. */
 var DATA_URL = "https://script.google.com/macros/s/AKfycbwIL60E_q7Qtv9AAXJk9FxvU4Wbq6JyI63M9xFNXA9w8wnx4pZNx0Vbg6L7KdmhEe-Mgw/exec";
 
-var DATA=null, ALL_WARS=[], WARS=[], PLAYERS={}, CURRENT_IDS={}, charts={}, VIEW_MODE='all';
+var DATA=null, ALL_WARS=[], WARS=[], MAND_WARS=[], PLAYERS={}, MAND_PLAYERS={}, CURRENT_IDS={}, charts={}, OPEN_PID=null, PLAYER_MODE='all';
 
 /* ---------- loading ---------- */
 function boot(){
@@ -204,13 +203,20 @@ function ingest(payload){
   applyMode();
 }
 
-/* Filter to the active war set for the chosen mode, recompute, re-render. */
+/* Recompute for the chosen mode, then re-render. War-level fields and the
+   historical charts always use every war. Accountability always uses mandatory
+   wars. The toggle changes the summary cards, concentration, leaderboards and
+   player lookup. */
 function applyMode(){
-  WARS = (VIEW_MODE==='mandatory') ? ALL_WARS.filter(function(w){return w._mandatory;}) : ALL_WARS.slice();
-  aggregate();
+  computeWarFields(ALL_WARS);
+  WARS = ALL_WARS.slice();
+  MAND_WARS = ALL_WARS.filter(function(w){return w._mandatory;});
+  PLAYERS = aggregateOver(WARS);
+  MAND_PLAYERS = aggregateOver(MAND_WARS);
   renderOverview();
   renderWars();
   var pq=document.getElementById('pSearch'); if(pq){renderResults(pq.value.trim().toLowerCase());}
+  if(OPEN_PID!=null && PLAYERS[OPEN_PID]){openPlayer(OPEN_PID,true);}
 }
 
 function computeCurrentRoster(){
@@ -221,9 +227,9 @@ function computeCurrentRoster(){
 function isLeaver(id){return !CURRENT_IDS[id];}
 
 /* ---------- aggregation ---------- */
-function aggregate(){
-  PLAYERS={};
-  WARS.forEach(function(war){
+/* Per-war intrinsic fields, computed over every war so all-wars charts always work. */
+function computeWarFields(warSet){
+  warSet.forEach(function(war){
     war._fighters=war.members.filter(function(m){return m.hits>0;});
     var fh=war._fighters.map(function(m){return m.hits;});
     var fr=war._fighters.map(function(m){return m.respect;});
@@ -236,8 +242,15 @@ function aggregate(){
     ranked.forEach(function(m,i){war._rankById[m.id]=i+1;});
     war._size=war.members.length;
     war._totalRespect=sum(war.members.map(function(m){return m.respect;}));
+  });
+}
+
+/* Build a player map over a chosen set of wars. */
+function aggregateOver(warSet){
+  var P={};
+  warSet.forEach(function(war){
     war.members.forEach(function(m){
-      var p=PLAYERS[m.id]||(PLAYERS[m.id]={id:m.id,name:m.name,level:m.level,warsPresent:0,warsFought:0,totalHits:0,totalRespect:0,history:[]});
+      var p=P[m.id]||(P[m.id]={id:m.id,name:m.name,level:m.level,warsPresent:0,warsFought:0,totalHits:0,totalRespect:0,history:[]});
       p.name=m.name; p.level=m.level;
       p.warsPresent++;
       if(m.hits>0)p.warsFought++;
@@ -246,29 +259,32 @@ function aggregate(){
       p.history.push({warId:war.warId,start:war.start,opponent:war.opponent,result:war.result,mandatory:war._mandatory,hits:m.hits,respect:m.respect,rank:war._rankById[m.id],size:war._size,facAvgHits:war._avgHits,facAvgRespect:war._avgRespect,facAvgRph:war._avgRph});
     });
   });
-  Object.keys(PLAYERS).forEach(function(id){
-    var p=PLAYERS[id];
+  Object.keys(P).forEach(function(id){
+    var p=P[id];
     p.participation=p.warsPresent?p.warsFought/p.warsPresent:0;
     p.avgHits=p.warsPresent?p.totalHits/p.warsPresent:0;
     p.avgRespect=p.warsPresent?p.totalRespect/p.warsPresent:0;
     p.avgRph=p.totalHits?p.totalRespect/p.totalHits:0;
     p.hitsPerFought=p.warsFought?p.totalHits/p.warsFought:0;
     p.respPerFought=p.warsFought?p.totalRespect/p.warsFought:0;
+    p.history.sort(function(a,b){return (a.start||a.warId)-(b.start||b.warId);});
     var fought=p.history.filter(function(h){return h.hits>0;});
     p.aboveHits=fought.length?fought.filter(function(h){return h.hits>h.facAvgHits;}).length/fought.length:null;
     p.aboveResp=fought.length?fought.filter(function(h){return h.respect>h.facAvgRespect;}).length/fought.length:null;
   });
+  return P;
 }
 
-function factionBenchmarks(){
-  var roster=rosterPlayers().filter(function(p){return p.warsPresent>0;});
+function factionBenchmarks(map){
+  map=map||PLAYERS;
+  var roster=rosterPlayers(map).filter(function(p){return p.warsPresent>0;});
   return {
     participation:mean(roster.map(function(p){return p.participation;})),
     rph:(function(){var h=sum(roster.map(function(p){return p.totalHits;}));return h?sum(roster.map(function(p){return p.totalRespect;}))/h:0;})(),
     avgHits:mean(roster.map(function(p){return p.avgHits;}))
   };
 }
-function rosterPlayers(){return Object.keys(PLAYERS).map(function(id){return PLAYERS[id];}).filter(function(p){return !isLeaver(p.id);});}
+function rosterPlayers(map){map=map||PLAYERS;return Object.keys(map).map(function(id){return map[id];}).filter(function(p){return !isLeaver(p.id);});}
 
 /* ---------- helpers ---------- */
 function sum(a){return a.reduce(function(x,y){return x+y;},0);}
@@ -299,6 +315,7 @@ function goldLine(data){return {data:data,borderColor:GOLD,backgroundColor:GOLDF
 /* ---------- overview ---------- */
 function renderOverview(){
   var v=document.getElementById('view-overview');
+  ['rank','part','resp','wl','concHits','concResp','quad'].forEach(function(k){if(charts[k]){try{charts[k].destroy();}catch(e){}delete charts[k];}});
   if(!WARS.length){v.innerHTML='<div class="empty">No wars in the data.</div>';return;}
 
   var wins=WARS.filter(function(w){return w.result==='Won';}).length;
@@ -308,7 +325,7 @@ function renderOverview(){
   var facPart=pct(mean(WARS.map(function(w){return w._participation;})));
   var totalHits=sum(WARS.map(function(w){return sum(w.members.map(function(m){return m.hits;}));}));
   var totalResp=sum(WARS.map(function(w){return w._totalRespect;}));
-  var modeNote=(VIEW_MODE==='mandatory')?'mandatory wars':'all wars';
+  var modeNote='all wars';
 
   v.innerHTML=
     cardsBlock([
@@ -321,7 +338,7 @@ function renderOverview(){
       card('Members now',fmt(Object.keys(CURRENT_IDS).length),'latest roster')
     ])+
     '<div class="grid charts">'+
-      panel('wide','Campaign record','Every war, oldest to newest. Click a box to open that war.',
+      panel('wide','War record','Every war, oldest to newest. Click a box to open that war.',
         '<div class="legend"><span><i class="sw win"></i> Won</span><span><i class="sw loss"></i> Lost</span><span><i class="sw opt"></i> Optional</span></div><div class="form-strip" id="formStrip"></div>')+
       panel('','Rank over time','Faction rank after each war.','<div class="chartbox"><canvas id="cRank"></canvas></div>')+
       panel('','Participation per war','Share of the roster that put in at least one hit.','<div class="chartbox"><canvas id="cPart"></canvas></div>')+
@@ -331,7 +348,7 @@ function renderOverview(){
       panel('','Respect concentration','Same, by respect earned.','<div class="chartbox"><canvas id="cHistResp"></canvas></div>')+
     '</div>'+
     '<div class="grid charts" style="margin-top:16px">'+
-      panel('wide','Not pulling their weight','Weakest turnout first. The 2x2 places each member by hits and turnout against the faction average. Use the mode switch to count all wars or mandatory only.','<div class="slack-wrap"><div class="slack-table" id="lbSlack"></div><div class="slack-quad" id="slackQuad"><div class="chartbox" style="height:340px"><canvas id="cQuad"></canvas></div><p class="note" id="quadNote"></p></div></div>')+
+      panel('wide','Not pulling their weight','Mandatory wars only, so sitting out an optional war is never held against anyone. Weakest turnout first. The 2x2 places each member by hits and turnout against the faction average.','<div class="slack-wrap"><div class="slack-table" id="lbSlack"></div><div class="slack-quad" id="slackQuad"><div class="chartbox" style="height:340px"><canvas id="cQuad"></canvas></div><p class="note" id="quadNote"></p></div></div>')+
     '</div>'+
     '<div class="grid charts" style="margin-top:16px">'+
       panel('','Best participation','Wars fought against wars present. Minimum 10 wars present.','<div id="lbPart"></div>')+
@@ -350,15 +367,15 @@ function card(label,value,sub,gold){return '<div class="panel card"><div class="
 function panel(cls,title,cap,inner){return '<div class="panel '+(cls||'')+'"><h3>'+title+'</h3>'+(cap?'<p class="cap">'+cap+'</p>':'')+inner+'</div>';}
 
 function drawFormStrip(){
-  document.getElementById('formStrip').innerHTML=WARS.map(function(w){
+  document.getElementById('formStrip').innerHTML=ALL_WARS.map(function(w){
     var c=w.result==='Won'?'w':'l';
     return '<div class="form-cell '+c+(w._mandatory?'':' opt')+'" data-war="'+w.warId+'" data-tip="'+escapeHtml(w.opponent)+'|'+w.result+', '+dateLong(w.start)+(w._mandatory?'':' (optional)')+'"></div>';
   }).join('');
 }
 
 function drawRank(){
-  var labels=WARS.map(warLabel);
-  var ranks=WARS.map(function(w){return rankToNum(w.rankAfter);});
+  var labels=ALL_WARS.map(warLabel);
+  var ranks=ALL_WARS.map(function(w){return rankToNum(w.rankAfter);});
   charts.rank=new Chart(document.getElementById('cRank'),{type:'line',
     data:{labels:labels,datasets:[Object.assign(goldLine(ranks),{stepped:true,tension:0,fill:false})]},
     options:lineOpts(baseScales('War','Rank',{beginAtZero:false,ticks:{color:TICK,font:{size:10},callback:function(v){return numToRank(v);}}}),
@@ -366,18 +383,18 @@ function drawRank(){
 }
 function drawParticipation(){
   charts.part=new Chart(document.getElementById('cPart'),{type:'line',
-    data:{labels:WARS.map(warLabel),datasets:[Object.assign(goldLine(WARS.map(function(w){return pct(w._participation);})),{fill:true})]},
+    data:{labels:ALL_WARS.map(warLabel),datasets:[Object.assign(goldLine(ALL_WARS.map(function(w){return pct(w._participation);})),{fill:true})]},
     options:lineOpts(baseScales('War','Participation %',{max:100,ticks:{color:TICK,font:{size:10},callback:function(v){return v+'%';}}}),
       {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return c.parsed.y+'%';}}})})});
 }
 function drawRespect(){
   charts.resp=new Chart(document.getElementById('cResp'),{type:'bar',
-    data:{labels:WARS.map(warLabel),datasets:[{data:WARS.map(function(w){return Math.round(w._totalRespect);}),backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1}]},
+    data:{labels:ALL_WARS.map(warLabel),datasets:[{data:ALL_WARS.map(function(w){return Math.round(w._totalRespect);}),backgroundColor:'#ffd70099',borderColor:GOLD,borderWidth:1}]},
     options:barOpts(baseScales('War','Total respect'))});
 }
 function drawWinLoss(){
-  var won=WARS.filter(function(w){return w.result==='Won';});
-  var lost=WARS.filter(function(w){return w.result==='Lost';});
+  var won=ALL_WARS.filter(function(w){return w.result==='Won';});
+  var lost=ALL_WARS.filter(function(w){return w.result==='Lost';});
   var data=[pct(mean(won.map(function(w){return w._participation;}))),pct(mean(lost.map(function(w){return w._participation;})))];
   charts.wl=new Chart(document.getElementById('cWL'),{type:'bar',
     data:{labels:['Wars won','Wars lost'],datasets:[{data:data,backgroundColor:['#5fb87a','#d8584e'],borderWidth:0}]},
@@ -419,7 +436,7 @@ function drawConcentration(){
 }
 
 function drawQuadrant(){
-  var elig=rosterPlayers().filter(function(p){return p.warsPresent>0;});
+  var elig=rosterPlayers(MAND_PLAYERS).filter(function(p){return p.warsPresent>0;});
   var avgHitsLine=mean(elig.map(function(p){return p.avgHits;}));
   var avgPartLine=mean(elig.map(function(p){return p.participation;}));
   document.getElementById('quadNote').innerHTML='Lines are the faction average for each axis. '+
@@ -487,8 +504,8 @@ function drawLeaderboards(){
 }
 
 function renderSlackers(){
-  var bench=factionBenchmarks();
-  var rows=rosterPlayers().slice().sort(function(a,b){
+  var bench=factionBenchmarks(MAND_PLAYERS);
+  var rows=rosterPlayers(MAND_PLAYERS).slice().sort(function(a,b){
     if(a.participation!==b.participation)return a.participation-b.participation;
     return a.avgHits-b.avgHits;
   });
@@ -588,15 +605,24 @@ function renderResults(q){
   box.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){openPlayer(Number(b.getAttribute('data-pid')));});});
 }
 
-function openPlayer(id){
-  setTab('players');
-  var p=PLAYERS[id]; if(!p)return;
-  var bench=factionBenchmarks();
+function openPlayer(id,noTab){
+  if(!noTab)setTab('players');
+  OPEN_PID=id;
+  var map=(PLAYER_MODE==='mandatory')?MAND_PLAYERS:PLAYERS;
+  var p=map[id];
+  var bench=factionBenchmarks(map);
+  var panelEl=document.getElementById('playerPanel');
+  var head='<div class="player-head"><span class="pn">'+escapeHtml((p||PLAYERS[id]||{name:''}).name)+(isLeaver(id)?' <span class="meta">(left)</span>':'')+'</span><span class="meta mono">ID '+id+'</span>'+
+    '<div class="modeswitch" id="pMode"><button data-mode="all"'+(PLAYER_MODE==='all'?' class="on"':'')+'>All wars</button><button data-mode="mandatory"'+(PLAYER_MODE==='mandatory'?' class="on"':'')+'>Mandatory only</button></div></div>';
+  if(!p){
+    panelEl.innerHTML=head+'<div class="empty">No mandatory wars on record for this member.</div>';
+    wirePlayerMode(id);
+    return;
+  }
   var hist=p.history.slice().sort(function(a,b){return (a.start||a.warId)-(b.start||b.warId);});
 
-  var panelEl=document.getElementById('playerPanel');
   panelEl.innerHTML=
-    '<div class="player-head"><span class="pn">'+escapeHtml(p.name)+(isLeaver(p.id)?' <span class="meta">(left)</span>':'')+'</span><span class="meta mono">ID '+p.id+'</span></div>'+
+    head+
     cardsBlock([
       card('Wars present',p.warsPresent),
       card('Wars fought',p.warsFought,null,true),
@@ -625,7 +651,19 @@ function openPlayer(id){
       {tooltip:Object.assign(tip(),{callbacks:{label:function(c){return 'Rank '+c.parsed.y;}}})})});
 
   document.getElementById('pStrip').innerHTML=hist.map(function(h){return '<div class="pcell'+(h.hits>0?' on':'')+'" data-tip="'+escapeHtml(labelFor(h))+'|'+(h.hits>0?(h.hits+' hits'):'no-show')+'"></div>';}).join('');
-  panelEl.scrollIntoView({behavior:'smooth',block:'start'});
+  wirePlayerMode(id);
+  if(!noTab)panelEl.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function wirePlayerMode(id){
+  var box=document.getElementById('pMode'); if(!box)return;
+  box.querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click',function(){
+      var m=b.getAttribute('data-mode');
+      if(m===PLAYER_MODE)return;
+      PLAYER_MODE=m;
+      openPlayer(id,true);
+    });
+  });
 }
 function labelFor(h){var d=h.start?new Date(h.start):null;var when=d?d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}):('#'+h.warId);return h.opponent+' '+when;}
 function vsChart(id,labels,mine,fac,name,yTitle){
@@ -739,16 +777,6 @@ function setTab(name){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 document.querySelectorAll('nav.tabs button').forEach(function(b){b.addEventListener('click',function(){setTab(b.getAttribute('data-tab'));});});
-
-document.querySelectorAll('#modeSwitch button').forEach(function(b){
-  b.addEventListener('click',function(){
-    var m=b.getAttribute('data-mode');
-    if(m===VIEW_MODE)return;
-    VIEW_MODE=m;
-    document.querySelectorAll('#modeSwitch button').forEach(function(x){x.classList.toggle('on',x===b);});
-    applyMode();
-  });
-});
 
 document.addEventListener('click',function(e){
   var ex=e.target.closest('[data-expand]');
