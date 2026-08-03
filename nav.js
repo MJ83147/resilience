@@ -1,11 +1,16 @@
 (function () {
   var MEMBER_LINKS = [
-    { href: "/", label: "Dashboard" },
-    { href: "/eggs.html", label: "Egg Hunt" },
-    { href: "/mug/", label: "Mug Board" },
-    { href: "/chains/", label: "Chain Watch" },
+    { href: "/competitions.html", label: "Competitions" },
     { href: "/scripts.html", label: "Scripts" },
+    { href: "/request-script.html", label: "Request a Script" },
   ];
+
+  // Pages that live under a member nav link, for active-state highlighting.
+  var MEMBER_PARENTS = {
+    "/eggs.html": "/competitions.html",
+    "/mug/": "/competitions.html",
+    "/chains/": "/competitions.html",
+  };
 
   var ADMIN_LINKS = [
     { href: "/admin.html", label: "Admin Hub" },
@@ -38,6 +43,7 @@
   }
 
   var current = norm(location.pathname);
+  if (MEMBER_PARENTS[current]) current = MEMBER_PARENTS[current];
 
   function linkHtml(l) {
     var active = norm(l.href) === current ? " active" : "";

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competitions - Resilience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css?v=20260803">
+  <style>
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .tool-card {
+      display: block;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      text-decoration: none;
+    }
+
+    .tool-card h2 {
+      color: var(--green);
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .tool-card p {
+      color: var(--text-light);
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-nav"></div>
+  <script src="auth.js?v=20260803"></script>
+  <script src="nav.js?v=20260803"></script>
+
+  <div class="container container--narrow">
+    <div class="header" style="background: transparent; box-shadow: none; text-align: center;">
+      <h1 style="font-size: 32px; margin-bottom: 8px;">Competitions</h1>
+      <p>Faction competitions and leaderboards</p>
+    </div>
+
+    <div class="tools-grid">
+      <a href="eggs.html" class="tool-card">
+        <h2>Egg Hunt</h2>
+        <p>Easter egg hunt leaderboard.</p>
+      </a>
+      <a href="mug/" class="tool-card">
+        <h2>Mug Board</h2>
+        <p>Mug leaderboard and statistics.</p>
+      </a>
+      <a href="chains/" class="tool-card">
+        <h2>Chain Watch</h2>
+        <p>Sign up for chain watch slots.</p>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

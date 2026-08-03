@@ -3,16 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tampermonkey Scripts - Resilience Dashboard</title>
+  <title>Scripts - Resilience</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="site.css?v=20260803">
   <style>
-    /* ========================================
-   Scripts Page
-   ======================================== */
-
 .scripts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
@@ -34,6 +30,7 @@
   border-color: var(--green);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  text-decoration: none;
 }
 
 .script-card h2 {
@@ -47,6 +44,17 @@
   font-size: 13px;
   line-height: 1.4;
 }
+
+.group-heading {
+  margin: 28px 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border-bottom: 1px solid var(--gray-300);
+  padding-bottom: 8px;
+}
   </style>
 </head>
 <body>
@@ -56,49 +64,101 @@
 
   <div class="container container--narrow">
     <div class="header">
-      <h1>Tampermonkey Scripts</h1>
-      <p>Useful userscripts for Torn. Click to install from Greasy Fork.</p>
+      <h1>Scripts</h1>
+      <p>Userscripts by Systoned. Install Tampermonkey, then click a card to install from Greasy Fork.
+        See the full list on the <a href="https://greasyfork.org/en/users/1438102-systoned" target="_blank" rel="noopener">Greasy Fork profile</a>.
+        Got an idea? <a href="request-script.html">Request a script</a>.</p>
     </div>
 
+    <h2 class="group-heading">War &amp; Faction</h2>
     <div class="scripts-grid">
-      <a href="https://greasyfork.org/en/scripts/553922-torn-display-case-market-share-calculator" target="_blank" class="script-card">
-        <h2>Display Case Market Share Calculator</h2>
-        <p>Calculate market share value of items in your display case.</p>
+      <a href="https://greasyfork.org/scripts/565168-torn-war-tools" target="_blank" rel="noopener" class="script-card">
+        <h2>Torn War Tools</h2>
+        <p>War target tools: travel warnings, available targets, med targets, sorting, shortlists.</p>
       </a>
-
-      <a href="https://greasyfork.org/en/scripts/558734-hide-chat-messages-from-users-by-xid" target="_blank" class="script-card">
-        <h2>Hide Chat Messages by XID</h2>
-        <p>Hide chat messages from specific users by their XID.</p>
+      <a href="https://greasyfork.org/scripts/581418-torn-war-respect-tracker" target="_blank" rel="noopener" class="script-card">
+        <h2>War Respect Tracker</h2>
+        <p>Tracks respect earned and attacks made during a war by reading your attack logs. Lives as a status-bar icon.</p>
       </a>
-
-      <a href="https://greasyfork.org/en/scripts/560551-torn-join-fight-warning" target="_blank" class="script-card">
+      <a href="https://greasyfork.org/scripts/567094-torn-xanax-stacking-planner" target="_blank" rel="noopener" class="script-card">
+        <h2>Xanax Stacking Planner</h2>
+        <p>Plan your Xanax stacking schedule for Torn wars and chains.</p>
+      </a>
+      <a href="https://greasyfork.org/scripts/560551-torn-join-fight-warning" target="_blank" rel="noopener" class="script-card">
         <h2>Join Fight Warning</h2>
-        <p>Shows a warning before joining a fight.</p>
+        <p>Warns when a Join Fight button appears on attack pages.</p>
       </a>
+      <a href="https://greasyfork.org/scripts/566290-torn-attack-networth-display" target="_blank" rel="noopener" class="script-card">
+        <h2>Attack Networth Display</h2>
+        <p>Shows the target's networth on the attack page before attacking.</p>
+      </a>
+      <a href="https://greasyfork.org/scripts/562668-oc-role-display-weights" target="_blank" rel="noopener" class="script-card">
+        <h2>OC Role Display + Weights</h2>
+        <p>Shows role weights for organized crimes.</p>
+      </a>
+    </div>
 
-      <a href="https://greasyfork.org/en/scripts/563523-torn-poker-notes" target="_blank" class="script-card">
+    <h2 class="group-heading">Poker &amp; Betting</h2>
+    <div class="scripts-grid">
+      <a href="https://greasyfork.org/scripts/563523-torn-poker-notes" target="_blank" rel="noopener" class="script-card">
         <h2>Poker Notes</h2>
-        <p>Add notes to players at the poker table.</p>
+        <p>Track player reads at the poker table.</p>
       </a>
-
-      <a href="https://greasyfork.org/en/scripts/553306-torn-weapon-bonus-on-new-line" target="_blank" class="script-card">
-        <h2>Weapon Bonus on New Line</h2>
-        <p>Displays weapon bonuses on a separate line for easier reading.</p>
+      <a href="https://greasyfork.org/scripts/576930-torn-poker-clickable-player-names" target="_blank" rel="noopener" class="script-card">
+        <h2>Poker - Clickable Player Names</h2>
+        <p>Makes opponent names at Torn poker tables clickable links to their profiles.</p>
       </a>
+      <a href="https://greasyfork.org/scripts/569499-torn-poker-hide-tables" target="_blank" rel="noopener" class="script-card">
+        <h2>Poker - Hide Tables</h2>
+        <p>Floating panel to hide or show poker lobby tables, with persistence.</p>
+      </a>
+      <a href="https://greasyfork.org/scripts/569290-tc-poker-export" target="_blank" rel="noopener" class="script-card">
+        <h2>TC Poker Export</h2>
+        <p>Analyse your entire poker play on Torn.</p>
+      </a>
+      <a href="https://greasyfork.org/scripts/573150-tc-poker-p-l-tracker" target="_blank" rel="noopener" class="script-card">
+        <h2>TC Poker P/L Tracker</h2>
+        <p>Profit and loss tracker with shorthand input, BB and cash support.</p>
+      </a>
+      <a href="https://greasyfork.org/scripts/577435-torn-bookie-tracker" target="_blank" rel="noopener" class="script-card">
+        <h2>Bookie Tracker</h2>
+        <p>Breaks out individual bets on the Torn bookie page and adds a status bar icon.</p>
+      </a>
+    </div>
 
-      <a href="https://greasyfork.org/en/scripts/562469-torn-profile-stats-dashboard" target="_blank" class="script-card">
+    <h2 class="group-heading">Profiles &amp; Chat</h2>
+    <div class="scripts-grid">
+      <a href="https://greasyfork.org/scripts/562469-torn-profile-stats-dashboard" target="_blank" rel="noopener" class="script-card">
         <h2>Profile Stats Dashboard</h2>
         <p>Enhanced stats display on player profiles.</p>
       </a>
-
-      <a href="https://greasyfork.org/en/scripts/562668-oc-role-display-weights" target="_blank" class="script-card">
-        <h2>OC Role Display Weights</h2>
-        <p>Shows role weights for organized crimes.</p>
-      </a>
-
-      <a href="https://greasyfork.org/en/scripts/562813-torn-user-list-stats" target="_blank" class="script-card">
+      <a href="https://greasyfork.org/scripts/562813-torn-user-list-stats" target="_blank" rel="noopener" class="script-card">
         <h2>User List Stats</h2>
         <p>Display additional stats in user lists.</p>
+      </a>
+      <a href="https://greasyfork.org/scripts/558734-hide-chat-messages-from-users-by-xid" target="_blank" rel="noopener" class="script-card">
+        <h2>Hide Chat Messages (by XID)</h2>
+        <p>Hides chat messages from specific users by profile XID.</p>
+      </a>
+    </div>
+
+    <h2 class="group-heading">Utilities</h2>
+    <div class="scripts-grid">
+      <a href="https://greasyfork.org/scripts/553922-torn-display-case-market-share-calculator" target="_blank" rel="noopener" class="script-card">
+        <h2>Display Case Market Share Calculator</h2>
+        <p>Calculate market share for any item in your Torn display case.</p>
+      </a>
+      <a href="https://greasyfork.org/scripts/567038-torn-training-tracker" target="_blank" rel="noopener" class="script-card">
+        <h2>Training Tracker</h2>
+        <p>Tracks how many times each employee has been trained. Reset all counts with one button.</p>
+      </a>
+      <a href="https://greasyfork.org/scripts/537257-torn-flight-helper-rehab-mode" target="_blank" rel="noopener" class="script-card">
+        <h2>Flight Helper - Rehab Mode</h2>
+        <p>Travel helper for rehab trips. Guides to Switzerland and checks funds before traveling.</p>
+      </a>
+      <a href="https://greasyfork.org/scripts/553306-torn-weapon-bonus-on-new-line" target="_blank" rel="noopener" class="script-card">
+        <h2>Weapon Bonus on New Line</h2>
+        <p>Displays weapon bonuses on a separate line for easier reading.</p>
       </a>
     </div>
   </div>

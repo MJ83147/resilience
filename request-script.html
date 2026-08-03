@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request a Script - Resilience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css?v=20260803">
+  <style>
+    .request-wrap { max-width: 640px; margin: 0 auto; }
+    .request-wrap textarea { min-height: 140px; font-family: var(--font); }
+    .request-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  </style>
+</head>
+<body>
+  <div id="site-nav"></div>
+  <script src="auth.js?v=20260803"></script>
+  <script src="nav.js?v=20260803"></script>
+
+  <div class="container container--narrow">
+    <div class="request-wrap">
+      <div class="header">
+        <h1>Request a Script</h1>
+        <p>Want a Torn userscript that does not exist yet? Describe it below, then send it to Systoned.</p>
+      </div>
+
+      <div class="panel">
+        <label for="reqName">Your name (Torn username)</label>
+        <div class="lookup" style="margin-bottom:12px">
+          <input id="reqName" type="text" placeholder="e.g. Player [1234567]" autocomplete="off">
+        </div>
+
+        <label for="reqText">What should the script do?</label>
+        <textarea id="reqText" placeholder="Which page in Torn, what it should show or automate, and why it would help."></textarea>
+
+        <div class="request-actions">
+          <button class="unlock-btn" id="copyBtn">Copy request</button>
+          <a class="sn-link" id="tornLink" href="#" target="_blank" rel="noopener" style="display:none">Open Torn message</a>
+          <span class="note" id="copyMsg" style="margin-top:0"></span>
+        </div>
+
+        <p class="note">Copy your request, then send it to Systoned in Torn or drop it in the faction Discord.
+          Existing scripts are on the <a href="scripts.html">Scripts page</a> and on
+          <a href="https://greasyfork.org/en/users/1438102-systoned" target="_blank" rel="noopener">Greasy Fork</a>.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Set to Systoned's Torn XID to enable the "Open Torn message" button.
+    var OWNER_XID = null;
+
+    if (OWNER_XID) {
+      var link = document.getElementById('tornLink');
+      link.href = 'https://www.torn.com/messages.php#/p=compose&XID=' + OWNER_XID;
+      link.style.display = 'inline-block';
+    }
+
+    document.getElementById('copyBtn').addEventListener('click', function () {
+      var name = document.getElementById('reqName').value.trim();
+      var text = document.getElementById('reqText').value.trim();
+      var msg = document.getElementById('copyMsg');
+      if (!text) { msg.textContent = 'Describe the script first.'; return; }
+      var out = 'Script request' + (name ? ' from ' + name : '') + ':\n' + text;
+      navigator.clipboard.writeText(out).then(function () {
+        msg.textContent = 'Copied. Paste it in a Torn message or Discord.';
+      }, function () {
+        msg.textContent = 'Could not copy automatically. Select and copy the text yourself.';
+      });
+    });
+  </script>
+</body>
+</html>
