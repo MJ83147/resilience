@@ -53,14 +53,12 @@
 
   var html;
   if (isAdminPage) {
-    // Admin pages get their own menu: admin tools only, plus a way back.
+    // Admin pages: logo only. The Admin Hub page is the menu.
     html =
       '<nav class="site-nav sn-admin">' +
       '<div class="sn-row">' +
       '<a class="sn-brand" href="/admin">Resilience <b>Admin</b></a>' +
-      ADMIN_LINKS.map(linkHtml).join("") +
       '<span class="sn-right">' +
-      '<a class="sn-link" href="/">Member site</a>' +
       (window.Auth && window.Auth.isAdmin() ? '<a class="sn-link" href="#" id="snSignout">Sign out</a>' : "") +
       "</span>" +
       "</div>" +
