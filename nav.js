@@ -23,13 +23,14 @@
     ".site-nav{background:#1d1b16;border-bottom:1px solid #332f26;margin-bottom:16px;" +
     'font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:14px}' +
     ".site-nav .sn-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px 8px;padding:8px 16px;max-width:1200px;margin:0 auto}" +
-    ".site-nav .sn-admin-row{border-top:1px solid #2a271f;background:#232019}" +
+    ".site-nav.sn-admin{background:#232019}" +
     ".site-nav .sn-brand{color:#ffd700;font-weight:700;font-size:15px;letter-spacing:.05em;text-transform:uppercase;text-decoration:none;margin-right:12px}" +
     ".site-nav .sn-brand:hover{color:#ffe14d}" +
+    ".site-nav .sn-brand b{color:#988f7c;font-weight:600}" +
     ".site-nav a.sn-link{color:#988f7c;text-decoration:none;padding:5px 9px;border-radius:6px;white-space:nowrap}" +
     ".site-nav a.sn-link:hover{color:#f1ede4;background:#2a271f}" +
     ".site-nav a.sn-link.active{color:#f1ede4;background:#332f26}" +
-    ".site-nav .sn-label{color:#6b6353;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-right:4px}";
+    ".site-nav .sn-right{margin-left:auto}";
 
   function norm(p) {
     p = p.replace(/\/index\.html$/, "/");
@@ -43,22 +44,33 @@
     return '<a class="sn-link' + active + '" href="' + l.href + '">' + l.label + "</a>";
   }
 
-  // Until auth ships, Auth is undefined and the admin row is always shown.
-  var showAdmin = !window.Auth || window.Auth.isAdmin();
+  var isAdminPage = ADMIN_LINKS.some(function (l) { return norm(l.href) === current; });
 
-  var html =
-    '<nav class="site-nav">' +
-    '<div class="sn-row">' +
-    '<a class="sn-brand" href="/">Resilience</a>' +
-    MEMBER_LINKS.map(linkHtml).join("") +
-    "</div>" +
-    (showAdmin
-      ? '<div class="sn-row sn-admin-row"><span class="sn-label">Admin</span>' +
-        ADMIN_LINKS.map(linkHtml).join("") +
-        (window.Auth && window.Auth.isAdmin() ? '<a class="sn-link" href="#" id="snSignout">Sign out</a>' : "") +
-        "</div>"
-      : "") +
-    "</nav>";
+  var html;
+  if (isAdminPage) {
+    // Admin pages get their own menu: admin tools only, plus a way back.
+    html =
+      '<nav class="site-nav sn-admin">' +
+      '<div class="sn-row">' +
+      '<a class="sn-brand" href="/admin.html">Resilience <b>Admin</b></a>' +
+      ADMIN_LINKS.map(linkHtml).join("") +
+      '<span class="sn-right">' +
+      '<a class="sn-link" href="/">Member site</a>' +
+      (window.Auth && window.Auth.isAdmin() ? '<a class="sn-link" href="#" id="snSignout">Sign out</a>' : "") +
+      "</span>" +
+      "</div>" +
+      "</nav>";
+  } else {
+    // Member pages: member links plus a single entry point to the admin area.
+    html =
+      '<nav class="site-nav">' +
+      '<div class="sn-row">' +
+      '<a class="sn-brand" href="/">Resilience</a>' +
+      MEMBER_LINKS.map(linkHtml).join("") +
+      '<span class="sn-right"><a class="sn-link" href="/admin.html">Admin</a></span>' +
+      "</div>" +
+      "</nav>";
+  }
 
   var style = document.createElement("style");
   style.textContent = CSS;
