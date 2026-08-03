@@ -4,8 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resilience Dashboard</title>
-  <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css?v=20260803">
   <style>
     /* Homepage Summary & Armory Cards */
     .faction-overview,
@@ -181,21 +183,9 @@
     
     <h2 class="section-heading">Members</h2>
     <div class="tools-grid">
-      <a href="wars.html" class="tool-card">
-        <h2>War Room</h2>
-        <p>Ranked war history, stats, and performance for the faction.</p>
-      </a>
-      <a href="war.html" class="tool-card">
-        <h2>War Analyzer</h2>
-        <p>Track med outs for each war.</p>
-      </a>
       <a href="eggs.html" class="tool-card">
         <h2>Egg Hunt</h2>
         <p>Easter egg hunt leaderboard.</p>
-      </a>
-      <a href="xr.html" class="tool-card">
-        <h2>Xanax Runners</h2>
-        <p>Xanax runner stats and history.</p>
       </a>
       <a href="mug/" class="tool-card">
         <h2>Mug Board</h2>
@@ -217,9 +207,21 @@
         <h2>Admin Hub</h2>
         <p>All faction management tools in one place.</p>
       </a>
+      <a href="wars.html" class="tool-card">
+        <h2>War Room</h2>
+        <p>Ranked war history, stats, and performance for the faction.</p>
+      </a>
+      <a href="war.html" class="tool-card">
+        <h2>War Analyzer</h2>
+        <p>Track med outs for each war.</p>
+      </a>
       <a href="war-pay.html" class="tool-card">
         <h2>War Pay</h2>
         <p>Capture war performance and record payouts.</p>
+      </a>
+      <a href="xr.html" class="tool-card">
+        <h2>Xanax Runners</h2>
+        <p>Xanax runner stats and history.</p>
       </a>
       <a href="oc.html" class="tool-card">
         <h2>OC Tracker</h2>
@@ -386,6 +388,5 @@ async function loadFactionData() {
     loadFactionData();
     loadInventoryData();
   </script>
-  <script src="theme.js"></script>
 </body>
 </html>

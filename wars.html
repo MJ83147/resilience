@@ -7,20 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css?v=20260803">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  :root{
-    --ink:#14130f; --panel:#1d1b16; --panel-2:#232019; --line:#332f26;
-    --text:#f1ede4; --muted:#988f7c; --faint:#6b6353;
-    --gold:#ffd700; --win:#5fb87a; --loss:#d8584e;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0}
-  body{background:var(--ink);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-  a{color:var(--gold);text-decoration:none}
-  a:hover{text-decoration:underline}
-  .mono{font-family:'JetBrains Mono',monospace}
-
   .topbar{position:sticky;top:0;z-index:6;background:var(--ink)}
   header.top{border-bottom:1px solid var(--line);padding:22px 32px 18px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
   .brand{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:30px;letter-spacing:.04em;text-transform:uppercase;margin:0}
@@ -28,44 +17,12 @@
   .crumb{color:var(--muted);font-size:13px}
   .gen{margin-left:auto;color:var(--faint);font-size:12px}
 
-  nav.tabs{display:flex;gap:4px;padding:0 32px;border-bottom:1px solid var(--line);background:var(--ink);z-index:5}
-  nav.tabs button{background:none;border:none;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:17px;letter-spacing:.05em;text-transform:uppercase;padding:14px 16px;cursor:pointer;border-bottom:2px solid transparent}
-  nav.tabs button:hover{color:var(--text)}
-  nav.tabs button.active{color:var(--gold);border-bottom-color:var(--gold)}
-
   main{padding:24px 32px 80px}
   section.view{display:none}
   section.view.active{display:block}
 
-  .grid{display:grid;gap:16px}
-  .cards{grid-template-columns:repeat(auto-fit,minmax(165px,1fr));margin-bottom:8px}
-  .charts{grid-template-columns:repeat(2,1fr)}
-  .charts .wide{grid-column:1 / -1}
-  @media(max-width:900px){.charts{grid-template-columns:1fr}}
-
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px 18px 16px}
-  .card .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
-  .card .value{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:34px;line-height:1.05;margin-top:6px}
-  .card .value.gold{color:var(--gold)}
-  .card .sub{color:var(--faint);font-size:12px;margin-top:3px}
-  .card .sub b{color:var(--muted);font-weight:600}
-
-  .panel h3{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:19px;letter-spacing:.03em;text-transform:uppercase;margin:0 0 2px}
-  .panel .cap{color:var(--muted);font-size:12.5px;margin:0 0 14px}
-  .chartbox{position:relative;height:240px}
-
-  .controls{display:flex;gap:10px;align-items:center;margin:0 0 12px;flex-wrap:wrap}
-  .controls label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
-  .controls input[type=number],.controls select{background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:5px;padding:6px 8px;font-family:'JetBrains Mono',monospace}
+  .controls{gap:10px;margin:0 0 12px}
   .controls input[type=number]{width:84px}
-  .seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
-  .seg button{background:var(--ink);border:none;color:var(--muted);padding:6px 12px;cursor:pointer;font-size:13px}
-  .seg button.on{background:var(--gold);color:#1a1814;font-weight:600}
-
-  .legend{display:flex;gap:16px;align-items:center;margin:0 0 12px;font-size:12.5px;color:var(--muted)}
-  .legend span{display:inline-flex;align-items:center;gap:6px}
-  .sw{width:13px;height:13px;border-radius:3px;display:inline-block}
-  .sw.win{background:var(--win)} .sw.loss{background:var(--loss)}
 
   .form-strip{display:flex;flex-wrap:wrap;gap:4px}
   .form-cell{width:17px;height:26px;border-radius:3px;cursor:pointer;transition:transform .08s}
@@ -81,12 +38,6 @@
   .pcell{width:14px;height:22px;border-radius:2px;border:1px solid var(--line);background:transparent}
   .pcell.on{background:var(--gold);border-color:var(--gold)}
 
-  table.board{width:100%;border-collapse:collapse;font-size:13.5px}
-  table.board th{text-align:left;color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;padding:7px 10px;border-bottom:1px solid var(--line)}
-  table.board td{padding:7px 10px;border-bottom:1px solid #26241d}
-  table.board td.num,table.board th.num{text-align:right;font-family:'JetBrains Mono',monospace}
-  table.board tr:hover td{background:var(--panel-2)}
-  .rank{color:var(--faint);font-family:'Barlow Condensed',sans-serif;font-weight:700;width:30px}
   .pname{cursor:pointer}
   .pname:hover{color:var(--gold)}
   .leaver{color:var(--muted)}
@@ -97,45 +48,17 @@
   .slack-table{flex:1 1 360px;min-width:320px}
   .slack-quad{flex:1 1 380px;min-width:320px}
 
-  .board-scroll{max-height:360px;overflow-y:auto;border-radius:6px}
-  .board-scroll table.board th{position:sticky;top:0;background:var(--panel);z-index:1}
-
-  .note{color:var(--faint);font-size:12px;margin-top:10px}
-  .note.click{cursor:pointer}
-  .note.click:hover{color:var(--muted)}
-
-  .lookup{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
-  .lookup input{flex:1;min-width:220px;max-width:340px;background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:10px 12px;font-size:14px}
-  .results{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
-  .results button{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:5px;padding:6px 11px;cursor:pointer;font-size:13px}
-  .results button:hover{border-color:var(--gold)}
-
   .player-head,.war-head{display:flex;align-items:baseline;gap:14px;margin-bottom:14px;flex-wrap:wrap}
   .player-head .pn,.war-head .wn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px}
   .player-head .meta,.war-head .meta{color:var(--muted);font-size:13px}
   .war-head .res{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:20px}
   .war-head .res.w{color:var(--win)} .war-head .res.l{color:var(--loss)}
 
-  .empty{color:var(--muted);padding:40px 0;text-align:center}
-  .loader-box{border:1px dashed var(--line);border-radius:8px;padding:28px;text-align:center;color:var(--muted)}
-  .hidden{display:none !important}
-
-  #floatTip{position:fixed;pointer-events:none;background:#0c0b08;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:12.5px;color:var(--text);z-index:50;opacity:0;transition:opacity .08s;max-width:240px}
-  #floatTip .t{color:var(--muted);font-size:11px}
-
-  .unlock-btn{background:var(--gold);color:#1a1814;border:none;font-weight:600;padding:9px 18px;border-radius:6px;cursor:pointer;font-size:14px}
-  .unlock-btn:hover{filter:brightness(1.05)}
   .manage-list{display:flex;flex-direction:column;gap:2px;margin-top:6px}
   .manage-row{display:grid;grid-template-columns:1fr 70px 150px;align-items:center;gap:12px;padding:8px 6px;border-bottom:1px solid #26241d}
   .ml-name{font-size:14px}
   .ml-res{font-size:13px;color:var(--muted)}
-  .toggle{display:inline-flex;align-items:center;gap:9px;background:none;border:none;cursor:pointer;padding:0;justify-self:end}
-  .toggle .knob{width:38px;height:22px;border-radius:11px;background:#3a362b;position:relative;transition:background .15s}
-  .toggle .knob::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#8a8170;transition:transform .15s}
-  .toggle.on .knob{background:var(--gold)}
-  .toggle.on .knob::after{transform:translateX(16px);background:#1a1814}
-  .toggle .tlabel{font-size:12px;color:var(--muted);width:74px;text-align:left}
-  .toggle.on .tlabel{color:var(--gold)}
+  .manage-row .toggle{justify-self:end}
   .signout{font-size:12px;color:var(--muted);cursor:pointer;font-weight:400;text-transform:none;letter-spacing:0;margin-left:10px}
   .signout:hover{color:var(--gold)}
   .modeswitch{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;margin-left:auto}

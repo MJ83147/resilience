@@ -4,16 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Easter Egg Hunt Leaderboard!</title>
-  <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css?v=20260803">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     :root {
       --primary-color: var(--green);
-      --primary-light: #4CAF50;
+      --primary-light: #ffe14d;
       --primary-lightest: var(--green-light);
       --border-radius: 8px;
-      --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+      --font-family: var(--font);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -21,7 +23,7 @@
     html, body {
       min-height: 100vh;
       font-family: var(--font-family);
-      background-color: var(--gray-100);
+      background-color: var(--ink);
       color: var(--text);
       line-height: 1.5;
     }
@@ -63,7 +65,7 @@
     .loader {
       width: 20px;
       height: 20px;
-      border: 3px solid rgba(46, 125, 50, 0.2);
+      border: 3px solid rgba(255, 215, 0, 0.2);
       border-radius: 50%;
       border-top-color: var(--primary-color);
       animation: spin 1s ease-in-out infinite;
@@ -125,7 +127,7 @@
     }
 
     th.sortable { cursor: pointer; user-select: none; }
-    th.sortable:hover { background-color: #81C784; color: var(--white); }
+    th.sortable:hover { background-color: var(--gray-200); color: var(--text); }
     th .sort-arrow { margin-left: 4px; font-size: 10px; opacity: 0.4; }
     th.active-sort .sort-arrow { opacity: 1; }
 
@@ -261,7 +263,7 @@
           datasets: [{
             label: 'Eggs This Year',
             data: chartData.map(d => d.score),
-            backgroundColor: '#4CAF50',
+            backgroundColor: '#ffd700',
             borderColor: '#2E7D32',
             borderWidth: 1,
             borderRadius: 4
@@ -363,6 +365,5 @@
     refreshBtn.addEventListener('click', fetchData);
     window.addEventListener('load', fetchData);
   </script>
-  <script src="theme.js"></script>
 </body>
 </html>

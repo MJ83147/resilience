@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>War Performance Capture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css?v=20260803">
 <style>
   :root {
-    --bg: #14171c;
-    --panel: #1c2026;
-    --border: #2c323b;
-    --text: #e6e8eb;
-    --muted: #8a929c;
-    --accent: #3fae6b;
-    --danger: #d36b6b;
+    --bg: var(--ink);
+    --border: var(--line);
+    --accent: var(--gold);
+    --danger: var(--loss);
   }
-  * { box-sizing: border-box; }
   body {
     margin: 0; padding: 2rem 1rem;
     background: var(--bg); color: var(--text);
-    font: 15px/1.5 -apple-system, Segoe UI, Roboto, sans-serif;
+    font: 15px/1.5 var(--font);
   }
   .card {
     max-width: 520px; margin: 0 auto;
@@ -47,7 +47,7 @@
     white-space: pre-wrap;
   }
   #status.show { display: block; }
-  #status.ok { background: rgba(63,174,107,0.12); border: 1px solid var(--accent); }
+  #status.ok { background: rgba(95,184,122,0.12); border: 1px solid var(--win); }
   #status.err { background: rgba(211,107,107,0.12); border: 1px solid var(--danger); }
 </style>
 </head>
