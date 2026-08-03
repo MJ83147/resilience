@@ -9,7 +9,6 @@
   var MEMBER_PARENTS = {
     "/eggs.html": "/competitions.html",
     "/mug/": "/competitions.html",
-    "/chains/": "/competitions.html",
   };
 
   var ADMIN_LINKS = [

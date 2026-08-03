@@ -9,8 +9,47 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="site.css?v=20260803">
   <style>
-    .request-wrap { max-width: 640px; margin: 0 auto; }
-    .request-wrap textarea { min-height: 140px; font-family: var(--font); }
+    .request-wrap { max-width: 720px; margin: 0 auto; }
+
+    .madlib {
+      font-size: 17px;
+      line-height: 2.4;
+      color: var(--text);
+    }
+
+    .madlib .blank {
+      display: inline-block;
+      background: var(--ink);
+      border: none;
+      border-bottom: 2px solid var(--line);
+      border-radius: 4px 4px 0 0;
+      color: var(--gold);
+      font: inherit;
+      font-size: 15px;
+      padding: 2px 8px;
+      margin: 0 2px;
+      min-width: 60px;
+      vertical-align: baseline;
+    }
+
+    .madlib .blank:focus {
+      outline: none;
+      border-bottom-color: var(--gold);
+    }
+
+    .madlib .blank.filled { border-bottom-color: var(--win); }
+
+    .preview-box {
+      background: var(--ink);
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-size: 14px;
+      color: var(--muted);
+      white-space: pre-wrap;
+      margin: 16px 0;
+    }
+
     .request-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   </style>
 </head>
@@ -23,17 +62,27 @@
     <div class="request-wrap">
       <div class="header">
         <h1>Request a Script</h1>
-        <p>Want a Torn userscript that does not exist yet? Describe it below, then send it to Systoned.</p>
+        <p>Fill in the blanks, copy the request, and send it to Systoned in Torn or the faction Discord.</p>
       </div>
 
       <div class="panel">
-        <label for="reqName">Your name (Torn username)</label>
-        <div class="lookup" style="margin-bottom:12px">
-          <input id="reqName" type="text" placeholder="e.g. Player [1234567]" autocomplete="off">
-        </div>
+        <p class="madlib">
+          I'm <input class="blank" id="bName" size="14" placeholder="your name" autocomplete="off">
+          and I need a script that will
+          <input class="blank" id="bWhat" size="28" placeholder="do what?">
+          because
+          <input class="blank" id="bWhy" size="28" placeholder="why do you need it?">.
+          <br>
+          Functionally, when I
+          <input class="blank" id="bTrigger" size="26" placeholder="do what in Torn?">,
+          I want it to
+          <input class="blank" id="bAction" size="26" placeholder="do / show what?">.
+          <br>
+          This will help me
+          <input class="blank" id="bBenefit" size="28" placeholder="achieve what?">.
+        </p>
 
-        <label for="reqText">What should the script do?</label>
-        <textarea id="reqText" placeholder="Which page in Torn, what it should show or automate, and why it would help."></textarea>
+        <div class="preview-box" id="preview">Your request will appear here as you type.</div>
 
         <div class="request-actions">
           <button class="unlock-btn" id="copyBtn">Copy request</button>
@@ -41,8 +90,7 @@
           <span class="note" id="copyMsg" style="margin-top:0"></span>
         </div>
 
-        <p class="note">Copy your request, then send it to Systoned in Torn or drop it in the faction Discord.
-          Existing scripts are on the <a href="scripts.html">Scripts page</a> and on
+        <p class="note">Existing scripts are on the <a href="scripts.html">Scripts page</a> and on
           <a href="https://greasyfork.org/en/users/1438102-systoned" target="_blank" rel="noopener">Greasy Fork</a>.</p>
       </div>
     </div>
@@ -58,16 +106,49 @@
       link.style.display = 'inline-block';
     }
 
+    var fields = {
+      name: document.getElementById('bName'),
+      what: document.getElementById('bWhat'),
+      why: document.getElementById('bWhy'),
+      trigger: document.getElementById('bTrigger'),
+      action: document.getElementById('bAction'),
+      benefit: document.getElementById('bBenefit')
+    };
+
+    function val(f) { return fields[f].value.trim(); }
+
+    function buildRequest() {
+      return 'Script request from ' + (val('name') || '???') + ':\n' +
+        'I need a script that will ' + (val('what') || '???') +
+        ' because ' + (val('why') || '???') + '.\n' +
+        'Functionally, when I ' + (val('trigger') || '???') +
+        ', I want it to ' + (val('action') || '???') + '.\n' +
+        'This will help me ' + (val('benefit') || '???') + '.';
+    }
+
+    function refresh() {
+      document.getElementById('preview').textContent = buildRequest();
+      Object.keys(fields).forEach(function (k) {
+        fields[k].classList.toggle('filled', !!val(k));
+      });
+    }
+
+    Object.keys(fields).forEach(function (k) {
+      fields[k].addEventListener('input', refresh);
+    });
+
     document.getElementById('copyBtn').addEventListener('click', function () {
-      var name = document.getElementById('reqName').value.trim();
-      var text = document.getElementById('reqText').value.trim();
       var msg = document.getElementById('copyMsg');
-      if (!text) { msg.textContent = 'Describe the script first.'; return; }
-      var out = 'Script request' + (name ? ' from ' + name : '') + ':\n' + text;
-      navigator.clipboard.writeText(out).then(function () {
+      var missing = Object.keys(fields).filter(function (k) { return !val(k); });
+      if (missing.length) {
+        msg.textContent = 'Fill in all the blanks first.';
+        fields[missing[0]].focus();
+        return;
+      }
+      navigator.clipboard.writeText(buildRequest()).then(function () {
         msg.textContent = 'Copied. Paste it in a Torn message or Discord.';
       }, function () {
-        msg.textContent = 'Could not copy automatically. Select and copy the text yourself.';
+        msg.textContent = 'Could not copy automatically. Copy the preview text yourself.';
       });
     });
   </script>
