@@ -1,0 +1,2 @@
+# Apps Script code stays out of the public repo (names the properties that hold keys/secrets)
+apps-script/

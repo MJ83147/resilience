@@ -52,7 +52,12 @@
     '<a class="sn-brand" href="/">Resilience</a>' +
     MEMBER_LINKS.map(linkHtml).join("") +
     "</div>" +
-    (showAdmin ? '<div class="sn-row sn-admin-row"><span class="sn-label">Admin</span>' + ADMIN_LINKS.map(linkHtml).join("") + "</div>" : "") +
+    (showAdmin
+      ? '<div class="sn-row sn-admin-row"><span class="sn-label">Admin</span>' +
+        ADMIN_LINKS.map(linkHtml).join("") +
+        (window.Auth && window.Auth.isAdmin() ? '<a class="sn-link" href="#" id="snSignout">Sign out</a>' : "") +
+        "</div>"
+      : "") +
     "</nav>";
 
   var style = document.createElement("style");
@@ -66,4 +71,12 @@
     document.body.insertBefore(mount, document.body.firstChild);
   }
   mount.innerHTML = html;
+
+  var signout = document.getElementById("snSignout");
+  if (signout) {
+    signout.addEventListener("click", function (e) {
+      e.preventDefault();
+      window.Auth.logout();
+    });
+  }
 })();

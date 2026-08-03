@@ -29,13 +29,15 @@
 </head>
 <body>
   <div id="site-nav"></div>
+  <script src="config.js?v=20260803"></script>
+  <script src="auth.js?v=20260803"></script>
   <script src="nav.js?v=20260803"></script>
+  <script>Auth.gate();</script>
 
   <div class="container">
     <div class="header">
       <h1>War Tracker</h1>
       <div class="controls">
-        <input type="password" class="search-box" id="apiKey" placeholder="Enter API key..." style="flex: 1; min-width: 300px;">
         <button class="filter-btn" onclick="loadRankedWars()">Load Ranked Wars</button>
       </div>
     </div>
@@ -70,7 +72,6 @@
   </div>
 
   <script>
-    let apiKey = "";
     let faction1 = null;
     let faction2 = null;
 
@@ -85,15 +86,8 @@
     }
 
     async function loadRankedWars() {
-      apiKey = document.getElementById("apiKey").value.trim();
-      if (!apiKey) {
-        alert("Please enter your API key");
-        return;
-      }
-      
       try {
-        const res = await fetch(`https://api.torn.com/v2/faction?selections=rankedwars&key=${apiKey}`);
-        const data = await res.json();
+        const data = await tornFetch('v2/faction?selections=rankedwars');
         
         if (data.error) {
           alert(`API Error: ${data.error.error}`);
@@ -114,7 +108,7 @@
         document.getElementById("warSelector").style.display = "block";
       } catch (err) {
         console.error("Error loading wars:", err);
-        alert("Error loading wars. Check your API key and try again.");
+        alert("Error loading wars. Please try again.");
       }
     }
 
@@ -134,13 +128,11 @@
         document.getElementById("tableContainer").innerHTML = "<div style='text-align:center;padding:2rem;'>Loading attack logs...</div>";
         document.getElementById("summaryTable").innerHTML = "<div style='text-align:center;padding:2rem;'>Loading summary data...</div>";
         
-        let url = `https://api.torn.com/v2/faction/attacks?from=${war.start}&to=${war.end}&limit=100&sort=DESC`;
-        const headers = { 'Authorization': `ApiKey ${apiKey}` };
+        let url = `v2/faction/attacks?from=${war.start}&to=${war.end}&limit=100&sort=DESC`;
         let attacks = [];
         
         while (url) {
-          const res = await fetch(url, { headers });
-          const data = await res.json();
+          const data = await tornFetch(url);
           
           if (data.error) {
             alert(`API Error: ${data.error.error}`);

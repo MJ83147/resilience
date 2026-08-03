@@ -254,7 +254,10 @@
 </head>
 <body>
   <div id="site-nav"></div>
+  <script src="config.js?v=20260803"></script>
+  <script src="auth.js?v=20260803"></script>
   <script src="nav.js?v=20260803"></script>
+  <script>Auth.gate();</script>
 
   <div class="container">
     <div id="loadingState" class="loading-container">
@@ -356,8 +359,6 @@
     // ---- Config ----
     var CHAINS_CSV = 'https://docs.google.com/spreadsheets/d/1garCJf8OdTzWaNgdXfOMIKtR3MmG8-kuAjh1r-ln2CE/gviz/tq?tqx=out:csv&sheet=Chains';
     var REPORTS_CSV = 'https://docs.google.com/spreadsheets/d/1garCJf8OdTzWaNgdXfOMIKtR3MmG8-kuAjh1r-ln2CE/gviz/tq?tqx=out:csv&sheet=ChainReports';
-    var API_KEY = 'Ai7FeouMaJd9ufVr';
-    var TORN_BASE = 'https://api.torn.com/v2';
 
     // ---- State ----
     var currentMembers = {};
@@ -857,11 +858,8 @@
     async function loadAll() {
       try {
         setProgress(10, 'Fetching current faction members...');
-        var membersResp = await fetch(TORN_BASE + '/faction/members', {
-          headers: { 'Accept': 'application/json', 'Authorization': 'ApiKey ' + API_KEY }
-        });
-        if (!membersResp.ok) throw new Error('Members API returned ' + membersResp.status);
-        var membersData = await membersResp.json();
+        var membersData = await tornFetch('v2/faction/members');
+        if (membersData.error) throw new Error('Members API error: ' + membersData.error.error);
         if (membersData.members) {
           membersData.members.forEach(function(m) { currentMembers[m.id] = m.name; });
         }

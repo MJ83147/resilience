@@ -69,7 +69,9 @@
 </head>
 <body>
 <div id="site-nav"></div>
+<script src="auth.js?v=20260803"></script>
 <script src="nav.js?v=20260803"></script>
+<script>Auth.gate();</script>
 
 <div class="topbar">
 <header class="top">
@@ -606,49 +608,13 @@ var RANK_ORDER=['Unranked','Bronze III','Bronze II','Bronze I','Silver III','Sil
 function rankToNum(r){if(!r)return null;var i=RANK_ORDER.indexOf(r);if(i>-1)return i;for(var k=0;k<RANK_ORDER.length;k++){if(RANK_ORDER[k].indexOf(r)===0)return k;}return null;}
 function numToRank(n){var i=Math.round(n);return (i>=0&&i<RANK_ORDER.length)?RANK_ORDER[i]:'';}
 
-/* ---------- manage wars (admin) ---------- */
-var ADMIN_UID=null, ADMIN_KEY='resWarAdmin';
+/* ---------- manage wars (admin) ----------
+   Login and credential storage live in the shared auth.js (Auth.*);
+   the whole page is behind Auth.gate(), so the manage tab renders directly. */
 function apiUrl(){return (DATA_URL&&DATA_URL.indexOf('http')===0)?DATA_URL:'./resilience-wars.json';}
-function loadStoredAdmin(){try{return localStorage.getItem(ADMIN_KEY);}catch(e){return null;}}
-function storeAdmin(v){try{localStorage.setItem(ADMIN_KEY,v);}catch(e){}}
-function clearStoredAdmin(){try{localStorage.removeItem(ADMIN_KEY);}catch(e){}}
-
-function verifyAdmin(pw,cb,errcb){
-  fetch(apiUrl()+'?action=admincheck&uid='+encodeURIComponent(pw),{cache:'no-store'})
-    .then(function(r){return r.json();})
-    .then(function(j){cb(!!(j&&j.admin));})
-    .catch(function(){(errcb||function(){cb(false);})();});
-}
 
 function buildManage(){
-  var v=document.getElementById('view-manage');
-  if(ADMIN_UID){renderManage(v);return;}
-  var stored=loadStoredAdmin();
-  if(stored){
-    v.innerHTML='<div class="panel" style="max-width:460px"><h3>Manage wars</h3><p class="note">Checking saved login&hellip;</p></div>';
-    verifyAdmin(stored,function(ok){if(ok){ADMIN_UID=stored;renderManage(v);}else{clearStoredAdmin();showAdminLogin(v);}},function(){showAdminLogin(v);});
-    return;
-  }
-  showAdminLogin(v);
-}
-
-function showAdminLogin(v){
-  v.innerHTML='<div class="panel" style="max-width:460px"><h3>Manage wars</h3>'+
-    '<p class="cap">Admin only. Enter the password to mark wars mandatory or optional.</p>'+
-    '<div class="lookup"><input id="adminId" type="password" placeholder="Password" autocomplete="off"></div>'+
-    '<button class="unlock-btn" id="adminUnlock">Unlock</button>'+
-    '<p class="note" id="adminMsg"></p></div>';
-  var btn=document.getElementById('adminUnlock'), inp=document.getElementById('adminId');
-  function tryUnlock(){
-    var pw=inp.value.trim(); if(!pw)return;
-    document.getElementById('adminMsg').textContent='Checking&hellip;';
-    verifyAdmin(pw,function(ok){
-      if(ok){ADMIN_UID=pw;storeAdmin(pw);renderManage(v);}
-      else{document.getElementById('adminMsg').textContent='Wrong password.';}
-    },function(){document.getElementById('adminMsg').textContent='Could not reach the data source.';});
-  }
-  btn.addEventListener('click',tryUnlock);
-  inp.addEventListener('keydown',function(e){if(e.key==='Enter')tryUnlock();});
+  renderManage(document.getElementById('view-manage'));
 }
 
 function renderManage(v){
@@ -666,7 +632,7 @@ function renderManage(v){
       }).join('')+
     '</div><p class="note" id="manageMsg"></p></div>';
 
-  document.getElementById('adminSignout').addEventListener('click',function(){ADMIN_UID=null;clearStoredAdmin();buildManage();});
+  document.getElementById('adminSignout').addEventListener('click',function(){Auth.logout();});
   document.getElementById('manageList').querySelectorAll('.toggle').forEach(function(b){
     b.addEventListener('click',function(){toggleWar(Number(b.getAttribute('data-war')),b);});
   });
@@ -677,7 +643,7 @@ function toggleWar(warId,btn){
   var next=!w._mandatory;
   btn.disabled=true;
   document.getElementById('manageMsg').textContent='Saving...';
-  fetch(apiUrl()+'?action=set&uid='+encodeURIComponent(ADMIN_UID)+'&warId='+warId+'&mandatory='+next,{cache:'no-store'})
+  fetch(apiUrl()+'?action=set&'+Auth.param()+'&warId='+warId+'&mandatory='+next,{cache:'no-store'})
     .then(function(r){return r.json();})
     .then(function(j){
       btn.disabled=false;

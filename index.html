@@ -165,6 +165,8 @@
 </head>
 <body>
   <div id="site-nav"></div>
+  <script src="config.js?v=20260803"></script>
+  <script src="auth.js?v=20260803"></script>
   <script src="nav.js?v=20260803"></script>
 
   <div class="container container--narrow">
@@ -243,11 +245,6 @@
   </div>
   
   <script>
-   var API_KEY = 'Ai7FeouMaJd9ufVr';
-var BASIC_URL = 'https://api.torn.com/v2/faction/basic';
-var BALANCE_URL = 'https://api.torn.com/v2/faction/balance';
-var INVENTORY_URL = 'https://api.torn.com/v2/faction?selections=armor,weapons,temporary,medical,drugs,cesium,utilities,boosters';
-
 function sumQuantity(items) {
   if (!items || !Array.isArray(items)) return 0;
   return items.reduce(function(sum, item) {
@@ -258,23 +255,10 @@ async function loadFactionData() {
   var container = document.getElementById('factionOverview');
   
   try {
-    var [basicResponse, balanceResponse] = await Promise.all([
-      fetch(BASIC_URL, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'ApiKey ' + API_KEY
-        }
-      }),
-      fetch(BALANCE_URL, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'ApiKey ' + API_KEY
-        }
-      })
+    var [basicData, balanceData] = await Promise.all([
+      tornFetch('v2/faction/basic'),
+      tornFetch('v2/faction/balance')
     ]);
-    
-    var basicData = await basicResponse.json();
-    var balanceData = await balanceResponse.json();
     
     var faction = basicData.basic;
     var balance = balanceData.balance?.faction || {};
@@ -321,14 +305,7 @@ async function loadFactionData() {
       var container = document.getElementById('inventoryOverview');
       
       try {
-        var response = await fetch(INVENTORY_URL, {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': 'ApiKey ' + API_KEY
-          }
-        });
-        
-        var data = await response.json();
+        var data = await tornFetch('v2/faction?selections=armor,weapons,temporary,medical,drugs,cesium,utilities,boosters');
         
         var armorCount = sumQuantity(data.armor);
         var weaponsCount = sumQuantity(data.weapons);

@@ -1,15 +1,8 @@
 const CACHE_KEY = 'oc_dashboard_cache';
 const ITEMS_CACHE_KEY = 'oc_dashboard_items';
 
-// Get API key from config.js
-let apiKey = '';
-try {
-  if (typeof CONFIG !== 'undefined' && CONFIG.apiKey) {
-    apiKey = CONFIG.apiKey;
-  }
-} catch (e) {
-  console.error('Could not load API key from config.js');
-}
+// Torn API access comes from config.js (tornFetch).
+const hasTornConfig = typeof tornFetch === 'function';
 
 // Multi-stage crimes to exclude from success/failure calculations
 const MULTI_STAGE_CRIMES = [
@@ -158,10 +151,10 @@ function showTab(tabId, btnId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!apiKey) {
+  if (!hasTornConfig) {
     document.getElementById('loadingMessage').style.display = 'none';
     document.getElementById('errorMessage').style.display = 'block';
-    document.getElementById('errorMessage').textContent = 'Error: Missing config.js or API key. Create a config.js file with: const CONFIG = { apiKey: "your-key-here" };';
+    document.getElementById('errorMessage').textContent = 'Error: config.js is missing or did not load.';
     return;
   }
 
@@ -217,10 +210,10 @@ function switchMetric(metric) {
 }
 
 async function loadData() {
-  if (!apiKey) {
+  if (!hasTornConfig) {
     document.getElementById('loadingMessage').style.display = 'none';
     document.getElementById('errorMessage').style.display = 'block';
-    document.getElementById('errorMessage').textContent = 'Error: No API key configured.';
+    document.getElementById('errorMessage').textContent = 'Error: config.js is missing or did not load.';
     return;
   }
 
@@ -228,8 +221,7 @@ async function loadData() {
   document.getElementById('errorMessage').style.display = 'none';
 
   try {
-    const crimeExpRes = await fetch(`https://api.torn.com/v2/faction/?selections=crimeexp&key=${apiKey}`);
-    const crimeExpData = await crimeExpRes.json();
+    const crimeExpData = await tornFetch('v2/faction/?selections=crimeexp');
 
     if (crimeExpData.error) {
       throw new Error(crimeExpData.error.error);
@@ -237,8 +229,7 @@ async function loadData() {
 
     crimeExpMembers = crimeExpData.crimeexp || [];
 
-    const basicRes = await fetch(`https://api.torn.com/faction/?selections=basic&key=${apiKey}`);
-    const basicData = await basicRes.json();
+    const basicData = await tornFetch('faction/?selections=basic');
 
     if (basicData.error) {
       throw new Error(basicData.error.error);
@@ -254,8 +245,7 @@ async function loadData() {
     let oldestFetched = Date.now() / 1000;
 
     while (offset < maxOffset) {
-      const crimesRes = await fetch(`https://api.torn.com/v2/faction/crimes?key=${apiKey}&offset=${offset}`);
-      const crimesData = await crimesRes.json();
+      const crimesData = await tornFetch('v2/faction/crimes?offset=' + offset);
 
       if (crimesData.error) {
         throw new Error(crimesData.error.error);
@@ -313,8 +303,7 @@ async function loadData() {
 
     if (itemIds.size > 0) {
       try {
-        const itemsRes = await fetch(`https://api.torn.com/torn/?selections=items&key=${apiKey}`);
-        const itemsData = await itemsRes.json();
+        const itemsData = await tornFetch('torn/?selections=items');
         if (itemsData.items) {
           itemIds.forEach(id => {
             if (itemsData.items[id]) {
