@@ -150,4 +150,10 @@
     logout: logout,
     gate: gate
   };
+
+  // Admin pages load this script with a data-gate attribute instead of
+  // calling Auth.gate() inline (the script is deferred, so inline callers
+  // would run before Auth exists).
+  var cs = document.currentScript;
+  if (cs && cs.hasAttribute('data-gate')) gate();
 })();

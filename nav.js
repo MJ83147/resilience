@@ -1,26 +1,26 @@
 (function () {
   var MEMBER_LINKS = [
-    { href: "/competitions.html", label: "Competitions" },
-    { href: "/scripts.html", label: "Scripts" },
-    { href: "/request-script.html", label: "Request a Script" },
+    { href: "/competitions", label: "Competitions" },
+    { href: "/scripts", label: "Scripts" },
+    { href: "/request-script", label: "Request a Script" },
   ];
 
   // Pages that live under a member nav link, for active-state highlighting.
   var MEMBER_PARENTS = {
-    "/eggs.html": "/competitions.html",
-    "/mug/": "/competitions.html",
+    "/eggs": "/competitions",
+    "/mug/": "/competitions",
   };
 
   var ADMIN_LINKS = [
-    { href: "/admin.html", label: "Admin Hub" },
-    { href: "/war-pay.html", label: "War Pay" },
-    { href: "/oc.html", label: "OC Tracker" },
-    { href: "/energy.html", label: "Energy" },
-    { href: "/xr.html", label: "Xanax Runners" },
-    { href: "/wars.html", label: "War Room" },
-    { href: "/war.html", label: "War Analyzer" },
-    { href: "/xanax.html", label: "Xanax Tracker" },
-    { href: "/chain.html", label: "Chain Performance" },
+    { href: "/admin", label: "Admin Hub" },
+    { href: "/war-pay", label: "War Pay" },
+    { href: "/oc", label: "OC Tracker" },
+    { href: "/energy", label: "Energy" },
+    { href: "/xr", label: "Xanax Runners" },
+    { href: "/wars", label: "War Room" },
+    { href: "/war", label: "War Analyzer" },
+    { href: "/xanax", label: "Xanax Tracker" },
+    { href: "/chain", label: "Chain Performance" },
   ];
 
   var CSS =
@@ -37,7 +37,7 @@
     ".site-nav .sn-right{margin-left:auto}";
 
   function norm(p) {
-    p = p.replace(/\/index\.html$/, "/");
+    p = p.replace(/\/index\.html$/, "/").replace(/\.html$/, "");
     return p === "" ? "/" : p;
   }
 
@@ -57,7 +57,7 @@
     html =
       '<nav class="site-nav sn-admin">' +
       '<div class="sn-row">' +
-      '<a class="sn-brand" href="/admin.html">Resilience <b>Admin</b></a>' +
+      '<a class="sn-brand" href="/admin">Resilience <b>Admin</b></a>' +
       ADMIN_LINKS.map(linkHtml).join("") +
       '<span class="sn-right">' +
       '<a class="sn-link" href="/">Member site</a>' +
@@ -72,7 +72,7 @@
       '<div class="sn-row">' +
       '<a class="sn-brand" href="/">Resilience</a>' +
       MEMBER_LINKS.map(linkHtml).join("") +
-      '<span class="sn-right"><a class="sn-link" href="/admin.html">Admin</a></span>' +
+      '<span class="sn-right"><a class="sn-link" href="/admin">Admin</a></span>' +
       "</div>" +
       "</nav>";
   }
