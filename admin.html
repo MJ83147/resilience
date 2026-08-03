@@ -46,6 +46,17 @@
       line-height: 1.5;
       margin: 0;
     }
+
+    .group-heading {
+      margin: 28px 0 0;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      border-bottom: 1px solid var(--gray-300);
+      padding-bottom: 8px;
+    }
   </style>
   <script src="/config.js?v=20260803b"></script>
   <script src="/auth.js?v=20260803b" defer data-gate></script>
@@ -60,11 +71,8 @@
       <p>Faction management tools for admins &middot; <a href="/">back to member site</a></p>
     </div>
 
+    <h2 class="group-heading">Manage War Payouts and Hits</h2>
     <div class="tools-grid">
-      <a href="/wars" class="tool-card">
-        <h2>War Room</h2>
-        <p>Ranked war history, stats, and performance. Manage tab marks wars mandatory or optional.</p>
-      </a>
       <a href="/war" class="tool-card">
         <h2>War Analyzer</h2>
         <p>Track med outs for each war.</p>
@@ -73,25 +81,33 @@
         <h2>War Pay</h2>
         <p>Capture war performance and record payouts to the payment sheet.</p>
       </a>
-      <a href="/xr" class="tool-card">
-        <h2>Xanax Runners</h2>
-        <p>Xanax runner stats and history.</p>
+      <a href="/wars" class="tool-card">
+        <h2>War Room</h2>
+        <p>Ranked war history, stats, and performance. Manage tab marks wars mandatory or optional.</p>
       </a>
+    </div>
+
+    <h2 class="group-heading">Track Performance</h2>
+    <div class="tools-grid">
       <a href="/oc" class="tool-card">
         <h2>OC Tracker</h2>
         <p>Track organized crime participation and readiness across the faction.</p>
       </a>
-      <a href="/energy" class="tool-card">
-        <h2>Energy Monitor</h2>
-        <p>Monitor how much energy each faction member is using in the gym.</p>
+      <a href="/chain" class="tool-card">
+        <h2>Chain Performance</h2>
+        <p>Track member contributions across chains. See who's exceeding and who's falling behind.</p>
       </a>
       <a href="/xanax" class="tool-card">
         <h2>Xanax Tracker</h2>
         <p>Track weekly Xanax usage across faction members.</p>
       </a>
-      <a href="/chain" class="tool-card">
-        <h2>Chain Performance</h2>
-        <p>Track member contributions across chains. See who's exceeding and who's falling behind.</p>
+      <a href="/energy" class="tool-card">
+        <h2>Energy Monitor</h2>
+        <p>Monitor how much energy each faction member is using in the gym.</p>
+      </a>
+      <a href="/xr" class="tool-card">
+        <h2>Xanax Runners</h2>
+        <p>Xanax runner stats and history.</p>
       </a>
     </div>
   </div>
