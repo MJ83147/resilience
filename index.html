@@ -148,9 +148,23 @@
   line-height: 1.5;
   margin: 0;
 }
+
+.section-heading {
+  margin: 28px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  border-bottom: 1px solid var(--gray-300);
+  padding-bottom: 8px;
+}
   </style>
 </head>
 <body>
+  <div id="site-nav"></div>
+  <script src="nav.js?v=20260803"></script>
+
   <div class="container container--narrow">
     <div class="header" style="background: transparent; box-shadow: none; text-align: center;">
       <h1 style="font-size: 32px; margin-bottom: 8px;">Resilience Dashboard</h1>
@@ -165,31 +179,64 @@
       <div class="overview-loading">Loading inventory...</div>
     </div>
     
+    <h2 class="section-heading">Members</h2>
     <div class="tools-grid">
-      <a href="xanax.html" class="tool-card">
-        <h2>Xanax Tracker</h2>
-        <p>Track weekly Xanax usage across faction members. See who's on track and who's falling behind.</p>
-      </a>
-      <a href="energy.html" class="tool-card">
-        <h2>Energy Monitor <span class="new-badge">New</span></h2>
-        <p>Monitor how much energy each faction member is using in the gym.</p>
+      <a href="wars.html" class="tool-card">
+        <h2>War Room</h2>
+        <p>Ranked war history, stats, and performance for the faction.</p>
       </a>
       <a href="war.html" class="tool-card">
-        <h2>War Tracker</h2>
+        <h2>War Analyzer</h2>
         <p>Track med outs for each war.</p>
+      </a>
+      <a href="eggs.html" class="tool-card">
+        <h2>Egg Hunt</h2>
+        <p>Easter egg hunt leaderboard.</p>
+      </a>
+      <a href="xr.html" class="tool-card">
+        <h2>Xanax Runners</h2>
+        <p>Xanax runner stats and history.</p>
+      </a>
+      <a href="mug/" class="tool-card">
+        <h2>Mug Board</h2>
+        <p>Mug leaderboard and statistics.</p>
+      </a>
+      <a href="chains/" class="tool-card">
+        <h2>Chain Watch</h2>
+        <p>Sign up for chain watch slots.</p>
+      </a>
+      <a href="scripts.html" class="tool-card">
+        <h2>Tampermonkey Scripts</h2>
+        <p>Useful userscripts for Torn. Enhance your gameplay with these tools.</p>
+      </a>
+    </div>
+
+    <h2 class="section-heading">Admin</h2>
+    <div class="tools-grid">
+      <a href="admin.html" class="tool-card">
+        <h2>Admin Hub</h2>
+        <p>All faction management tools in one place.</p>
+      </a>
+      <a href="war-pay.html" class="tool-card">
+        <h2>War Pay</h2>
+        <p>Capture war performance and record payouts.</p>
       </a>
       <a href="oc.html" class="tool-card">
         <h2>OC Tracker</h2>
         <p>Track organized crime participation and readiness.</p>
       </a>
-         <a href="chain.html" class="tool-card">
+      <a href="energy.html" class="tool-card">
+        <h2>Energy Monitor</h2>
+        <p>Monitor how much energy each faction member is using in the gym.</p>
+      </a>
+      <a href="xanax.html" class="tool-card">
+        <h2>Xanax Tracker</h2>
+        <p>Track weekly Xanax usage across faction members. See who's on track and who's falling behind.</p>
+      </a>
+      <a href="chain.html" class="tool-card">
         <h2>Chain Performance</h2>
         <p>Track member contributions across chains. See who's exceeding, who's consistent, and who's falling behind.</p>
       </a>
-      <a href="scripts.html" class="tool-card">
-  <h2>Tampermonkey Scripts</h2>
-  <p>Useful userscripts for Torn. Enhance your gameplay with these tools.</p>
-</a>
     </div>
   </div>
   

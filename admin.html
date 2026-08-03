@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resilience Admin</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .tool-card {
+      display: block;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    .tool-card h2 {
+      color: var(--green);
+      font-size: 18px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tool-card p {
+      color: var(--text-light);
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-nav"></div>
+  <script src="nav.js?v=20260803"></script>
+
+  <div class="container container--narrow">
+    <div class="header" style="background: transparent; box-shadow: none; text-align: center;">
+      <h1 style="font-size: 32px; margin-bottom: 8px;">Admin Hub</h1>
+      <p>Faction management tools for admins</p>
+    </div>
+
+    <div class="tools-grid">
+      <a href="war-pay.html" class="tool-card">
+        <h2>War Pay</h2>
+        <p>Capture war performance and record payouts to the payment sheet.</p>
+      </a>
+      <a href="oc.html" class="tool-card">
+        <h2>OC Tracker</h2>
+        <p>Track organized crime participation and readiness across the faction.</p>
+      </a>
+      <a href="energy.html" class="tool-card">
+        <h2>Energy Monitor</h2>
+        <p>Monitor how much energy each faction member is using in the gym.</p>
+      </a>
+      <a href="xanax.html" class="tool-card">
+        <h2>Xanax Tracker</h2>
+        <p>Track weekly Xanax usage across faction members.</p>
+      </a>
+      <a href="chain.html" class="tool-card">
+        <h2>Chain Performance</h2>
+        <p>Track member contributions across chains. See who's exceeding and who's falling behind.</p>
+      </a>
+      <a href="wars.html" class="tool-card">
+        <h2>War Room: Manage</h2>
+        <p>Mark ranked wars as mandatory or optional in the war room's Manage tab.</p>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

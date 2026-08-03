@@ -258,10 +258,8 @@
   </style>
 </head>
 <body>
-  <nav class="navbar">
-    <a href="index.html" class="nav-brand">Resilience Dashboard</a>
-    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()"></button>
-  </nav>
+  <div id="site-nav"></div>
+  <script src="nav.js?v=20260803"></script>
 
   <div class="container">
     <div id="loadingState" class="loading-container">
@@ -869,7 +867,7 @@
 
     function updateThemeBtn() {
       var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      document.getElementById('themeBtn').textContent = isDark ? '\u2600\uFE0F Light' : '\uD83C\uDF19 Dark';
+      var btn = document.getElementById('themeBtn'); if (btn) btn.textContent = isDark ? '\u2600\uFE0F Light' : '\uD83C\uDF19 Dark';
     }
 
     (function() {

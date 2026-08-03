@@ -6,7 +6,7 @@
   btn.innerHTML = '<span class="theme-icon"></span><span class="theme-label"></span>';
 
   // Try to insert in navbar, fallback to header or body if not found
-  const navbar = document.querySelector('.navbar');
+  const navbar = document.querySelector('.site-nav .sn-row') || document.querySelector('.navbar');
   const header = document.querySelector('.header-top') || document.querySelector('.header');
 
   if (navbar) {
