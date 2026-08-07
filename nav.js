@@ -1,5 +1,6 @@
 (function () {
   var MEMBER_LINKS = [
+    { href: "/performance", label: "My Performance" },
     { href: "/competitions", label: "Competitions" },
     { href: "/scripts", label: "Scripts" },
     { href: "/request-script", label: "Request a Script" },

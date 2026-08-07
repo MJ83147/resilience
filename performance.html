@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Performance - Resilience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css?v=20260803">
+  <style>
+    /* Page-specific styling for the performance dashboard (shared tokens live in site.css). */
+    .perf-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .summary-grid { display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-start; }
+    .sm { min-width: 90px; }
+    .sm .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+    .sm .v { font-size: 18px; font-weight: 600; color: var(--text); margin-top: 2px; }
+    .sm .v b { color: var(--gold); }
+    .summary-grid .spacer { margin-left: auto; }
+
+    .win-sel { display: inline-flex; gap: 4px; background: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 3px; }
+    .win-sel button { background: none; border: none; color: var(--muted); font: inherit; font-size: 13px; padding: 5px 11px; border-radius: 4px; cursor: pointer; }
+    .win-sel button.on { background: var(--panel-2); color: var(--text); }
+
+    .section-title { font-family: var(--font-display); font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 22px 0 10px; }
+
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .mcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+    .tcard { padding: 22px 24px; }
+    .mcard .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+    .mcard .name { font-size: 15px; color: var(--text); font-weight: 600; }
+    .tcard .name { font-size: 16px; }
+    .badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+    .badge.ahead { color: var(--win); background: rgba(95,184,122,.14); }
+    .badge.behind { color: var(--loss); background: var(--red-light); }
+
+    .mcard .figures { display: flex; align-items: baseline; gap: 7px; }
+    .mcard .rate { font-family: var(--font-mono); font-size: 28px; font-weight: 700; color: var(--text); }
+    .tcard .rate { font-size: 40px; }
+    .mcard .unit { color: var(--muted); font-size: 13px; }
+    .mcard .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .mcard .sub b { color: var(--text); font-weight: 600; }
+    .agechip { display: inline-block; margin-top: 12px; font-size: 12px; padding: 4px 10px; border-radius: 20px; }
+    .agechip.ok { color: var(--win); background: rgba(95,184,122,.14); }
+    .agechip.bad { color: var(--loss); background: var(--red-light); }
+
+    .bar { height: 7px; background: var(--ink); border-radius: 4px; overflow: hidden; margin: 12px 0 8px; }
+    .bar > span { display: block; height: 100%; border-radius: 4px; }
+    .bar > span.ahead { background: var(--win); }
+    .bar > span.behind { background: var(--warn); }
+
+    /* crime skills / advice */
+    .skill-lead { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+    .skill-lead b { color: var(--gold); }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip { flex: 1 1 170px; max-width: 240px; background: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+    .chip.close { border-color: var(--gold); }
+    .chip .cn { font-size: 12.5px; color: var(--text); display: flex; justify-content: space-between; gap: 8px; }
+    .chip .cn span { font-family: var(--font-mono); color: var(--muted); }
+    .chip .cn span b { color: var(--gold); }
+    .chip .cbar { height: 5px; background: var(--panel-2); border-radius: 3px; overflow: hidden; margin-top: 7px; }
+    .chip .cbar > span { display: block; height: 100%; background: var(--gold); border-radius: 3px; }
+    .all-maxed { color: var(--win); font-size: 14px; }
+
+    .steps { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 10px 0 4px; padding-left: 18px; }
+    .steps a { color: var(--gold); }
+    .privacy { color: var(--faint); font-size: 12px; margin-top: 12px; }
+    .err { color: var(--loss); font-size: 13px; margin-top: 10px; }
+    .link-btn { background: none; border: none; color: var(--muted); font: inherit; font-size: 12.5px; cursor: pointer; text-decoration: underline; padding: 0; }
+    .link-btn:hover { color: var(--text); }
+    .loading { color: var(--muted); font-size: 14px; }
+    .help-note { margin-top: 20px; text-align: center; font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .help-note b { color: var(--gold); }
+    .help-note.warn { border-color: var(--warn); }
+    [hidden] { display: none !important; }
+  </style>
+  <script src="/config.js?v=20260803b"></script>
+  <script src="/nav.js?v=20260803b" defer></script>
+</head>
+<body>
+  <div id="site-nav"></div>
+
+  <div class="container container--narrow">
+    <div class="header" style="background:transparent;border:none;box-shadow:none;text-align:center">
+      <h1 style="font-size:30px;margin-bottom:6px">My <b>Performance</b></h1>
+      <p class="perf-sub">Track your xanax target and see your key numbers and crime skills.</p>
+    </div>
+
+    <!-- Key entry -->
+    <div class="panel" id="gate" style="max-width:520px;margin:0 auto" hidden>
+      <h3>Connect your Torn account</h3>
+      <p class="cap">Paste your Torn API key. We only read your public personal stats and profile, and it stays in your browser.</p>
+      <div class="lookup">
+        <input id="keyIn" type="text" placeholder="Torn API key" autocomplete="off" spellcheck="false">
+        <button class="unlock-btn" id="keyGo">Track me</button>
+      </div>
+      <ol class="steps">
+        <li>Open <a href="https://www.torn.com/preferences.php#tab=api" target="_blank" rel="noopener">Torn &rarr; Settings &rarr; API Keys</a>.</li>
+        <li>Create a key. Public access is enough.</li>
+        <li>Paste it above and hit Track me.</li>
+      </ol>
+      <p class="err" id="gateErr" hidden></p>
+      <p class="privacy">Your key is stored only in this browser (localStorage) and sent only to Torn's own API. Nothing is uploaded to us.</p>
+    </div>
+
+    <!-- Results -->
+    <div id="results" hidden>
+      <div class="panel" style="margin-bottom:6px">
+        <div class="summary-grid">
+          <div class="sm"><div class="k">Player</div><div class="v" id="smName"></div></div>
+          <div class="sm"><div class="k">Level</div><div class="v" id="smLevel"></div></div>
+          <div class="sm"><div class="k">Rank</div><div class="v" id="smRank"></div></div>
+          <div class="sm"><div class="k">Faction</div><div class="v" id="smPos"></div></div>
+          <div class="sm"><div class="k">Activity</div><div class="v" id="smAct"></div></div>
+          <div class="sm"><div class="k">Donator</div><div class="v" id="smDon"></div></div>
+          <div class="spacer"></div>
+          <div class="sm" style="text-align:right">
+            <button class="link-btn" id="changeKey">Change key</button>
+          </div>
+        </div>
+        <p class="err" id="resErr" hidden></p>
+      </div>
+
+      <div class="loading" id="loading" hidden>Loading your stats&hellip;</div>
+
+      <div id="body" hidden>
+        <div class="section-title">Targets</div>
+        <div class="cards" id="targetCards"></div>
+
+        <div class="section-title">Your numbers <span class="unit" style="text-transform:none;letter-spacing:0">· averaged over the last 3 months</span></div>
+        <div class="cards" id="infoCards"></div>
+
+        <div class="section-title">Crimes &amp; skills</div>
+        <div class="panel" id="skillPanel"></div>
+
+        <div class="panel help-note" id="helpNote" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    var STORE_KEY = 'resPerfKey';
+    var FACTION_ID = 22887;          // Resilience
+    var FACTION_NAME = 'Resilience';
+
+    // Averages are computed over this fixed lookback (~3 months) and then
+    // expressed in each metric's own timeframe.
+    var LOOKBACK_DAYS = 90;
+
+    // ---- ADMIN: targets. 'per' sets the timeframe the target is measured in.
+    // ageCheck adds a "lifetime usage must exceed your account age" pass/fail.
+    var TARGETS = [
+      { label:'Xanax',            field:'xantaken',        per:'day',  target:2, fmt:'dec1', ageCheck:true },
+      { label:'Energy refill',    field:'refills',         per:'day',  target:1, fmt:'dec1' },
+      { label:'Organised crimes', field:'organisedcrimes', per:'week', target:1, fmt:'dec1' }
+    ];
+    // ------------------------------------------------------------------------
+
+    // Informational stats (no target), each shown in its own timeframe.
+    var INFO = [
+      { label:'Ranked war hits', field:'rankedwarhits',     fmt:'dec1',  per:'week',  unit:'/wk' },
+      { label:'Respect earned',  field:'respectforfaction', fmt:'comma', per:'week',  unit:'/wk', note:'Varies by war' },
+      { label:'Overdoses',       field:'overdosed',         fmt:'dec1',  per:'month', unit:'/mo' }
+    ];
+    // Daily time online, shown in the top summary (uses the same lookback).
+    var ACTIVITY_FIELD = 'useractivity';
+
+    // Crimes 2.0 skills (each 0-100). Field -> label.
+    var CRIMES = [
+      ['searchforcashskill','Search for Cash'], ['bootleggingskill','Bootlegging'],
+      ['graffitiskill','Graffiti'], ['shopliftingskill','Shoplifting'],
+      ['pickpocketingskill','Pickpocketing'], ['cardskimmingskill','Card Skimming'],
+      ['burglaryskill','Burglary'], ['hustlingskill','Hustling'],
+      ['disposalskill','Disposal'], ['crackingskill','Cracking'],
+      ['forgeryskill','Forgery'], ['scammingskill','Scamming'],
+      ['arsonskill','Arson'], ['huntingskill','Hunting']
+    ];
+
+    var $ = function (id) { return document.getElementById(id); };
+    var state = { key:null, ps:null, id:null, days:84 };
+
+    function getKey() { try { return localStorage.getItem(STORE_KEY) || ''; } catch (e) { return ''; } }
+    function setKey(k) { try { localStorage.setItem(STORE_KEY, k); } catch (e) {} }
+    function clearKey() { try { localStorage.removeItem(STORE_KEY); } catch (e) {} }
+
+    // Fetch against api.torn.com with the MEMBER's own key (not the shared one).
+    function pFetch(path) {
+      var sep = path.indexOf('?') > -1 ? '&' : '?';
+      return fetch('https://api.torn.com/' + path + sep + 'key=' + encodeURIComponent(state.key))
+        .then(function (r) { return r.json(); });
+    }
+
+    function abbrev(n) {
+      var s = n < 0 ? '-' : ''; n = Math.abs(n);
+      if (n >= 1e9) return s + (n / 1e9).toFixed(n >= 1e10 ? 0 : 1) + 'b';
+      if (n >= 1e6) return s + (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'm';
+      if (n >= 1e3) return s + (n / 1e3).toFixed(n >= 1e4 ? 0 : 1) + 'k';
+      return s + Math.round(n);
+    }
+    function fmtNum(n, fmt) {
+      if (fmt === 'abbrev') return abbrev(n);
+      if (fmt === 'dec1')   return (Math.round(n * 10) / 10).toLocaleString();
+      return Math.round(n).toLocaleString();
+    }
+
+    function showGate(msg) {
+      $('results').hidden = true;
+      $('gate').hidden = false;
+      var e = $('gateErr');
+      if (msg) { e.textContent = msg; e.hidden = false; } else { e.hidden = true; }
+    }
+
+    function tryKey(k) {
+      state.key = k;
+      $('gateErr').hidden = true;
+      var btn = $('keyGo'); btn.disabled = true; btn.textContent = 'Checking…';
+      pFetch('user/?selections=profile,personalstats').then(function (d) {
+        btn.disabled = false; btn.textContent = 'Track me';
+        if (!d || d.error) {
+          showGate('Torn said: ' + ((d && d.error && d.error.error) || 'that key did not work') + '. Use a key with Public access or higher.');
+          return;
+        }
+        setKey(k);
+        state.ps = d.personalstats || {};
+        state.id = {
+          name: d.name, id: d.player_id, level: d.level, age: d.age,
+          rank: d.rank, donator: d.donator, faction: d.faction || null
+        };
+        renderIdentity();
+        $('gate').hidden = true;
+        $('results').hidden = false;
+        renderSkills(state.ps);
+        load();
+      }).catch(function () {
+        btn.disabled = false; btn.textContent = 'Track me';
+        showGate('Could not reach the Torn API. Check your connection and try again.');
+      });
+    }
+
+    function renderIdentity() {
+      var id = state.id, f = id.faction;
+      $('smName').innerHTML = '<b>' + escapeHtml(id.name) + '</b>';
+      $('smLevel').textContent = id.level;
+      $('smRank').textContent = id.rank || '-';
+      if (f && f.faction_id === FACTION_ID) $('smPos').textContent = f.position;
+      else if (f && f.faction_id) $('smPos').innerHTML = '<span style="color:var(--warn)">' + escapeHtml(f.faction_name || 'Other') + '</span>';
+      else $('smPos').innerHTML = '<span style="color:var(--warn)">None</span>';
+
+      $('smDon').innerHTML = id.donator
+        ? '<span style="color:var(--win)">Yes</span>'
+        : '<span style="color:var(--muted)">No</span>';
+
+      $('smAct').textContent = '…'; // filled by render() once history loads
+    }
+
+    function periodCount(per, days) {
+      if (per === 'day') return days;
+      if (per === 'month') return days / 30.44;
+      return days / 7; // week
+    }
+    function perUnit(per) { return per === 'day' ? '/day' : per === 'month' ? '/mo' : '/wk'; }
+
+    // Fetch the historical snapshot (fixed ~3-month lookback) and render rates.
+    function load() {
+      $('resErr').hidden = true;
+      $('body').hidden = true;
+      $('loading').hidden = false;
+
+      var pastTs = Math.floor(Date.now() / 1000) - LOOKBACK_DAYS * 86400;
+      var fields = TARGETS.concat(INFO).map(function (m) { return m.field; });
+      fields.push(ACTIVITY_FIELD);
+      pFetch('user/?selections=personalstats&stat=' + fields.join(',') + '&timestamp=' + pastTs).then(function (d) {
+        $('loading').hidden = true;
+        if (!d || d.error) {
+          $('resErr').textContent = 'Could not load history: ' + ((d && d.error && d.error.error) || 'unknown error');
+          $('resErr').hidden = false;
+          return;
+        }
+        render(state.ps, d.personalstats || {}, LOOKBACK_DAYS);
+        $('body').hidden = false;
+      }).catch(function () {
+        $('loading').hidden = true;
+        $('resErr').textContent = 'Could not reach the Torn API for history.';
+        $('resErr').hidden = false;
+      });
+    }
+
+    function render(cur, past, days) {
+      // --- Daily activity, into the top summary ---
+      var aDelta = Math.max(0, Number(cur[ACTIVITY_FIELD] || 0) - Number(past[ACTIVITY_FIELD] || 0));
+      $('smAct').innerHTML = fmtNum((aDelta / days) / 3600, 'dec1') + ' <span class="unit">hrs/day</span>';
+
+      // --- Targets ---
+      var thtml = '', behind = 0;
+      TARGETS.forEach(function (m) {
+        var scale = m.scale || 1;
+        var delta = Math.max(0, Number(cur[m.field] || 0) - Number(past[m.field] || 0));
+        var rate = (delta / periodCount(m.per, days)) * scale;
+        var ratio = m.target > 0 ? rate / m.target : 1;
+        var ahead = ratio >= 1;
+        if (!ahead) behind++;
+        var barPct = Math.max(4, Math.min(100, ratio * 100));
+        var u = perUnit(m.per);
+        var chip = '';
+        if (m.ageCheck) {
+          var life = Number(cur[m.field] || 0), age = Number(state.id.age || 0), ok = life >= age;
+          chip = '<span class="agechip ' + (ok ? 'ok' : 'bad') + '">Lifetime ' + fmtNum(life, 'int') +
+            ' · ' + (ok ? 'exceeds' : 'below') + ' age (' + fmtNum(age, 'int') + 'd)</span>';
+        }
+        thtml +=
+          '<div class="mcard tcard">' +
+            '<div class="top"><span class="name">' + m.label + '</span>' +
+              '<span class="badge ' + (ahead ? 'ahead' : 'behind') + '">' + (ahead ? 'On target' : 'Behind') + '</span></div>' +
+            '<div class="figures"><span class="rate">' + fmtNum(rate, m.fmt) + '</span><span class="unit">' + u + '</span></div>' +
+            '<div class="bar"><span class="' + (ahead ? 'ahead' : 'behind') + '" style="width:' + barPct + '%"></span></div>' +
+            '<div class="sub">Target <b>' + fmtNum(m.target, m.fmt) + u + '</b></div>' +
+            chip +
+          '</div>';
+      });
+      $('targetCards').innerHTML = thtml;
+
+      // --- Support note ---
+      var hn = $('helpNote');
+      hn.className = 'panel help-note' + (behind > 0 ? ' warn' : '');
+      hn.innerHTML = (behind > 0 ? 'You\'re behind on ' + behind + ' target' + (behind > 1 ? 's' : '') + '. ' : '') +
+        'Falling behind on any stats and need support or guidance? Reach out to any <b>Elder</b> and we\'ll help you get back on track.';
+      hn.hidden = false;
+
+      // --- Info: no target, each in its own timeframe ---
+      var html = '';
+      INFO.forEach(function (m) {
+        var scale = m.scale || 1;
+        var now = Number(cur[m.field] || 0), then = Number(past[m.field] || 0);
+        var delta = Math.max(0, now - then);
+        var rate = (delta / periodCount(m.per, days)) * scale;
+        html +=
+          '<div class="mcard">' +
+            '<div class="top"><span class="name">' + m.label + '</span>' +
+              (m.note ? '<span class="unit">' + m.note + '</span>' : '') + '</div>' +
+            '<div class="figures"><span class="rate">' + fmtNum(rate, m.fmt) + '</span><span class="unit">' + (m.unit || perUnit(m.per)) + '</span></div>' +
+            '<div class="sub">' + fmtNum(now, m.fmt) + ' lifetime</div>' +
+          '</div>';
+      });
+      $('infoCards').innerHTML = html;
+    }
+
+    // Crime skills + racing skill (from current stats; window-independent).
+    function renderSkills(ps) {
+      var rows = CRIMES.map(function (c) { return { label: c[1], v: Number(ps[c[0]] || 0) }; });
+      var unfinished = rows.filter(function (r) { return r.v < 100; }).sort(function (a, b) { return b.v - a.v; });
+      var maxed = rows.length - unfinished.length;
+      var racing = Number(ps.racingskill || 0);
+
+      var h = '';
+      if (unfinished.length === 0) {
+        h += '<p class="all-maxed">All ' + rows.length + ' crime skills maxed at 100. Nice.</p>';
+      } else {
+        h += '<p class="skill-lead"><b>' + maxed + '/' + rows.length + '</b> crime skills maxed. ' +
+             'Closest to finishing to 100:</p>';
+        h += '<div class="chips">' + unfinished.map(function (r) {
+          var close = r.v >= 80 ? ' close' : '';
+          return '<div class="chip' + close + '"><div class="cn">' + escapeHtml(r.label) +
+                 ' <span>' + (r.v >= 80 ? '<b>' + r.v + '</b>' : r.v) + '/100</span></div>' +
+                 '<div class="cbar"><span style="width:' + r.v + '%"></span></div></div>';
+        }).join('') + '</div>';
+      }
+      h += '<div class="chips" style="margin-top:16px">' +
+             '<div class="chip' + (racing < 100 ? ' close' : '') + '"><div class="cn">Racing skill ' +
+               '<span><b>' + fmtNum(racing, 'dec1') + '</b>/100</span></div>' +
+               '<div class="cbar"><span style="width:' + Math.min(100, racing) + '%"></span></div></div>' +
+           '</div>';
+      $('skillPanel').innerHTML = h;
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+      });
+    }
+
+    // ---- wire up ----
+    $('keyGo').addEventListener('click', function () {
+      var v = $('keyIn').value.trim();
+      if (v) tryKey(v);
+    });
+    $('keyIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('keyGo').click(); });
+    $('changeKey').addEventListener('click', function () {
+      clearKey(); state.key = null; $('keyIn').value = ''; showGate();
+    });
+
+    var saved = getKey();
+    if (saved) tryKey(saved); else showGate();
+  })();
+  </script>
+</body>
+</html>

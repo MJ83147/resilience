@@ -1,3 +1,12 @@
+// Clean URLs: GitHub Pages serves both /foo and /foo.html. If someone lands on
+// a .html address (bookmark, external link), rewrite the address bar to the
+// clean path without reloading. The clean path serves the same page.
+(function () {
+  var p = location.pathname;
+  var clean = p.replace(/\/index\.html$/, '/').replace(/\.html$/, '');
+  if (clean !== p) history.replaceState(null, '', clean + location.search + location.hash);
+})();
+
 // Site-wide config and Torn API access.
 const CONFIG = {
   // Wars Apps Script: admin checks, war data, and (once deployed) the Torn proxy.
