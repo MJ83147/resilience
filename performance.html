@@ -173,7 +173,8 @@
     var GYM_WEEKS = 3;
     var GYM_TARGET = 800; // energy per day
 
-    // Crimes 2.0 skills (each 0-100). Field -> label.
+    // Crimes 2.0 skills (each 0-100). Field -> label. Racing and Hunting are
+    // separate skills, not crimes; they render in their own row below.
     var CRIMES = [
       ['searchforcashskill','Search for Cash'], ['bootleggingskill','Bootlegging'],
       ['graffitiskill','Graffiti'], ['shopliftingskill','Shoplifting'],
@@ -181,7 +182,7 @@
       ['burglaryskill','Burglary'], ['hustlingskill','Hustling'],
       ['disposalskill','Disposal'], ['crackingskill','Cracking'],
       ['forgeryskill','Forgery'], ['scammingskill','Scamming'],
-      ['arsonskill','Arson'], ['huntingskill','Hunting']
+      ['arsonskill','Arson']
     ];
 
     var $ = function (id) { return document.getElementById(id); };
@@ -466,7 +467,10 @@
       var rows = CRIMES.map(function (c) { return { label: c[1], v: Number(ps[c[0]] || 0) }; });
       var unfinished = rows.filter(function (r) { return r.v < 100; }).sort(function (a, b) { return b.v - a.v; });
       var maxed = rows.length - unfinished.length;
-      var racing = Number(ps.racingskill || 0);
+      var others = [
+        { label: 'Racing skill',  v: Number(ps.racingskill || 0) },
+        { label: 'Hunting skill', v: Number(ps.huntingskill || 0) }
+      ];
 
       var h = '';
       if (unfinished.length === 0) {
@@ -481,11 +485,11 @@
                  '<div class="cbar"><span style="width:' + r.v + '%"></span></div></div>';
         }).join('') + '</div>';
       }
-      h += '<div class="chips" style="margin-top:16px">' +
-             '<div class="chip' + (racing < 100 ? ' close' : '') + '"><div class="cn">Racing skill ' +
-               '<span><b>' + fmtNum(racing, 'dec1') + '</b>/100</span></div>' +
-               '<div class="cbar"><span style="width:' + Math.min(100, racing) + '%"></span></div></div>' +
-           '</div>';
+      h += '<div class="chips" style="margin-top:16px">' + others.map(function (o) {
+             return '<div class="chip' + (o.v < 100 ? ' close' : '') + '"><div class="cn">' + o.label +
+                    ' <span><b>' + fmtNum(o.v, 'dec1') + '</b>/100</span></div>' +
+                    '<div class="cbar"><span style="width:' + Math.min(100, o.v) + '%"></span></div></div>';
+           }).join('') + '</div>';
       $('skillPanel').innerHTML = h;
     }
 
