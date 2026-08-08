@@ -275,7 +275,7 @@
             '<span class="badge ' + (ahead ? 'ahead' : 'behind') + '">' + (ahead ? 'On target' : 'Behind') + '</span></div>' +
           '<div class="figures"><span class="rate">' + fmtNum(rate, 'int') + '</span><span class="unit">/day</span></div>' +
           '<div class="bar"><span class="' + (ahead ? 'ahead' : 'behind') + '" style="width:' + barPct + '%"></span></div>' +
-          '<div class="sub">Target <b>' + fmtNum(GYM_TARGET, 'int') + '/day</b> &middot; avg of last ' + used + ' week' + (used > 1 ? 's' : '') + ' in the tracker</div>';
+          '<div class="sub">Target <b>' + fmtNum(GYM_TARGET, 'int') + '/day</b> &middot; avg over the last ' + used + ' week' + (used > 1 ? 's' : '') + '</div>';
       } else {
         card.innerHTML =
           '<div class="top"><span class="name">Gym energy</span></div>' +
@@ -430,7 +430,7 @@
               '<span class="badge ' + (ahead ? 'ahead' : 'behind') + '">' + (ahead ? 'On target' : 'Behind') + '</span></div>' +
             '<div class="figures"><span class="rate">' + fmtNum(rate, m.fmt) + '</span><span class="unit">' + u + '</span></div>' +
             '<div class="bar"><span class="' + (ahead ? 'ahead' : 'behind') + '" style="width:' + barPct + '%"></span></div>' +
-            '<div class="sub">Target <b>' + fmtNum(m.target, m.fmt) + u + '</b></div>' +
+            '<div class="sub">Target <b>' + fmtNum(m.target, m.fmt) + u + '</b> &middot; avg over the last 3 months</div>' +
             chip +
           '</div>';
       });
