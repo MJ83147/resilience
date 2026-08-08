@@ -267,7 +267,7 @@
       card.className = 'mcard tcard';
       if (days > 0) {
         var rate = total / days;
-        var ahead = rate >= GYM_TARGET;
+        var ahead = Math.round(rate) >= GYM_TARGET;
         var barPct = Math.max(4, Math.min(100, (rate / GYM_TARGET) * 100));
         card.innerHTML =
           '<div class="top"><span class="name">Gym energy</span>' +
@@ -408,8 +408,12 @@
         var scale = m.scale || 1;
         var delta = Math.max(0, Number(cur[m.field] || 0) - Number(past[m.field] || 0));
         var rate = (delta / periodCount(m.per, days)) * scale;
+        // Judge the badge on the value as displayed (rounded), so a card
+        // showing exactly the target never reads "Behind". Matters for refills:
+        // 1/day is the physical max, so the true rate is almost always 0.9x.
+        var shown = m.fmt === 'dec1' ? Math.round(rate * 10) / 10 : Math.round(rate);
         var ratio = m.target > 0 ? rate / m.target : 1;
-        var ahead = ratio >= 1;
+        var ahead = m.target > 0 ? shown >= m.target : true;
         if (!ahead) behind++;
         var barPct = Math.max(4, Math.min(100, ratio * 100));
         var u = perUnit(m.per);
