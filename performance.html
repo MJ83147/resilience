@@ -167,6 +167,12 @@
     // Daily time online, shown in the top summary (uses the same lookback).
     var ACTIVITY_FIELD = 'useractivity';
 
+    // Gym energy comes from the faction energy tracker sheet (same source as
+    // energy.html), not the Torn API. Averaged over the last GYM_WEEKS weeks.
+    var ENERGY_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQPU-ScBFwwLu_bMIgrhrA4EwScgrFv8XbK7d-BnCInHrKa0jbM1DbTXHZG8QlsD2vVn9iFI_BbNFLI/pub?gid=878473474&single=true&output=csv';
+    var GYM_WEEKS = 3;
+    var GYM_TARGET = 800; // energy per day
+
     // Crimes 2.0 skills (each 0-100). Field -> label.
     var CRIMES = [
       ['searchforcashskill','Search for Cash'], ['bootleggingskill','Bootlegging'],
@@ -179,7 +185,111 @@
     ];
 
     var $ = function (id) { return document.getElementById(id); };
-    var state = { key:null, ps:null, id:null, days:84 };
+    var state = { key:null, ps:null, id:null, days:84, energy:null };
+
+    // ---- Gym energy from the tracker sheet ----
+    // Kick the fetch off immediately; the row is matched once we know who the
+    // player is and the info cards have rendered.
+    fetch(ENERGY_CSV)
+      .then(function (r) { return r.text(); })
+      .then(function (csv) { state.energy = parseEnergyCsv(csv); updateGymCard(); })
+      .catch(function () { /* sheet unavailable: the card is just not shown */ });
+
+    function parseEnergyCsv(csv) {
+      var rows = csv.trim().split('\n').map(function (r) {
+        var out = [], cur = '', inQ = false;
+        for (var i = 0; i < r.length; i++) {
+          var ch = r[i];
+          if (ch === '"') inQ = !inQ;
+          else if (ch === ',' && !inQ) { out.push(cur.trim()); cur = ''; }
+          else cur += ch;
+        }
+        out.push(cur.trim());
+        return out;
+      });
+      var headers = rows[0] || [];
+      var data = rows.slice(1).map(function (row) {
+        var obj = {};
+        headers.forEach(function (h, i) { obj[h] = row[i] || ''; });
+        return obj;
+      });
+      // Week columns look like "4 Aug Energy"; days per week = gap to previous.
+      var weeks = [], seen = new Set();
+      headers.forEach(function (h) {
+        var m = h.match(/^(\d+\s+\w+)\s+Energy$/);
+        if (m && !seen.has(m[1])) { weeks.push(m[1]); seen.add(m[1]); }
+      });
+      var months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 };
+      function weekDate(w) {
+        var p = w.split(' ');
+        return new Date(new Date().getFullYear(), months[p[1]], parseInt(p[0], 10));
+      }
+      var weekDays = {};
+      weeks.forEach(function (w, i) {
+        weekDays[w] = i === 0 ? 7
+          : Math.ceil(Math.abs(weekDate(w) - weekDate(weeks[i - 1])) / 86400000);
+      });
+      return { rows: data, weeks: weeks, weekDays: weekDays };
+    }
+
+    function updateGymCard() {
+      var e = state.energy, cards = $('targetCards');
+      if (!e || !state.id || !cards.childElementCount) return;
+
+      var old = $('gymCard');
+      if (old) old.remove();
+
+      // Match by the sheet's ID column (Torn player id), falling back to name.
+      var name = String(state.id.name || '').toLowerCase();
+      var pid = String(state.id.id || '');
+      var row = null;
+      for (var i = 0; i < e.rows.length; i++) {
+        if (pid && String(e.rows[i]['ID'] || '').trim() === pid) { row = e.rows[i]; break; }
+      }
+      if (!row) {
+        for (var j = 0; j < e.rows.length; j++) {
+          if (String(e.rows[j]['Username'] || '').toLowerCase() === name) { row = e.rows[j]; break; }
+        }
+      }
+
+      // Average over the last GYM_WEEKS weeks that have a number for this member.
+      var total = 0, days = 0, used = 0;
+      if (row) {
+        for (var w = e.weeks.length - 1; w >= 0 && used < GYM_WEEKS; w--) {
+          var v = parseInt(row[e.weeks[w] + ' Energy'], 10);
+          if (isNaN(v)) continue;
+          total += v; days += e.weekDays[e.weeks[w]] || 7; used++;
+        }
+      }
+
+      var card = document.createElement('div');
+      card.id = 'gymCard';
+      card.className = 'mcard tcard';
+      if (days > 0) {
+        var rate = total / days;
+        var ahead = rate >= GYM_TARGET;
+        var barPct = Math.max(4, Math.min(100, (rate / GYM_TARGET) * 100));
+        card.innerHTML =
+          '<div class="top"><span class="name">Gym energy</span>' +
+            '<span class="badge ' + (ahead ? 'ahead' : 'behind') + '">' + (ahead ? 'On target' : 'Behind') + '</span></div>' +
+          '<div class="figures"><span class="rate">' + fmtNum(rate, 'int') + '</span><span class="unit">/day</span></div>' +
+          '<div class="bar"><span class="' + (ahead ? 'ahead' : 'behind') + '" style="width:' + barPct + '%"></span></div>' +
+          '<div class="sub">Target <b>' + fmtNum(GYM_TARGET, 'int') + '/day</b> &middot; avg of last ' + used + ' week' + (used > 1 ? 's' : '') + ' in the tracker</div>';
+      } else {
+        card.innerHTML =
+          '<div class="top"><span class="name">Gym energy</span></div>' +
+          '<div class="figures"><span class="rate">-</span><span class="unit">/day</span></div>' +
+          '<div class="sub">' + (row ? 'No energy recorded in the tracker yet' : 'Not found in the energy tracker') + '</div>';
+      }
+      cards.appendChild(card);
+
+      // Recount "behind" for the help note now that this card is included.
+      var behind = cards.querySelectorAll('.badge.behind').length;
+      var hn = $('helpNote');
+      hn.className = 'panel help-note' + (behind > 0 ? ' warn' : '');
+      hn.innerHTML = (behind > 0 ? 'You\'re behind on ' + behind + ' target' + (behind > 1 ? 's' : '') + '. ' : '') +
+        'Falling behind on any stats and need support or guidance? Reach out to any <b>Elder</b> and we\'ll help you get back on track.';
+    }
 
     function getKey() { try { return localStorage.getItem(STORE_KEY) || ''; } catch (e) { return ''; } }
     function setKey(k) { try { localStorage.setItem(STORE_KEY, k); } catch (e) {} }
@@ -344,6 +454,7 @@
           '</div>';
       });
       $('infoCards').innerHTML = html;
+      updateGymCard();
     }
 
     // Crime skills + racing skill (from current stats; window-independent).
