@@ -51,20 +51,39 @@
     return 'uid=' + encodeURIComponent(cred.uid);
   }
 
-  function login(password, cb) {
-    fetch(AUTH_URL + '?action=admincheck&uid=' + encodeURIComponent(password), { cache: 'no-store' })
+  // The Apps Script cannot see the caller's IP, so the browser looks up
+  // its own public IP and sends it along. The script binds each user id
+  // to the first IP it logs in from and locks the id on a mismatch.
+  function getIp(cb) {
+    fetch('https://api.ipify.org?format=json', { cache: 'no-store' })
       .then(function (r) { return r.json(); })
-      .then(function (j) {
-        if (j && j.admin) {
-          // Newer Apps Script versions return a signed token; older ones only
-          // confirm the password, in which case the password itself is kept.
-          store(j.token ? { token: j.token } : { uid: password });
-          cb(true);
-        } else {
-          cb(false, 'Wrong password.');
-        }
-      })
-      .catch(function () { cb(false, 'Could not reach the data source.'); });
+      .then(function (j) { cb(j && j.ip ? j.ip : ''); })
+      .catch(function () { cb(''); });
+  }
+
+  var LOCKED_MSG = 'This login is locked because it was used from a new location. Message Jordie to unlock it.';
+
+  function login(password, cb) {
+    getIp(function (ip) {
+      fetch(AUTH_URL + '?action=admincheck&uid=' + encodeURIComponent(password) +
+            '&ip=' + encodeURIComponent(ip), { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.admin) {
+            // Newer Apps Script versions return a signed token; older ones only
+            // confirm the credential, in which case it is kept as-is.
+            store(j.token ? { token: j.token } : { uid: password });
+            cb(true);
+          } else if (j && j.locked) {
+            cb(false, LOCKED_MSG);
+          } else if (j && j.noip) {
+            cb(false, 'Could not confirm your network address. Try again.');
+          } else {
+            cb(false, 'Wrong password.');
+          }
+        })
+        .catch(function () { cb(false, 'Could not reach the data source.'); });
+    });
   }
 
   // Server-side re-check of the stored credential.
