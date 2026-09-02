@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bottle Caps</title>
+<style>
+  :root {
+    --bg: #1c1a17;
+    --panel: #26231f;
+    --text: #e8e2d6;
+    --muted: #8f877a;
+    --line: #3a352e;
+    --accent: #c9a24a;
+    --error: #d1665a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 Georgia, "Times New Roman", serif;
+  }
+  main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: normal;
+    margin: 0 0 4px;
+  }
+  .window {
+    color: var(--muted);
+    margin: 0 0 28px;
+  }
+  .steps {
+    margin: 0 0 28px;
+    padding-left: 22px;
+  }
+  .steps li { margin-bottom: 6px; }
+  .note {
+    font-size: 13px;
+    color: var(--muted);
+    margin: -24px 0 24px;
+  }
+  details {
+    border-top: 1px solid var(--line);
+    padding: 12px 0;
+    margin-bottom: 32px;
+    color: var(--muted);
+  }
+  summary {
+    cursor: pointer;
+    color: var(--text);
+  }
+  details p { margin: 12px 0 0; }
+  a { color: var(--accent); }
+  form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+  input {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 10px 12px;
+    font: inherit;
+    border-radius: 4px;
+  }
+  input:focus, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  button {
+    background: var(--accent);
+    color: #1c1a17;
+    border: 0;
+    padding: 10px 16px;
+    font: inherit;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+  button.secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  #result { display: none; }
+  .total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+  }
+  .total strong {
+    font-size: 40px;
+    font-weight: normal;
+  }
+  .total span { color: var(--muted); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  td {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  td:last-child { text-align: right; }
+  #error {
+    color: var(--error);
+    display: none;
+    margin: -12px 0 24px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Bottle Caps</h1>
+  <p class="window">02/09/2026 10:00:00 to 12:00:00 TCT</p>
+
+  <ol class="steps">
+    <li>Enter your API key and press Count.</li>
+    <li>The page reads your crime log for the comp window and adds up Bottle Caps gained from searching the beach.</li>
+    <li>Press Copy and paste the result in Discord.</li>
+  </ol>
+
+  <form id="form">
+    <input id="key" type="text" autocomplete="off" spellcheck="false">
+    <button id="run" type="submit">Count</button>
+  </form>
+  <p class="note">Full Access key required. Create one at <a href="https://www.torn.com/preferences.php#tab=api" target="_blank" rel="noopener">Preferences, API Keys</a>.</p>
+  <p id="error"></p>
+
+  <details>
+    <summary>How your key is used</summary>
+    <p>The key is sent from your browser to api.torn.com only. It is not stored, logged, or sent anywhere else. Reloading the page clears it.</p>
+    <p>The log endpoint does not work with Limited or Minimal keys. You can delete the key after the comp.</p>
+  </details>
+
+  <section id="result">
+    <div class="total">
+      <strong id="count">0</strong>
+      <span id="searches"></span>
+      <button class="secondary" id="copy" type="button">Copy</button>
+    </div>
+    <table><tbody id="rows"></tbody></table>
+  </section>
+</main>
+
+<script>
+const FROM = 1788343200;
+const TO = 1788350400;
+const CAP_ID = "897";
+
+const form = document.getElementById("form");
+const keyInput = document.getElementById("key");
+const runBtn = document.getElementById("run");
+const errorEl = document.getElementById("error");
+const result = document.getElementById("result");
+const countEl = document.getElementById("count");
+const searchesEl = document.getElementById("searches");
+const rows = document.getElementById("rows");
+const copyBtn = document.getElementById("copy");
+
+let entries = [];
+
+function fmt(ts) {
+  const d = new Date(ts * 1000);
+  const p = n => String(n).padStart(2, "0");
+  return `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())} - ${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${String(d.getUTCFullYear()).slice(2)}`;
+}
+
+async function fetchAll(key) {
+  let url = `https://api.torn.com/v2/user/log?log=9020&limit=100&from=${FROM}&to=${TO}&key=${key}`;
+  const out = [];
+  while (url) {
+    const r = await fetch(url).then(r => r.json());
+    if (r.error) throw new Error(r.error.error);
+    for (const e of r.log) {
+      if (e.timestamp < FROM || e.timestamp >= TO) continue;
+      if (e.data.crime_action === "searching the beach" && e.data.items_gained && e.data.items_gained[CAP_ID]) {
+        out.push({ ts: e.timestamp, qty: e.data.items_gained[CAP_ID] });
+      }
+    }
+    const prev = r._metadata && r._metadata.links && r._metadata.links.prev;
+    const oldest = r.log.length ? r.log[r.log.length - 1].timestamp : 0;
+    url = prev && oldest > FROM ? `${prev}&from=${FROM}&key=${key}` : null;
+  }
+  return out.sort((a, b) => a.ts - b.ts);
+}
+
+function render() {
+  const total = entries.reduce((s, e) => s + e.qty, 0);
+  countEl.textContent = total;
+  searchesEl.textContent = `${entries.length} search${entries.length === 1 ? "" : "es"}`;
+  rows.innerHTML = "";
+  for (const e of entries) {
+    const tr = document.createElement("tr");
+    const a = document.createElement("td");
+    const b = document.createElement("td");
+    a.textContent = fmt(e.ts);
+    b.textContent = `${e.qty}x`;
+    tr.append(a, b);
+    rows.append(tr);
+  }
+  result.style.display = "block";
+}
+
+function copyText() {
+  const total = entries.reduce((s, e) => s + e.qty, 0);
+  const lines = [`Bottle Caps: ${total}`, ...entries.map(e => `${fmt(e.ts)}  ${e.qty}x`)];
+  return lines.join("\n");
+}
+
+form.addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const key = keyInput.value.trim();
+  if (!key) return;
+  errorEl.style.display = "none";
+  runBtn.disabled = true;
+  try {
+    entries = await fetchAll(key);
+    render();
+  } catch (err) {
+    result.style.display = "none";
+    errorEl.textContent = err.message;
+    errorEl.style.display = "block";
+  } finally {
+    runBtn.disabled = false;
+  }
+});
+
+copyBtn.addEventListener("click", async () => {
+  await navigator.clipboard.writeText(copyText());
+  copyBtn.textContent = "Copied";
+  setTimeout(() => copyBtn.textContent = "Copy", 1500);
+});
+</script>
+</body>
+</html>
