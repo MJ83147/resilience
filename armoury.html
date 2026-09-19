@@ -1,75 +1,560 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Armoury</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="site.css?v=20260803">
   <style>
-    .arm-tabs{display:flex;gap:6px;margin:18px 0 16px}
-    .arm-tabs button{background:var(--panel-2);color:var(--muted);border:1px solid var(--line);font-weight:600;padding:8px 16px;border-radius:8px}
-    .arm-tabs button.active{background:var(--gold);color:#1a1814;border-color:var(--gold)}
-    .arm-view{display:none}
-    .arm-view.active{display:block}
+    .arm-tabs {
+      display: flex;
+      gap: 6px;
+      margin: 18px 0 16px
+    }
 
-    .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
-    .tile{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
-    .tile .n{font-size:22px;font-weight:700;color:var(--text);font-family:var(--font-mono)}
-    .tile .n.warn{color:var(--warn)}
-    .tile .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+    .arm-tabs button {
+      background: var(--panel-2);
+      color: var(--muted);
+      border: 1px solid var(--line);
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 8px
+    }
 
-    .controls{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;margin-bottom:14px}
-    .controls .grp{display:flex;flex-direction:column;gap:4px}
-    .controls label.h{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-    .controls select,.controls input[type=search]{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:13px;font-family:var(--font)}
-    .seg{display:flex;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-    .seg button{background:var(--panel-2);color:var(--muted);border:none;border-radius:0;padding:7px 12px;font-size:13px}
-    .seg button.active{background:var(--gold);color:#1a1814}
-    .typechips{display:flex;flex-wrap:wrap;gap:6px}
-    .typechips label{display:inline-flex;align-items:center;gap:5px;background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none}
-    .typechips label.on{color:var(--text);border-color:var(--gold)}
-    .typechips input{display:none}
+    .arm-tabs button.active {
+      background: var(--gold);
+      color: #1a1814;
+      border-color: var(--gold)
+    }
 
-    .src{color:var(--muted);font-size:12.5px}
-    .src b{color:var(--text);font-weight:600}
-    .flag{color:var(--warn);font-weight:600}
-    .conf{font-size:11px;padding:2px 7px;border-radius:20px;white-space:nowrap}
-    .conf.exact{background:rgba(95,184,122,.14);color:var(--win)}
-    .conf.attr{background:rgba(106,167,216,.14);color:var(--info)}
-    .conf.unk{background:rgba(224,168,60,.16);color:var(--warn)}
-    .cat{font-size:11px;color:var(--faint);text-transform:uppercase}
-    tr.exp-row>td{padding:0}
-    .exp{padding:6px 14px 12px 26px;background:var(--panel-2);font-size:12.5px;color:var(--muted);columns:240px 3;column-gap:24px}
-    .exp span{display:block;padding:1px 0}
-    .exp b{color:var(--text);font-weight:600;font-family:var(--font-mono)}
-    .clk{cursor:pointer}
-    .clk:hover td{background:var(--panel-2)}
-    .meta{color:var(--faint);font-size:12px;margin-top:14px}
-    h2.sec{font-family:var(--font-display);font-size:22px;margin:0 0 4px;color:var(--text)}
+    .arm-view {
+      display: none
+    }
 
-    .own{display:inline-block;background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:1px 8px;font-size:11.5px;color:var(--text)}
-    .sale{display:inline-block;background:rgba(255,215,0,.14);border:1px solid rgba(255,215,0,.4);border-radius:20px;padding:1px 8px;font-size:11.5px;color:var(--gold);font-weight:600}
-    .exp2{padding:8px 14px 12px 20px;background:var(--panel-2)}
-    .exp-h{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:2px 0 5px}
-    .exp-holders{columns:200px 4;column-gap:20px;font-size:12.5px;color:var(--muted);margin-bottom:12px}
-    .exp-holders span{display:block;padding:1px 0}
-    .markedit{border-top:1px solid var(--line);padding-top:10px}
-    .mrow{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:2px 0}
-    .mform{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
-    .mi{background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:var(--font)}
-    .mchk{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
-    button.mini{background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600}
-    button.mini.gold{background:var(--gold);color:#1a1814;border-color:var(--gold)}
-    button.mini:hover{filter:brightness(1.1)}
-    .msg{font-size:12px;color:var(--warn)}
+    .arm-view.active {
+      display: block
+    }
+
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px
+    }
+
+    .tile {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px
+    }
+
+    .tile .n {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      font-family: var(--font-mono)
+    }
+
+    .tile .n.warn {
+      color: var(--warn)
+    }
+
+    .tile .l {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-top: 2px
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      align-items: flex-end;
+      margin-bottom: 14px
+    }
+
+    .controls .grp {
+      display: flex;
+      flex-direction: column;
+      gap: 4px
+    }
+
+    .controls label.h {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em
+    }
+
+    .controls select,
+    .controls input[type=search] {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px 9px;
+      font-size: 13px;
+      font-family: var(--font)
+    }
+
+    .seg {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden
+    }
+
+    .seg button {
+      background: var(--panel-2);
+      color: var(--muted);
+      border: none;
+      border-radius: 0;
+      padding: 7px 12px;
+      font-size: 13px
+    }
+
+    .seg button.active {
+      background: var(--gold);
+      color: #1a1814
+    }
+
+    .typechips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px
+    }
+
+    .typechips label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none
+    }
+
+    .typechips label.on {
+      color: var(--text);
+      border-color: var(--gold)
+    }
+
+    .typechips input {
+      display: none
+    }
+
+    .src {
+      color: var(--muted);
+      font-size: 12.5px
+    }
+
+    .src b {
+      color: var(--text);
+      font-weight: 600
+    }
+
+    .flag {
+      color: var(--warn);
+      font-weight: 600
+    }
+
+    .conf {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 20px;
+      white-space: nowrap
+    }
+
+    .conf.exact {
+      background: rgba(95, 184, 122, .14);
+      color: var(--win)
+    }
+
+    .conf.attr {
+      background: rgba(106, 167, 216, .14);
+      color: var(--info)
+    }
+
+    .conf.unk {
+      background: rgba(224, 168, 60, .16);
+      color: var(--warn)
+    }
+
+    .cat {
+      font-size: 11px;
+      color: var(--faint);
+      text-transform: uppercase
+    }
+
+    tr.exp-row>td {
+      padding: 0
+    }
+
+    .exp {
+      padding: 6px 14px 12px 26px;
+      background: var(--panel-2);
+      font-size: 12.5px;
+      color: var(--muted);
+      columns: 240px 3;
+      column-gap: 24px
+    }
+
+    .exp span {
+      display: block;
+      padding: 1px 0
+    }
+
+    .exp b {
+      color: var(--text);
+      font-weight: 600;
+      font-family: var(--font-mono)
+    }
+
+    .clk {
+      cursor: pointer
+    }
+
+    .clk:hover td {
+      background: var(--panel-2)
+    }
+
+    .meta {
+      color: var(--faint);
+      font-size: 12px;
+      margin-top: 14px
+    }
+
+    h2.sec {
+      font-family: var(--font-display);
+      font-size: 22px;
+      margin: 0 0 4px;
+      color: var(--text)
+    }
+
+    .own {
+      display: inline-block;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 1px 8px;
+      font-size: 11.5px;
+      color: var(--text)
+    }
+
+    .sale {
+      display: inline-block;
+      background: rgba(255, 215, 0, .14);
+      border: 1px solid rgba(255, 215, 0, .4);
+      border-radius: 20px;
+      padding: 1px 8px;
+      font-size: 11.5px;
+      color: var(--gold);
+      font-weight: 600
+    }
+
+    .exp2 {
+      padding: 8px 14px 12px 20px;
+      background: var(--panel-2)
+    }
+
+    .exp-h {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin: 2px 0 5px
+    }
+
+    .exp-holders {
+      columns: 200px 4;
+      column-gap: 20px;
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-bottom: 12px
+    }
+
+    .exp-holders span {
+      display: block;
+      padding: 1px 0
+    }
+
+    .markedit {
+      border-top: 1px solid var(--line);
+      padding-top: 10px
+    }
+
+    .mrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      padding: 2px 0
+    }
+
+    .mform {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-top: 8px
+    }
+
+    .mi {
+      background: var(--ink);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12.5px;
+      font-family: var(--font)
+    }
+
+    .mchk {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--muted)
+    }
+
+    button.mini {
+      background: var(--panel);
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600
+    }
+
+    button.mini.gold {
+      background: var(--gold);
+      color: #1a1814;
+      border-color: var(--gold)
+    }
+
+    button.mini:hover {
+      filter: brightness(1.1)
+    }
+
+    .msg {
+      font-size: 12px;
+      color: var(--warn)
+    }
+
+    /* item / person detail overlay */
+    .ovl {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .6);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      z-index: 50;
+      padding: 40px 16px;
+      overflow: auto
+    }
+
+    .ovl-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, .6);
+      width: 100%;
+      max-width: 720px;
+      padding: 22px 22px 26px;
+      position: relative
+    }
+
+    .ovl-x {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 26px;
+      line-height: 1;
+      padding: 2px 8px;
+      cursor: pointer
+    }
+
+    .ovl-x:hover {
+      color: var(--text)
+    }
+
+    .ovl h3 {
+      font-family: var(--font-display);
+      font-size: 26px;
+      margin: 0 2px 2px 0;
+      color: var(--text)
+    }
+
+    .ovl .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 14px
+    }
+
+    .dt-tiles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px
+    }
+
+    .dt-tiles .tile {
+      flex: 1;
+      min-width: 90px
+    }
+
+    .dt-sec {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin: 16px 0 7px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 5px
+    }
+
+    .dt-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px
+    }
+
+    .dt-list .own {
+      cursor: default
+    }
+
+    .dt-kv {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 3px 0;
+      font-size: 13px;
+      border-bottom: 1px solid var(--gray-200)
+    }
+
+    .dt-kv span {
+      color: var(--muted)
+    }
+
+    .dt-kv b {
+      font-family: var(--font-mono);
+      color: var(--text);
+      font-weight: 600
+    }
+
+    .dt-kv.clk2 {
+      cursor: pointer
+    }
+
+    .dt-kv.clk2:hover {
+      background: var(--panel-2)
+    }
+
+    /* timeline */
+    .tl {
+      position: relative;
+      margin: 4px 0 0
+    }
+
+    .tl-row {
+      display: grid;
+      grid-template-columns: 92px 16px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 5px 0;
+      font-size: 13px
+    }
+
+    .tl-date {
+      color: var(--faint);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      padding-top: 2px;
+      text-align: right
+    }
+
+    .tl-dot {
+      position: relative;
+      display: flex;
+      justify-content: center
+    }
+
+    .tl-dot::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin-top: 4px
+    }
+
+    .tl-dot::after {
+      content: "";
+      position: absolute;
+      top: 13px;
+      bottom: -10px;
+      width: 1px;
+      background: var(--line)
+    }
+
+    .tl-row:last-child .tl-dot::after {
+      display: none
+    }
+
+    .tl-row.in .tl-dot::before {
+      background: var(--win)
+    }
+
+    .tl-row.out .tl-dot::before {
+      background: var(--info)
+    }
+
+    .tl-row.back .tl-dot::before {
+      background: var(--gold)
+    }
+
+    .tl-txt {
+      color: var(--text)
+    }
+
+    .tl-txt b {
+      font-weight: 600
+    }
+
+    .tl-q {
+      color: var(--muted)
+    }
+
+    .ev{font-size:11px;padding:2px 8px;border-radius:20px;white-space:nowrap;font-weight:600}
+    .ev-deposit,.ev-cache{background:rgba(95,184,122,.14);color:var(--win)}
+    .ev-loaned,.ev-given{background:rgba(106,167,216,.14);color:var(--info)}
+    .ev-returned,.ev-retrieved{background:rgba(255,215,0,.14);color:var(--gold)}
+    .ev-took,.ev-used{background:var(--panel-2);color:var(--muted);border:1px solid var(--line)}
   </style>
   <script src="/config.js?v=20260803b"></script>
   <script src="/auth.js?v=20260803b" defer data-gate></script>
   <script src="/nav.js?v=20260803b" defer></script>
 </head>
+
 <body>
   <div id="site-nav"></div>
 
@@ -79,11 +564,14 @@
       <p>Faction armoury usage and weapon/armour tracing &middot; <a href="/admin">back to admin</a></p>
     </div>
 
-    <div id="armLoad" class="panel"><p class="cap">Loading armoury data…</p></div>
+    <div id="armLoad" class="panel">
+      <p class="cap">Loading armoury data…</p>
+    </div>
 
     <div id="armMain" style="display:none">
       <div class="arm-tabs">
         <button data-tab="trace" class="active">Tracing</button>
+        <button data-tab="ledger">Ledger</button>
         <button data-tab="usage">Usage</button>
       </div>
 
@@ -93,7 +581,8 @@
 
         <div class="panel" id="unknownPanel" style="margin-bottom:16px;border-color:var(--warn)">
           <h3 style="color:var(--warn)">Unaccounted copies</h3>
-          <p class="cap">In the armoury now, but no deposit for them exists in the downloaded news. Likely deposited before the news history begins, or acquired another way. Worth confirming by hand.</p>
+          <p class="cap">In the armoury now, but no deposit for them exists in the downloaded news. Likely deposited
+            before the news history begins, or acquired another way.</p>
           <div id="unknownList"></div>
         </div>
 
@@ -122,19 +611,60 @@
         <div class="panel" style="padding:0">
           <div class="board-scroll" style="overflow:auto">
             <table class="board" id="traceTable">
-              <thead><tr>
-                <th data-sort="item">Item</th>
-                <th class="num" data-sort="copies">Copies</th>
-                <th class="num" data-sort="onLoan">On loan</th>
-                <th>Deposited by</th>
-                <th data-sort="conf">Source</th>
-                <th>Owner / for sale</th>
-              </tr></thead>
+              <thead>
+                <tr>
+                  <th data-sort="item">Item</th>
+                  <th class="num" data-sort="copies">Copies</th>
+                  <th class="num" data-sort="onLoan">On loan</th>
+                  <th>Deposited by</th>
+                  <th data-sort="conf">Source</th>
+                  <th>Owner / for sale</th>
+                </tr>
+              </thead>
               <tbody></tbody>
             </table>
           </div>
         </div>
         <p class="meta" id="traceMeta"></p>
+      </div>
+
+      <!-- ================= LEDGER ================= -->
+      <div class="arm-view" id="view-ledger">
+        <div class="controls">
+          <div class="grp">
+            <label class="h">Category</label>
+            <div class="seg" id="ledCat">
+              <button data-v="all" class="active">All</button>
+              <button data-v="weapons">Weapons</button>
+              <button data-v="armor">Armour</button>
+            </div>
+          </div>
+          <div class="grp" style="flex:1;min-width:200px">
+            <label class="h">Event types</label>
+            <div class="typechips" id="ledTypes"></div>
+          </div>
+          <div class="grp" style="flex:1;min-width:180px">
+            <label class="h">Search item or member</label>
+            <input type="search" id="ledSearch" placeholder="e.g. China Lake or Isca">
+          </div>
+        </div>
+        <div class="tiles" id="ledTiles"></div>
+        <div class="panel" style="padding:0">
+          <div class="board-scroll" style="overflow:auto;max-height:70vh">
+            <table class="board" id="ledTable">
+              <thead><tr>
+                <th>Date</th>
+                <th>Item</th>
+                <th>Event</th>
+                <th>Member</th>
+                <th>Counterparty</th>
+                <th class="num">Qty</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="meta" id="ledMeta"></p>
       </div>
 
       <!-- ================= USAGE ================= -->
@@ -167,11 +697,14 @@
         <div class="panel" style="padding:0">
           <div class="board-scroll" style="overflow:auto">
             <table class="board" id="useTable">
-              <thead><tr>
-                <th id="useCol0">Person</th>
-                <th class="num">Uses</th>
-                <th>Breakdown</th>
-              </tr></thead>
+              <thead>
+                <tr>
+                  <th id="useCol0">Person</th>
+                  <th class="num">Uses</th>
+                  <th class="num" id="useCol2">Items</th>
+                  <th></th>
+                </tr>
+              </thead>
               <tbody></tbody>
             </table>
           </div>
@@ -181,169 +714,168 @@
     </div>
   </div>
 
+  <div id="ovl" class="ovl" style="display:none">
+    <div class="ovl-card">
+      <button class="ovl-x" id="ovlClose" aria-label="Close">&times;</button>
+      <div id="ovlBody"></div>
+    </div>
+  </div>
+
   <script>
-  (function () {
-    var DATA = null;
-    var MARKS = [];            // owner assignments and for-sale flags (admin-entered)
-    var memberName = {};
+    (function () {
+      var DATA = null;
+      var MARKS = [];            // owner assignments and for-sale flags (admin-entered)
+      var memberName = {};
 
-    function marksFor(item) { return MARKS.filter(function (m) { return m.item === item; }); }
-    function loadMarks() {
-      if (!window.CONFIG || !CONFIG.SCRIPT_URL) return Promise.resolve([]);
-      return fetch(CONFIG.SCRIPT_URL + "?action=armourymarks", { cache: "no-store" })
-        .then(function (r) { return r.json(); })
-        .then(function (j) { return (j && j.marks) || []; })
-        .catch(function () { return []; });   // backend not deployed yet: page still works read-only
-    }
-    function saveMark(fields, cb) {
-      var qs = Object.keys(fields).map(function (k) { return k + "=" + encodeURIComponent(fields[k]); }).join("&");
-      var cred = window.Auth ? Auth.param() : "";
-      fetch(CONFIG.SCRIPT_URL + "?action=armourymarkset&" + cred + "&" + qs, { cache: "no-store" })
-        .then(function (r) { return r.json(); })
-        .then(function (j) { cb(j); }).catch(function () { cb({ ok: false, error: "network" }); });
-    }
-    function delMark(id, cb) {
-      var cred = window.Auth ? Auth.param() : "";
-      fetch(CONFIG.SCRIPT_URL + "?action=armourymarkdel&" + cred + "&id=" + encodeURIComponent(id), { cache: "no-store" })
-        .then(function (r) { return r.json(); })
-        .then(function (j) { cb(j); }).catch(function () { cb({ ok: false, error: "network" }); });
-    }
-    function refreshMarks(done) { loadMarks().then(function (m) { MARKS = m; if (done) done(); }); }
+      function marksFor(item) { return MARKS.filter(function (m) { return m.item === item; }); }
+      function loadMarks() {
+        if (!window.CONFIG || !CONFIG.SCRIPT_URL) return Promise.resolve([]);
+        return fetch(CONFIG.SCRIPT_URL + "?action=armourymarks", { cache: "no-store" })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { return (j && j.marks) || []; })
+          .catch(function () { return []; });   // backend not deployed yet: page still works read-only
+      }
+      function saveMark(fields, cb) {
+        var qs = Object.keys(fields).map(function (k) { return k + "=" + encodeURIComponent(fields[k]); }).join("&");
+        var cred = window.Auth ? Auth.param() : "";
+        fetch(CONFIG.SCRIPT_URL + "?action=armourymarkset&" + cred + "&" + qs, { cache: "no-store" })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { cb(j); }).catch(function () { cb({ ok: false, error: "network" }); });
+      }
+      function delMark(id, cb) {
+        var cred = window.Auth ? Auth.param() : "";
+        fetch(CONFIG.SCRIPT_URL + "?action=armourymarkdel&" + cred + "&id=" + encodeURIComponent(id), { cache: "no-store" })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { cb(j); }).catch(function () { cb({ ok: false, error: "network" }); });
+      }
+      function refreshMarks(done) { loadMarks().then(function (m) { MARKS = m; if (done) done(); }); }
 
-    // Action types and how they read as "usage".
-    var TYPE_LABEL = {
-      used: "Used", took: "Took for self", loaned: "Borrowed (loan)",
-      given: "Received (given)", returned: "Returned", retrieved: "Retrieved",
-      filled: "Filled", points: "Points spent"
-    };
-    // Default-on = consuming a faction item. Withdrawals ("took for self"),
-    // loans and gives are movement, not consumption, so they are opt-in via the
-    // chips. This keeps the headline number honest: e.g. taking 4000 Xanax for
-    // yourself is a withdrawal, not 4000 doses used.
-    var DEFAULT_TYPES = { used: 1, points: 1 };
+      // Action types and how they read as "usage".
+      var TYPE_LABEL = {
+        used: "Used", took: "Took for self", loaned: "Borrowed (loan)",
+        given: "Received (given)", returned: "Returned", retrieved: "Retrieved",
+        filled: "Filled", points: "Points spent"
+      };
+      // Default-on = consuming a faction item. Withdrawals ("took for self"),
+      // loans and gives are movement, not consumption, so they are opt-in via the
+      // chips. This keeps the headline number honest: e.g. taking 4000 Xanax for
+      // yourself is a withdrawal, not 4000 doses used.
+      var DEFAULT_TYPES = { used: 1, points: 1 };
 
-    function fmt(n) { return (n || 0).toLocaleString(); }
-    function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
-    function ago(ts) {
-      if (!ts) return "";
-      var d = Math.floor((Date.now() / 1000 - ts) / 86400);
-      if (d < 1) return "today";
-      if (d < 30) return d + "d ago";
-      if (d < 365) return Math.round(d / 30) + "mo ago";
-      return (d / 365).toFixed(1) + "y ago";
-    }
+      function fmt(n) { return (n || 0).toLocaleString(); }
+      function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
+      function ago(ts) {
+        if (!ts) return "";
+        var d = Math.floor((Date.now() / 1000 - ts) / 86400);
+        if (d < 1) return "today";
+        if (d < 30) return d + "d ago";
+        if (d < 365) return Math.round(d / 30) + "mo ago";
+        return (d / 365).toFixed(1) + "y ago";
+      }
 
-    // ---------------- tracing ----------------
-    var traceState = { cat: "all", show: "all", search: "", sort: "copies", dir: -1, expanded: {} };
+      // ---------------- tracing ----------------
+      var traceState = { cat: "all", show: "all", search: "", sort: "copies", dir: -1, expanded: {} };
 
-    function confOf(t) {
-      if (t.unknown >= t.copies) return { cls: "unk", label: "unknown" };
-      if (t.unknown > 0) return { cls: "unk", label: t.unknown + " unknown" };
-      if (t.exact) return { cls: "exact", label: "exact" };
-      return { cls: "attr", label: "attributed" };
-    }
+      function confOf(t) {
+        if (t.unknown >= t.copies) return { cls: "unk", label: "unknown" };
+        if (t.unknown > 0) return { cls: "unk", label: t.unknown + " unknown" };
+        if (t.exact) return { cls: "exact", label: "exact" };
+        return { cls: "attr", label: "attributed" };
+      }
 
-    function renderTraceTiles() {
-      var t = DATA.tracing;
-      var copies = t.reduce(function (s, x) { return s + x.copies; }, 0);
-      var onLoan = t.reduce(function (s, x) { return s + x.onLoan; }, 0);
-      var unk = t.reduce(function (s, x) { return s + x.unknown; }, 0);
-      var traced = t.filter(function (x) { return x.unknown === 0; }).length;
-      document.getElementById("traceTiles").innerHTML =
-        tile(t.length, "Items") + tile(fmt(copies), "Copies") + tile(fmt(onLoan), "On loan") +
-        tile(traced + "/" + t.length, "Fully sourced") + tile(fmt(unk), "Unknown copies", unk > 0);
-    }
-    function tile(n, l, warn) { return '<div class="tile"><div class="n' + (warn ? " warn" : "") + '">' + n + '</div><div class="l">' + l + "</div></div>"; }
+      function renderTraceTiles() {
+        var t = DATA.tracing;
+        var copies = t.reduce(function (s, x) { return s + x.copies; }, 0);
+        var onLoan = t.reduce(function (s, x) { return s + x.onLoan; }, 0);
+        var unk = t.reduce(function (s, x) { return s + x.unknown; }, 0);
+        var traced = t.filter(function (x) { return x.unknown === 0; }).length;
+        document.getElementById("traceTiles").innerHTML =
+          tile(t.length, "Items") + tile(fmt(copies), "Copies") + tile(fmt(onLoan), "On loan") +
+          tile(traced + "/" + t.length, "Fully sourced") + tile(fmt(unk), "Unknown copies", unk > 0);
+      }
+      function tile(n, l, warn) { return '<div class="tile"><div class="n' + (warn ? " warn" : "") + '">' + n + '</div><div class="l">' + l + "</div></div>"; }
 
-    function renderUnknown() {
-      var flagged = DATA.tracing.filter(function (t) { return t.unknown > 0; })
-        .sort(function (a, b) { return b.unknown - a.unknown; });
-      var el = document.getElementById("unknownPanel");
-      if (!flagged.length) { el.style.display = "none"; return; }
-      document.getElementById("unknownList").innerHTML = flagged.map(function (t) {
-        return '<div class="src" style="padding:3px 0"><span class="flag">' + t.unknown + " of " + t.copies +
-          '</span> <b>' + esc(t.item) + "</b> <span class=\"cat\">" + t.cat + "</span></div>";
-      }).join("");
-    }
+      function renderUnknown() {
+        var flagged = DATA.tracing.filter(function (t) { return t.unknown > 0; })
+          .sort(function (a, b) { return b.unknown - a.unknown; });
+        var el = document.getElementById("unknownPanel");
+        if (!flagged.length) { el.style.display = "none"; return; }
+        document.getElementById("unknownList").innerHTML = flagged.map(function (t) {
+          return '<div class="src clk" data-item="' + esc(t.item) + '" style="padding:3px 0;cursor:pointer"><span class="flag">' + t.unknown + " of " + t.copies +
+            '</span> <b>' + esc(t.item) + "</b> <span class=\"cat\">" + t.cat + "</span></div>";
+        }).join("");
+      }
 
-    function renderTrace() {
-      var s = traceState;
-      var q = s.search.toLowerCase();
-      var rows = DATA.tracing.filter(function (t) {
-        if (s.cat !== "all" && t.cat !== s.cat) return false;
-        if (s.show === "flagged" && t.unknown === 0) return false;
-        if (q) {
-          var inItem = t.item.toLowerCase().indexOf(q) > -1;
-          var inDep = t.depositors.some(function (d) { return d.name.toLowerCase().indexOf(q) > -1; });
-          if (!inItem && !inDep) return false;
-        }
-        return true;
-      });
-      rows.sort(function (a, b) {
-        var av, bv;
-        if (s.sort === "item") { av = a.item.toLowerCase(); bv = b.item.toLowerCase(); }
-        else if (s.sort === "conf") { av = a.unknown > 0 ? 2 : a.exact ? 0 : 1; bv = b.unknown > 0 ? 2 : b.exact ? 0 : 1; }
-        else { av = a[s.sort]; bv = b[s.sort]; }
-        return av < bv ? -s.dir : av > bv ? s.dir : 0;
-      });
-      var body = rows.map(function (t) {
-        var c = confOf(t);
-        var src = t.depositors.length
-          ? t.depositors.map(function (d) { return "<b>" + esc(d.name) + "</b>" + (d.qty > 1 ? " ×" + d.qty : ""); }).join(", ")
-          : '<span class="flag">—</span>';
-        if (t.unknown > 0 && t.depositors.length) src += ' <span class="flag">+' + t.unknown + " unknown</span>";
-        var main = '<tr class="clk" data-item="' + esc(t.item) + '">' +
-          "<td>" + esc(t.item) + ' <span class="cat">' + t.cat + "</span></td>" +
-          '<td class="num">' + t.copies + "</td>" +
-          '<td class="num">' + (t.onLoan || "") + "</td>" +
-          '<td><span class="src">' + src + "</span></td>" +
-          '<td><span class="conf ' + c.cls + '">' + c.label + "</span></td>" +
-          "<td>" + markBadges(t.item) + "</td></tr>";
-        if (s.expanded[t.item]) {
-          var holders = holdersFor(t.item);
-          main += '<tr class="exp-row"><td colspan="6"><div class="exp2">' +
-            '<div class="exp-holders"><div class="exp-h">On loan to</div>' +
-            (holders.length ? holders.map(function (h) { return "<span>" + esc(h) + "</span>"; }).join("") : '<span class="muted">No copies on loan.</span>') +
-            "</div>" + markEditor(t) + "</div></td></tr>";
-        }
-        return main;
-      }).join("");
-      document.querySelector("#traceTable tbody").innerHTML = body;
-      document.getElementById("traceMeta").textContent =
-        rows.length + " of " + DATA.tracing.length + " items shown. Multi-copy sources are best-effort: the news records item name and quantity, not which physical copy came from which deposit. Deposits span " +
-        dateShort(DATA.depositWindow.from) + " to " + dateShort(DATA.depositWindow.to) + ".";
-    }
-    function holdersFor(item) {
-      var t = DATA.tracing.find(function (x) { return x.item === item; });
-      return t && t.holders ? t.holders : [];
-    }
+      function renderTrace() {
+        var s = traceState;
+        var q = s.search.toLowerCase();
+        var rows = DATA.tracing.filter(function (t) {
+          if (s.cat !== "all" && t.cat !== s.cat) return false;
+          if (s.show === "flagged" && t.unknown === 0) return false;
+          if (q) {
+            var inItem = t.item.toLowerCase().indexOf(q) > -1;
+            var inDep = t.depositors.some(function (d) { return d.name.toLowerCase().indexOf(q) > -1; });
+            if (!inItem && !inDep) return false;
+          }
+          return true;
+        });
+        rows.sort(function (a, b) {
+          var av, bv;
+          if (s.sort === "item") { av = a.item.toLowerCase(); bv = b.item.toLowerCase(); }
+          else if (s.sort === "conf") { av = a.unknown > 0 ? 2 : a.exact ? 0 : 1; bv = b.unknown > 0 ? 2 : b.exact ? 0 : 1; }
+          else { av = a[s.sort]; bv = b[s.sort]; }
+          return av < bv ? -s.dir : av > bv ? s.dir : 0;
+        });
+        var body = rows.map(function (t) {
+          var c = confOf(t);
+          var src = t.depositors.length
+            ? t.depositors.map(function (d) { return "<b>" + esc(d.name) + "</b>" + (d.qty > 1 ? " ×" + d.qty : ""); }).join(", ")
+            : '<span class="flag">—</span>';
+          if (t.unknown > 0 && t.depositors.length) src += ' <span class="flag">+' + t.unknown + " unknown</span>";
+          var main = '<tr class="clk" data-item="' + esc(t.item) + '">' +
+            "<td>" + esc(t.item) + ' <span class="cat">' + t.cat + "</span></td>" +
+            '<td class="num">' + t.copies + "</td>" +
+            '<td class="num">' + (t.onLoan || "") + "</td>" +
+            '<td><span class="src">' + src + "</span></td>" +
+            '<td><span class="conf ' + c.cls + '">' + c.label + "</span></td>" +
+            "<td>" + markBadges(t.item) + "</td></tr>";
+          return main;
+        }).join("");
+        document.querySelector("#traceTable tbody").innerHTML = body;
+        document.getElementById("traceMeta").textContent =
+          rows.length + " of " + DATA.tracing.length + " items shown. Multi-copy sources are best-effort: the news records item name and quantity, not which physical copy came from which deposit. Deposits span " +
+          dateShort(DATA.depositWindow.from) + " to " + dateShort(DATA.depositWindow.to) + ".";
+      }
+      function holdersFor(item) {
+        var t = DATA.tracing.find(function (x) { return x.item === item; });
+        return t && t.holders ? t.holders : [];
+      }
 
-    function markBadges(item) {
-      var ms = marksFor(item);
-      if (!ms.length) return '<span class="muted" style="font-size:11px">—</span>';
-      return ms.map(function (m) {
-        var out = [];
-        if (m.owner) out.push('<span class="own">' + esc(m.owner) + (m.qty ? " ×" + m.qty : "") + "</span>");
-        if (m.for_sale) out.push('<span class="sale">for sale' + (m.price ? " " + esc(m.price) : "") + "</span>");
-        return out.join(" ");
-      }).join("<br>");
-    }
+      function markBadges(item) {
+        var ms = marksFor(item);
+        if (!ms.length) return '<span class="muted" style="font-size:11px">—</span>';
+        return ms.map(function (m) {
+          var out = [];
+          if (m.owner) out.push('<span class="own">' + esc(m.owner) + (m.qty ? " ×" + m.qty : "") + "</span>");
+          if (m.for_sale) out.push('<span class="sale">for sale' + (m.price ? " " + esc(m.price) : "") + "</span>");
+          return out.join(" ");
+        }).join("<br>");
+      }
 
-    function markEditor(t) {
-      var ms = marksFor(t.item);
-      var list = ms.map(function (m) {
-        var bits = [];
-        if (m.owner) bits.push("<b>" + esc(m.owner) + "</b>" + (m.qty ? " ×" + m.qty : ""));
-        if (m.for_sale) bits.push('<span class="sale">for sale' + (m.price ? " " + esc(m.price) : "") + "</span>");
-        if (m.note) bits.push('<span class="muted">' + esc(m.note) + "</span>");
-        return '<div class="mrow"><span>' + (bits.join(" &middot; ") || "(empty)") +
-          '</span> <button class="mini" data-mact="del" data-id="' + esc(m.id) + '">remove</button></div>';
-      }).join("");
-      var it = esc(t.item);
-      return '<div class="markedit" data-item="' + it + '">' +
-        '<div class="exp-h">Owner &amp; for-sale</div>' +
-        (list || '<div class="muted" style="font-size:12px;margin-bottom:6px">None set.</div>') +
-        '<div class="mform">' +
+      function markEditor(t) {
+        var ms = marksFor(t.item);
+        var list = ms.map(function (m) {
+          var bits = [];
+          if (m.owner) bits.push("<b>" + esc(m.owner) + "</b>" + (m.qty ? " ×" + m.qty : ""));
+          if (m.for_sale) bits.push('<span class="sale">for sale' + (m.price ? " " + esc(m.price) : "") + "</span>");
+          if (m.note) bits.push('<span class="muted">' + esc(m.note) + "</span>");
+          return '<div class="mrow"><span>' + (bits.join(" &middot; ") || "(empty)") +
+            '</span> <button class="mini" data-mact="del" data-id="' + esc(m.id) + '">remove</button></div>';
+        }).join("");
+        var it = esc(t.item);
+        return '<div class="markedit" data-item="' + it + '">' +
+          (list || '<div class="muted" style="font-size:12px;margin-bottom:6px">None set.</div>') +
+          '<div class="mform">' +
           '<input class="mi" data-f="owner" placeholder="Owner name">' +
           '<input class="mi" data-f="owner_id" placeholder="ID" style="width:70px">' +
           '<input class="mi" data-f="qty" type="number" min="0" placeholder="Qty" style="width:60px">' +
@@ -352,191 +884,388 @@
           '<input class="mi" data-f="note" placeholder="Note" style="flex:1;min-width:120px">' +
           '<button class="mini gold" data-mact="save">Save</button>' +
           '<span class="msg" data-msg></span>' +
-        "</div></div>";
-    }
-    function dateShort(ts) { return new Date(ts * 1000).toISOString().slice(0, 10); }
-
-    function handleMarkAction(btn) {
-      var box = btn.closest(".markedit");
-      var item = box.getAttribute("data-item");
-      var msg = box.querySelector("[data-msg]");
-      if (btn.getAttribute("data-mact") === "del") {
-        btn.disabled = true;
-        delMark(btn.getAttribute("data-id"), function (j) {
-          if (j && j.ok) refreshMarks(function () { renderTrace(); renderTraceTiles(); });
-          else { btn.disabled = false; if (msg) msg.textContent = (j && j.error) || "failed"; }
-        });
-        return;
+          "</div></div>";
       }
-      // save
-      var f = {};
-      box.querySelectorAll(".mform [data-f]").forEach(function (el) {
-        f[el.getAttribute("data-f")] = el.type === "checkbox" ? (el.checked ? "true" : "false") : el.value.trim();
-      });
-      if (!f.owner && f.for_sale !== "true") { if (msg) msg.textContent = "set an owner or tick for sale"; return; }
-      f.item = item;
-      if (msg) msg.textContent = "saving…";
-      btn.disabled = true;
-      saveMark(f, function (j) {
-        btn.disabled = false;
-        if (j && j.ok) { traceState.expanded[item] = true; refreshMarks(function () { renderTrace(); }); }
-        else if (msg) msg.textContent = (j && j.error) === "not authorized" ? "not authorized (log in as admin)" : (j && j.error) || "failed";
-      });
-    }
+      function dateShort(ts) { return new Date(ts * 1000).toISOString().slice(0, 10); }
 
-    // ---------------- usage ----------------
-    var useState = { group: "uid", from: null, to: null, types: Object.assign({}, DEFAULT_TYPES) };
-
-    function months() {
-      var set = {};
-      DATA.usage.rows.forEach(function (r) { set[r.m] = 1; });
-      return Object.keys(set).sort();
-    }
-    function typesPresent() {
-      var set = {};
-      DATA.usage.rows.forEach(function (r) { set[r.type] = 1; });
-      return Object.keys(set);
-    }
-
-    function buildUsageControls() {
-      var ms = months();
-      useState.from = ms[0]; useState.to = ms[ms.length - 1];
-      var opts = ms.map(function (m) { return '<option value="' + m + '">' + m + "</option>"; }).join("");
-      var from = document.getElementById("useFrom"), to = document.getElementById("useTo");
-      from.innerHTML = opts; to.innerHTML = opts;
-      from.value = useState.from; to.value = useState.to;
-      from.onchange = function () { useState.from = from.value; renderUsage(); };
-      to.onchange = function () { useState.to = to.value; renderUsage(); };
-
-      var chips = typesPresent().map(function (t) {
-        var on = useState.types[t] ? " on" : "";
-        return '<label class="' + on + '" data-t="' + t + '"><input type="checkbox"' + (useState.types[t] ? " checked" : "") + ">" + (TYPE_LABEL[t] || t) + "</label>";
-      }).join("");
-      var box = document.getElementById("useTypes");
-      box.innerHTML = chips;
-      box.querySelectorAll("label").forEach(function (l) {
-        l.addEventListener("click", function (e) {
-          e.preventDefault();
-          var t = l.getAttribute("data-t");
-          useState.types[t] = !useState.types[t];
-          l.classList.toggle("on", useState.types[t]);
-          l.querySelector("input").checked = useState.types[t];
-          renderUsage();
+      function handleMarkAction(btn) {
+        var box = btn.closest(".markedit");
+        var item = box.getAttribute("data-item");
+        var msg = box.querySelector("[data-msg]");
+        if (btn.getAttribute("data-mact") === "del") {
+          btn.disabled = true;
+          delMark(btn.getAttribute("data-id"), function (j) {
+            if (j && j.ok) refreshMarks(function () { renderTrace(); openItemDetail(item); });
+            else { btn.disabled = false; if (msg) msg.textContent = (j && j.error) || "failed"; }
+          });
+          return;
+        }
+        // save
+        var f = {};
+        box.querySelectorAll(".mform [data-f]").forEach(function (el) {
+          f[el.getAttribute("data-f")] = el.type === "checkbox" ? (el.checked ? "true" : "false") : el.value.trim();
         });
-      });
-    }
-
-    function renderUsage() {
-      var s = useState;
-      var rows = DATA.usage.rows.filter(function (r) {
-        return r.m >= s.from && r.m <= s.to && s.types[r.type];
-      });
-      var keyOf = { uid: function (r) { return r.uid; }, item: function (r) { return r.item; }, m: function (r) { return r.m; } }[s.group];
-      var labelOf = {
-        uid: function (k) { return memberName[k] || ("#" + k); },
-        item: function (k) { return k; },
-        m: function (k) { return k; }
-      }[s.group];
-      // secondary dimension for the breakdown column
-      var secondary = s.group === "uid" ? "item" : s.group === "item" ? "uid" : "item";
-      var secLabel = secondary === "uid" ? function (k) { return memberName[k] || ("#" + k); } : function (k) { return k; };
-
-      var groups = {};
-      rows.forEach(function (r) {
-        var k = keyOf(r);
-        var g = groups[k] || (groups[k] = { total: 0, sub: {} });
-        g.total += r.n;
-        var sk = r[secondary];
-        g.sub[sk] = (g.sub[sk] || 0) + r.n;
-      });
-      var list = Object.keys(groups).map(function (k) { return { k: k, g: groups[k] }; })
-        .sort(function (a, b) { return b.g.total - a.g.total; });
-
-      var totalUses = rows.reduce(function (s2, r) { return s2 + r.n; }, 0);
-      document.getElementById("useTiles").innerHTML =
-        tile(fmt(totalUses), "Total (selected)") + tile(list.length, s.group === "uid" ? "People" : s.group === "item" ? "Items" : "Months");
-
-      document.getElementById("useCol0").textContent = s.group === "uid" ? "Person" : s.group === "item" ? "Item" : "Month";
-      document.querySelector("#useTable tbody").innerHTML = list.map(function (row) {
-        var top = Object.keys(row.g.sub).map(function (sk) { return { k: sk, n: row.g.sub[sk] }; })
-          .sort(function (a, b) { return b.n - a.n; }).slice(0, 6)
-          .map(function (x) { return esc(secLabel(x.k)) + " ×" + x.n; }).join(", ");
-        return "<tr><td>" + esc(labelOf(row.k)) + '</td><td class="num">' + fmt(row.g.total) + '</td><td><span class="src">' + top + "</span></td></tr>";
-      }).join("");
-      document.getElementById("useMeta").textContent =
-        "Actions " + dateShort(DATA.actionWindow.from) + " to " + dateShort(DATA.actionWindow.to) +
-        ". “Uses” counts the selected action types. For gives and loans, the person credited is whoever received the item.";
-    }
-
-    // ---------------- wiring ----------------
-    function seg(id, cb) {
-      var el = document.getElementById(id);
-      el.querySelectorAll("button").forEach(function (b) {
-        b.addEventListener("click", function () {
-          el.querySelectorAll("button").forEach(function (x) { x.classList.remove("active"); });
-          b.classList.add("active");
-          cb(b.getAttribute("data-v"));
+        if (!f.owner && f.for_sale !== "true") { if (msg) msg.textContent = "set an owner or tick for sale"; return; }
+        f.item = item;
+        if (msg) msg.textContent = "saving…";
+        btn.disabled = true;
+        saveMark(f, function (j) {
+          btn.disabled = false;
+          if (j && j.ok) { refreshMarks(function () { renderTrace(); openItemDetail(item); }); }
+          else if (msg) msg.textContent = (j && j.error) === "not authorized" ? "not authorized (log in as admin)" : (j && j.error) || "failed";
         });
-      });
-    }
+      }
 
-    function init() {
-      DATA.usage.members.forEach(function (m) { memberName[m.id] = m.name; });
-      document.getElementById("armLoad").style.display = "none";
-      document.getElementById("armMain").style.display = "block";
+      // ---------------- detail overlay ----------------
+      function openOverlay(html) {
+        document.getElementById("ovlBody").innerHTML = html;
+        document.getElementById("ovl").style.display = "flex";
+      }
+      function closeOverlay() { document.getElementById("ovl").style.display = "none"; }
 
-      // tabs
-      document.querySelectorAll(".arm-tabs button").forEach(function (b) {
-        b.addEventListener("click", function () {
-          document.querySelectorAll(".arm-tabs button").forEach(function (x) { x.classList.remove("active"); });
-          b.classList.add("active");
-          var t = b.getAttribute("data-tab");
-          document.getElementById("view-trace").classList.toggle("active", t === "trace");
-          document.getElementById("view-usage").classList.toggle("active", t === "usage");
+      function evText(e) {
+        var by = e.by ? "<b>" + esc(e.by) + "</b>" : "someone";
+        var to = e.to ? "<b>" + esc(e.to) + "</b>" : "";
+        var q = e.qty > 1 ? ' <span class="tl-q">×' + e.qty + "</span>" : "";
+        switch (e.type) {
+          case "deposit": return { cls: "in", t: "Deposited by " + by + q };
+          case "cache": return { cls: "in", t: by + " opened a cache and gained this" };
+          case "loaned": return { cls: "out", t: e.to ? by + " loaned to " + to : by + " borrowed" + q };
+          case "given": return { cls: "out", t: by + " gave to " + to + q };
+          case "took": return { cls: "out", t: by + " took for self" + q };
+          case "returned": return { cls: "back", t: by + " returned" + q };
+          case "retrieved": return { cls: "back", t: "Retrieved from " + to + " by " + by + q };
+          case "used": return { cls: "out", t: by + " used" + q };
+          default: return { cls: "", t: esc(e.type) };
+        }
+      }
+      function renderTimeline(events) {
+        if (!events || !events.length) return '<div class="muted" style="font-size:13px">No deposit or loan events in the downloaded history.</div>';
+        return '<div class="tl">' + events.map(function (e) {
+          var x = evText(e);
+          return '<div class="tl-row ' + x.cls + '"><div class="tl-date">' + dateShort(e.ts) + '</div><div class="tl-dot"></div><div class="tl-txt">' + x.t + "</div></div>";
+        }).join("") + "</div>";
+      }
+
+      function openItemDetail(item) {
+        var t = DATA.tracing.find(function (x) { return x.item === item; });
+        if (!t) return openConsumableDetail(item);   // a usage-only item (consumable), no weapon timeline
+        var deps = t.depositors.length
+          ? t.depositors.map(function (d) { return '<span class="own">' + esc(d.name) + (d.qty > 1 ? " ×" + d.qty : "") + "</span>"; }).join(" ")
+          : '<span class="muted">none found in news</span>';
+        if (t.unknown > 0) deps += ' <span class="flag">+' + t.unknown + " unaccounted</span>";
+        var holders = (t.holders && t.holders.length)
+          ? t.holders.map(function (h) { return '<span class="own">' + esc(h) + "</span>"; }).join(" ")
+          : '<span class="muted">none on loan</span>';
+        var html =
+          "<h3>" + esc(t.item) + "</h3>" +
+          '<div class="sub">' + t.cat + "</div>" +
+          '<div class="dt-tiles">' + tile(t.copies, "Copies") + tile(t.onLoan, "On loan") + tile(t.copies - t.onLoan, "In armoury") + tile(t.unknown || 0, "Unknown", t.unknown > 0) + "</div>" +
+          '<div class="dt-sec">Deposited by</div><div class="dt-list">' + deps + "</div>" +
+          '<div class="dt-sec">On loan to</div><div class="dt-list">' + holders + "</div>" +
+          '<div class="dt-sec">Owner &amp; for sale</div>' + markEditor(t) +
+          '<div class="dt-sec">History (deposit &rarr; now)</div>' + renderTimeline(t.events);
+        openOverlay(html);
+      }
+
+      function kvRows(pairs, kind) {
+        // pairs: [{label, key, n, drill}]  kind for data attribute
+        return pairs.map(function (p) {
+          var attr = p.drill ? ' class="dt-kv clk2" data-' + kind + '="' + esc(p.key) + '"' : ' class="dt-kv"';
+          return "<div" + attr + "><span>" + esc(p.label) + "</span><b>" + fmt(p.n) + "</b></div>";
+        }).join("");
+      }
+
+      function openPersonDetail(uid) {
+        var rows = usageRows().filter(function (r) { return String(r.uid) === String(uid); });
+        var byItem = {}, total = 0;
+        rows.forEach(function (r) { byItem[r.item] = (byItem[r.item] || 0) + r.n; total += r.n; });
+        var list = Object.keys(byItem).map(function (i) {
+          return { label: i, key: i, n: byItem[i], drill: DATA.tracing.some(function (t) { return t.item === i; }) };
+        }).sort(function (a, b) { return b.n - a.n; });
+        openOverlay("<h3>" + esc(memberName[uid] || ("#" + uid)) + "</h3>" +
+          '<div class="sub">' + fmt(total) + " in the selected period, across " + list.length + " items</div>" +
+          '<div class="dt-sec">What they used</div>' + kvRows(list, "item"));
+      }
+
+      function openConsumableDetail(item) {
+        var rows = usageRows().filter(function (r) { return r.item === item; });
+        var byUser = {}, total = 0;
+        rows.forEach(function (r) { byUser[r.uid] = (byUser[r.uid] || 0) + r.n; total += r.n; });
+        var list = Object.keys(byUser).map(function (u) {
+          return { label: memberName[u] || ("#" + u), key: u, n: byUser[u], drill: true };
+        }).sort(function (a, b) { return b.n - a.n; });
+        openOverlay("<h3>" + esc(item) + "</h3>" +
+          '<div class="sub">' + fmt(total) + " used in the selected period, by " + list.length + " people</div>" +
+          '<div class="dt-sec">Who used it</div>' + kvRows(list, "uid"));
+      }
+
+      function openMonthDetail(m) {
+        var rows = usageRows().filter(function (r) { return r.m === m; });
+        var byItem = {}, total = 0;
+        rows.forEach(function (r) { byItem[r.item] = (byItem[r.item] || 0) + r.n; total += r.n; });
+        var list = Object.keys(byItem).map(function (i) {
+          return { label: i, key: i, n: byItem[i], drill: DATA.tracing.some(function (t) { return t.item === i; }) };
+        }).sort(function (a, b) { return b.n - a.n; });
+        openOverlay("<h3>" + esc(m) + "</h3>" +
+          '<div class="sub">' + fmt(total) + " used across " + list.length + " items</div>" +
+          '<div class="dt-sec">Items</div>' + kvRows(list, "item"));
+      }
+
+      // ---------------- ledger ----------------
+      var LED_LABEL = { deposit: "Deposit", cache: "Cache", loaned: "Loan", returned: "Return", retrieved: "Retrieve", given: "Given", took: "Took", used: "Used" };
+      var LEDGER = null;
+      var ledState = { cat: "all", types: {}, search: "" };
+
+      function buildLedger() {
+        var out = [];
+        DATA.tracing.forEach(function (t) {
+          (t.events || []).forEach(function (e) { out.push({ ts: e.ts, item: t.item, cat: t.cat, type: e.type, by: e.by, to: e.to, qty: e.qty }); });
         });
-      });
-
-      // tracing
-      renderTraceTiles();
-      renderUnknown();
-      seg("traceCat", function (v) { traceState.cat = v; renderTrace(); });
-      seg("traceShow", function (v) { traceState.show = v; renderTrace(); });
-      document.getElementById("traceSearch").addEventListener("input", function (e) { traceState.search = e.target.value; renderTrace(); });
-      document.querySelectorAll("#traceTable th[data-sort]").forEach(function (th) {
-        th.style.cursor = "pointer";
-        th.addEventListener("click", function () {
-          var k = th.getAttribute("data-sort");
-          if (traceState.sort === k) traceState.dir *= -1; else { traceState.sort = k; traceState.dir = k === "item" ? 1 : -1; }
-          renderTrace();
+        return out.sort(function (a, b) { return b.ts - a.ts; });   // newest first
+      }
+      function ledTypesPresent() { var s = {}; LEDGER.forEach(function (e) { s[e.type] = 1; }); return Object.keys(s); }
+      function buildLedgerControls() {
+        LEDGER = buildLedger();
+        ledTypesPresent().forEach(function (t) { ledState.types[t] = 1; });
+        var box = document.getElementById("ledTypes");
+        box.innerHTML = ledTypesPresent().map(function (t) {
+          return '<label class="on" data-t="' + t + '"><input type="checkbox" checked>' + (LED_LABEL[t] || t) + "</label>";
+        }).join("");
+        box.querySelectorAll("label").forEach(function (l) {
+          l.addEventListener("click", function (e) {
+            e.preventDefault();
+            var t = l.getAttribute("data-t");
+            ledState.types[t] = !ledState.types[t];
+            l.classList.toggle("on", ledState.types[t]);
+            l.querySelector("input").checked = ledState.types[t];
+            renderLedger();
+          });
         });
-      });
-      document.querySelector("#traceTable tbody").addEventListener("click", function (e) {
-        // editor actions live inside the expanded row; handle them first
-        var btn = e.target.closest("button[data-mact]");
-        if (btn) { handleMarkAction(btn); return; }
-        if (e.target.closest(".markedit")) return;   // clicks in the form should not toggle
-        var tr = e.target.closest("tr.clk");
-        if (!tr) return;
-        var it = tr.getAttribute("data-item");
-        traceState.expanded[it] = !traceState.expanded[it];
+      }
+      function renderLedger() {
+        var q = ledState.search.toLowerCase();
+        var rows = LEDGER.filter(function (e) {
+          if (ledState.cat !== "all" && e.cat !== ledState.cat) return false;
+          if (!ledState.types[e.type]) return false;
+          if (q) {
+            var hit = e.item.toLowerCase().indexOf(q) > -1 || (e.by && e.by.toLowerCase().indexOf(q) > -1) || (e.to && e.to.toLowerCase().indexOf(q) > -1);
+            if (!hit) return false;
+          }
+          return true;
+        });
+        var cnt = function (fn) { return fmt(rows.filter(fn).length); };
+        document.getElementById("ledTiles").innerHTML =
+          tile(fmt(rows.length), "Events") +
+          tile(cnt(function (e) { return e.type === "loaned"; }), "Loans out") +
+          tile(cnt(function (e) { return e.type === "returned" || e.type === "retrieved"; }), "Returns") +
+          tile(cnt(function (e) { return e.type === "deposit" || e.type === "cache"; }), "Deposits");
+        document.querySelector("#ledTable tbody").innerHTML = rows.slice(0, 1500).map(function (e) {
+          return '<tr class="clk" data-item="' + esc(e.item) + '">' +
+            '<td style="white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:var(--faint)">' + dateShort(e.ts) + "</td>" +
+            "<td>" + esc(e.item) + ' <span class="cat">' + e.cat + "</span></td>" +
+            '<td><span class="ev ev-' + e.type + '">' + (LED_LABEL[e.type] || e.type) + "</span></td>" +
+            "<td>" + (e.by ? esc(e.by) : '<span class="muted">-</span>') + "</td>" +
+            "<td>" + (e.to ? esc(e.to) : '<span class="muted">-</span>') + "</td>" +
+            '<td class="num">' + (e.qty > 1 ? e.qty : "") + "</td></tr>";
+        }).join("");
+        document.getElementById("ledMeta").textContent =
+          rows.length + " events" + (rows.length > 1500 ? " (showing newest 1500)" : "") +
+          ". Deposits reach back to 2019; loans and returns only as far as the action feed is downloaded (" +
+          dateShort(DATA.actionWindow.from) + " to " + dateShort(DATA.actionWindow.to) + ").";
+      }
+
+      // ---------------- usage ----------------
+      var useState = { group: "uid", from: null, to: null, types: Object.assign({}, DEFAULT_TYPES), expanded: {} };
+
+      function months() {
+        var set = {};
+        DATA.usage.rows.forEach(function (r) { set[r.m] = 1; });
+        return Object.keys(set).sort();
+      }
+      function typesPresent() {
+        var set = {};
+        DATA.usage.rows.forEach(function (r) { set[r.type] = 1; });
+        return Object.keys(set);
+      }
+
+      function buildUsageControls() {
+        var ms = months();
+        useState.from = ms[0]; useState.to = ms[ms.length - 1];
+        var opts = ms.map(function (m) { return '<option value="' + m + '">' + m + "</option>"; }).join("");
+        var from = document.getElementById("useFrom"), to = document.getElementById("useTo");
+        from.innerHTML = opts; to.innerHTML = opts;
+        from.value = useState.from; to.value = useState.to;
+        from.onchange = function () { useState.from = from.value; renderUsage(); };
+        to.onchange = function () { useState.to = to.value; renderUsage(); };
+
+        var chips = typesPresent().map(function (t) {
+          var on = useState.types[t] ? " on" : "";
+          return '<label class="' + on + '" data-t="' + t + '"><input type="checkbox"' + (useState.types[t] ? " checked" : "") + ">" + (TYPE_LABEL[t] || t) + "</label>";
+        }).join("");
+        var box = document.getElementById("useTypes");
+        box.innerHTML = chips;
+        box.querySelectorAll("label").forEach(function (l) {
+          l.addEventListener("click", function (e) {
+            e.preventDefault();
+            var t = l.getAttribute("data-t");
+            useState.types[t] = !useState.types[t];
+            l.classList.toggle("on", useState.types[t]);
+            l.querySelector("input").checked = useState.types[t];
+            renderUsage();
+          });
+        });
+      }
+
+      function usageRows() {
+        var s = useState;
+        return DATA.usage.rows.filter(function (r) { return r.m >= s.from && r.m <= s.to && s.types[r.type]; });
+      }
+
+      function renderUsage() {
+        var s = useState;
+        var rows = usageRows();
+        var keyOf = { uid: function (r) { return r.uid; }, item: function (r) { return r.item; }, m: function (r) { return r.m; } }[s.group];
+        var labelOf = {
+          uid: function (k) { return memberName[k] || ("#" + k); },
+          item: function (k) { return k; },
+          m: function (k) { return k; }
+        }[s.group];
+        // secondary dimension for the breakdown column
+        var secondary = s.group === "uid" ? "item" : s.group === "item" ? "uid" : "item";
+        var secLabel = secondary === "uid" ? function (k) { return memberName[k] || ("#" + k); } : function (k) { return k; };
+
+        var groups = {};
+        rows.forEach(function (r) {
+          var k = keyOf(r);
+          var g = groups[k] || (groups[k] = { total: 0, sub: {} });
+          g.total += r.n;
+          var sk = r[secondary];
+          g.sub[sk] = (g.sub[sk] || 0) + r.n;
+        });
+        var list = Object.keys(groups).map(function (k) { return { k: k, g: groups[k] }; })
+          .sort(function (a, b) { return b.g.total - a.g.total; });
+
+        var totalUses = rows.reduce(function (s2, r) { return s2 + r.n; }, 0);
+        document.getElementById("useTiles").innerHTML =
+          tile(fmt(totalUses), "Total (selected)") + tile(list.length, s.group === "uid" ? "People" : s.group === "item" ? "Items" : "Months");
+
+        document.getElementById("useCol0").textContent = s.group === "uid" ? "Person" : s.group === "item" ? "Item" : "Month";
+        document.getElementById("useCol2").textContent = s.group === "item" ? "People" : "Items";
+        document.querySelector("#useTable tbody").innerHTML = list.map(function (row) {
+          var distinct = Object.keys(row.g.sub).length;
+          return '<tr class="clk" data-k="' + esc(row.k) + '">' +
+            "<td>" + esc(labelOf(row.k)) + "</td>" +
+            '<td class="num">' + fmt(row.g.total) + "</td>" +
+            '<td class="num">' + distinct + "</td>" +
+            '<td class="muted" style="text-align:right;font-size:12px">view &rsaquo;</td></tr>';
+        }).join("");
+        document.getElementById("useMeta").textContent =
+          "Actions " + dateShort(DATA.actionWindow.from) + " to " + dateShort(DATA.actionWindow.to) +
+          ". “Uses” counts the selected action types. Click a row for the breakdown. For gives and loans, the person credited is whoever received the item.";
+      }
+
+      // ---------------- wiring ----------------
+      function seg(id, cb) {
+        var el = document.getElementById(id);
+        el.querySelectorAll("button").forEach(function (b) {
+          b.addEventListener("click", function () {
+            el.querySelectorAll("button").forEach(function (x) { x.classList.remove("active"); });
+            b.classList.add("active");
+            cb(b.getAttribute("data-v"));
+          });
+        });
+      }
+
+      function init() {
+        DATA.usage.members.forEach(function (m) { memberName[m.id] = m.name; });
+        document.getElementById("armLoad").style.display = "none";
+        document.getElementById("armMain").style.display = "block";
+
+        // tabs
+        document.querySelectorAll(".arm-tabs button").forEach(function (b) {
+          b.addEventListener("click", function () {
+            document.querySelectorAll(".arm-tabs button").forEach(function (x) { x.classList.remove("active"); });
+            b.classList.add("active");
+            var t = b.getAttribute("data-tab");
+            document.getElementById("view-trace").classList.toggle("active", t === "trace");
+            document.getElementById("view-ledger").classList.toggle("active", t === "ledger");
+            document.getElementById("view-usage").classList.toggle("active", t === "usage");
+          });
+        });
+
+        // tracing
+        renderTraceTiles();
+        renderUnknown();
+        seg("traceCat", function (v) { traceState.cat = v; renderTrace(); });
+        seg("traceShow", function (v) { traceState.show = v; renderTrace(); });
+        document.getElementById("traceSearch").addEventListener("input", function (e) { traceState.search = e.target.value; renderTrace(); });
+        document.querySelectorAll("#traceTable th[data-sort]").forEach(function (th) {
+          th.style.cursor = "pointer";
+          th.addEventListener("click", function () {
+            var k = th.getAttribute("data-sort");
+            if (traceState.sort === k) traceState.dir *= -1; else { traceState.sort = k; traceState.dir = k === "item" ? 1 : -1; }
+            renderTrace();
+          });
+        });
+        document.querySelector("#traceTable tbody").addEventListener("click", function (e) {
+          var tr = e.target.closest("tr.clk");
+          if (tr) openItemDetail(tr.getAttribute("data-item"));
+        });
+        // unaccounted panel items open the same detail
+        document.getElementById("unknownList").addEventListener("click", function (e) {
+          var row = e.target.closest("[data-item]");
+          if (row) openItemDetail(row.getAttribute("data-item"));
+        });
         renderTrace();
-      });
-      renderTrace();
 
-      // usage
-      buildUsageControls();
-      seg("useGroup", function (v) { useState.group = v; renderUsage(); });
-      renderUsage();
-    }
+        // ledger
+        buildLedgerControls();
+        seg("ledCat", function (v) { ledState.cat = v; renderLedger(); });
+        document.getElementById("ledSearch").addEventListener("input", function (e) { ledState.search = e.target.value; renderLedger(); });
+        document.querySelector("#ledTable tbody").addEventListener("click", function (e) {
+          var tr = e.target.closest("tr.clk");
+          if (tr) openItemDetail(tr.getAttribute("data-item"));
+        });
+        renderLedger();
 
-    Promise.all([
-      fetch("/data/armoury.json?v=" + Date.now()).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }),
-      loadMarks()
-    ]).then(function (res) { DATA = res[0]; MARKS = res[1]; init(); })
-      .catch(function (e) {
-        document.getElementById("armLoad").innerHTML = '<p class="cap">Could not load armoury data (' + e.message + "). The data file may not be built or deployed yet.</p>";
-      });
-  })();
+        // usage
+        buildUsageControls();
+        seg("useGroup", function (v) { useState.group = v; renderUsage(); });
+        document.querySelector("#useTable tbody").addEventListener("click", function (e) {
+          var tr = e.target.closest("tr.clk");
+          if (!tr) return;
+          var k = tr.getAttribute("data-k");
+          if (useState.group === "item") openItemDetail(k);
+          else if (useState.group === "uid") openPersonDetail(k);
+          else openMonthDetail(k);
+        });
+        renderUsage();
+
+        // overlay
+        document.getElementById("ovlClose").addEventListener("click", closeOverlay);
+        document.getElementById("ovl").addEventListener("click", function (e) { if (e.target.id === "ovl") closeOverlay(); });
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeOverlay(); });
+        document.getElementById("ovlBody").addEventListener("click", function (e) {
+          var btn = e.target.closest("button[data-mact]");
+          if (btn) { handleMarkAction(btn); return; }
+          var kv = e.target.closest(".dt-kv.clk2");
+          if (kv) {
+            if (kv.getAttribute("data-uid")) openPersonDetail(kv.getAttribute("data-uid"));
+            else if (kv.getAttribute("data-item")) openItemDetail(kv.getAttribute("data-item"));
+          }
+        });
+      }
+
+      Promise.all([
+        fetch("/data/armoury.json?v=" + Date.now()).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }),
+        loadMarks()
+      ]).then(function (res) { DATA = res[0]; MARKS = res[1]; init(); })
+        .catch(function (e) {
+          document.getElementById("armLoad").innerHTML = '<p class="cap">Could not load armoury data (' + e.message + "). The data file may not be built or deployed yet.</p>";
+        });
+    })();
   </script>
 </body>
+
 </html>

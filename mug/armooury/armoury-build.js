@@ -172,6 +172,22 @@ function usage(events) {
   const tracing = trace(copies, dep.events);
   const use = usage(act.events);
 
+  // Per-item timeline for weapons/armour: every deposit and loan-movement for a
+  // currently-held item, oldest first, so the page can show its life from the
+  // first deposit to now. Deposits reach back to 2019; loan movements only as
+  // far as the action feed has been downloaded.
+  const tracked = new Set(copies.map((c) => c.item));
+  const timeline = new Map();
+  const pushEv = (e, type) => {
+    if (!tracked.has(e.item)) return;
+    const arr = timeline.get(e.item) || [];
+    arr.push({ ts: e.ts, type, by: e.actor ? e.actor.name : null, to: e.other ? e.other.name : null, qty: e.qty || 1 });
+    timeline.set(e.item, arr);
+  };
+  for (const e of dep.events) pushEv(e, e.how);          // deposit / cache
+  for (const e of act.events) pushEv(e, e.type);         // loaned / returned / retrieved / given / took / used
+  for (const t of tracing) t.events = (timeline.get(t.item) || []).sort((a, b) => a.ts - b.ts);
+
   const depTs = dep.events.map((e) => e.ts);
   const actTs = act.events.map((e) => e.ts);
   const data = {
