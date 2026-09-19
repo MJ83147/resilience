@@ -4,6 +4,9 @@ raw-*.jsonl
 inv-*.json
 roster.json
 items-meta.json
+# Manual deposit log (member data); baked into data/armoury.json at build time
+*Deposit Log*.csv
+deposit-log.csv
 shapes-*.csv
 snapshots/
 *.log

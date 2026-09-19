@@ -555,6 +555,17 @@
     .ow-faction{background:rgba(106,167,216,.14);color:var(--info)}
     .ow-unknown{background:rgba(224,168,60,.16);color:var(--warn)}
     .own.left{background:rgba(106,167,216,.14);border-color:rgba(106,167,216,.4);color:var(--info)}
+
+    .fs{font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:4px;background:var(--gold);color:#1a1814}
+    .logrow{padding:5px 0;border-bottom:1px solid var(--gray-200);font-size:12.5px}
+    .st{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.03em}
+    .st-loan{background:var(--panel-2);color:var(--muted);border:1px solid var(--line)}
+    .st-faction{background:rgba(106,167,216,.16);color:var(--info)}
+    .st-sale{background:var(--gold);color:#1a1814}
+    .perk{font-size:11px;padding:1px 7px;border-radius:20px;font-weight:600;background:var(--panel-2);border:1px solid var(--line)}
+    .perk-yellow{color:var(--gold);border-color:rgba(255,215,0,.4)}
+    .perk-orange{color:#e0863c;border-color:rgba(224,134,60,.4)}
+    .perk-red{color:var(--loss);border-color:rgba(216,88,78,.4)}
   </style>
   <script src="/config.js?v=20260803b"></script>
   <script src="/auth.js?v=20260803b" defer data-gate></script>
@@ -871,7 +882,7 @@
             '<td><span class="src">' + src + "</span></td>" +
             "<td>" + ownBadges(t) + "</td>" +
             '<td><span class="conf ' + c.cls + '">' + c.label + "</span></td>" +
-            "<td>" + markBadges(t.item) + "</td></tr>";
+            "<td>" + (t.forSale ? '<span class="fs">FOR SALE</span> ' : "") + markBadges(t.item) + "</td></tr>";
           return main;
         }).join("");
         document.querySelector("#traceTable tbody").innerHTML = body;
@@ -997,6 +1008,25 @@
         return '<div class="dt-sec">Item details</div>' + rows.join("") + desc;
       }
 
+      // Manual deposit log: per-copy status, stats and bonus perks.
+      function renderLog(t) {
+        if (!t.log || !t.log.length) return "";
+        var rows = t.log.map(function (e) {
+          var perks = (e.perks || []).filter(function (p) { return p.name || p.pct != null; }).map(function (p) {
+            var lbl = p.name ? (p.name + (p.pct != null ? " " + p.pct + "%" : "")) : (p.pct + "%");
+            return '<span class="perk perk-' + (e.color || "").toLowerCase() + '">' + esc(lbl) + "</span>";
+          }).join(" ");
+          var stats = e.gear === "weapon"
+            ? [e.damage != null ? "Dmg " + e.damage : "", e.accuracy != null ? "Acc " + e.accuracy : "", e.quality != null ? "Q " + e.quality + "%" : ""].filter(Boolean).join(" · ")
+            : [e.armor != null ? "Armor " + e.armor : "", e.quality != null ? "Q " + e.quality : "", e.coverage != null ? "Cov " + e.coverage : ""].filter(Boolean).join(" · ");
+          var st = e.status || "";
+          var stcls = /sale/i.test(st) ? "st-sale" : /faction/i.test(st) ? "st-faction" : "st-loan";
+          return '<div class="logrow"><span class="st ' + stcls + '">' + esc(st) + "</span> <b>" + esc(e.who) + '</b> <span class="muted">' + esc(e.date) + "</span>" +
+            (perks ? " &middot; " + perks : "") + (stats ? ' <span class="muted" style="font-size:11.5px">' + stats + "</span>" : "") + "</div>";
+        }).join("");
+        return '<div class="dt-sec">Deposit log &amp; bonuses (' + t.log.length + ")</div>" + rows;
+      }
+
       function openItemDetail(item) {
         var t = DATA.tracing.find(function (x) { return x.item === item; });
         if (!t) return openConsumableDetail(item);   // a usage-only item (consumable), no weapon timeline
@@ -1012,10 +1042,11 @@
           : '<span class="muted">none on loan</span>';
         var html =
           "<h3>" + esc(t.item) + "</h3>" +
-          '<div class="sub">' + t.cat + (t.type ? " &middot; " + esc(t.type) : "") + "</div>" +
+          '<div class="sub">' + t.cat + (t.type ? " &middot; " + esc(t.type) : "") + (t.forSale ? ' <span class="fs">FOR SALE</span>' : "") + "</div>" +
           '<div class="dt-tiles">' + tile(t.copies, "Copies") + tile(t.onLoan, "On loan") + tile(t.copies - t.onLoan, "In armoury") + tile(t.unknown || 0, "Unknown", t.unknown > 0) + "</div>" +
           '<div class="dt-sec">Ownership</div><div class="dt-list">' + ownBadges(t) + '</div>' +
           itemMetaHtml(t) +
+          renderLog(t) +
           '<div class="dt-sec">Deposited by</div><div class="dt-list">' + deps + "</div>" +
           '<div class="dt-sec">On loan to</div><div class="dt-list">' + holders + "</div>" +
           '<div class="dt-sec">Owner &amp; for sale</div>' + markEditor(t) +

@@ -30,6 +30,53 @@ function loadItemMeta() {
   return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : {};
 }
 
+// Manual deposit log (a Google Sheet export): per-copy status (Loan / For Sale /
+// Faction Owned), stats and, uniquely, the bonus perks the Torn API does not give
+// for the armoury. Returns itemName -> [entries]. Matched to inventory by weapon
+// name, or armour set + body part (Body -> Body Armor).
+function parseCSV(text) {
+  const rows = []; let row = [], field = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; } else field += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+    else if (c !== "\r") field += c;
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+function loadLog() {
+  const f = fs.readdirSync(HERE).find((n) => /Deposit Log.*\.csv$/i.test(n) || n === "deposit-log.csv");
+  if (!f) return { byItem: {}, count: 0, source: null };
+  const rows = parseCSV(fs.readFileSync(path.join(HERE, f), "utf8")).filter((r) => r.some((c) => c && c.trim()));
+  rows.shift(); // header
+  const byItem = {}; let count = 0;
+  const add = (item, e) => { (byItem[item] = byItem[item] || []).push(e); count++; };
+  const num = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+  for (const r of rows) {
+    const who = (r[2] || "").trim(), date = (r[3] || "").trim(), status = (r[4] || "").trim(), gear = (r[5] || "").trim();
+    if (/weapon/i.test(gear)) {
+      for (const b of [6, 15, 24]) {
+        const name = (r[b] || "").trim();
+        if (!name) continue;
+        const perks = [];
+        if ((r[b + 5] || "").trim()) perks.push({ name: r[b + 5].trim(), pct: num(r[b + 6]) });
+        if ((r[b + 7] || "").trim()) perks.push({ name: r[b + 7].trim(), pct: num(r[b + 8]) });
+        add(name, { who, date, status, gear: "weapon", damage: num(r[b + 1]), accuracy: num(r[b + 2]), quality: num(r[b + 3]), color: (r[b + 4] || "").trim(), perks });
+      }
+    } else if (/armor|armour/i.test(gear)) {
+      const set = (r[33] || "").trim(), part = (r[34] || "").trim();
+      if (!set || !part) continue;
+      const name = set + " " + (/body/i.test(part) ? "Body Armor" : part);
+      const perks = num(r[36]) != null ? [{ name: "", pct: num(r[36]) }] : [];
+      add(name, { who, date, status, gear: "armor", set, part, color: (r[35] || "").trim(), armor: num(r[37]), quality: num(r[38]), coverage: num(r[39]), perks });
+    }
+  }
+  return { byItem, count, source: f };
+}
+
 // ---------- current inventory ----------
 // One physical copy per uid. loaned:null rows sit in the armoury; loaned:{id,name}
 // rows are with that member. Torn splits an item into one row per holder.
@@ -222,6 +269,15 @@ function loadRoster() {
   for (const e of act.events) pushEv(e, e.type);         // loaned / returned / retrieved / given / took / used
   for (const t of tracing) t.events = (timeline.get(t.item) || []).sort((a, b) => a.ts - b.ts);
 
+  // Attach the manual deposit log (bonuses/perks and manual status) per item.
+  const log = loadLog();
+  let logMatched = 0;
+  for (const t of tracing) {
+    t.log = log.byItem[t.item] || [];
+    if (t.log.length) logMatched += t.log.length;
+    t.forSale = t.log.some((e) => /sale/i.test(e.status));
+  }
+
   const depTs = dep.events.map((e) => e.ts);
   const actTs = act.events.map((e) => e.ts);
   const data = {
@@ -243,6 +299,7 @@ function loadRoster() {
   const ownSum = tracing.reduce((s, t) => ({ player: s.player + t.own.player, faction: s.faction + t.own.faction, unknown: s.unknown + t.own.unknown }), { player: 0, faction: 0, unknown: 0 });
   console.log(`tracing:  ${tracing.length - unknownItems.length}/${tracing.length} items fully sourced, ${unknownCopies} unknown copies across ${unknownItems.length} items`);
   console.log(`roster:   ${roster.count} members (${roster.source || "none"}) -> player-owned ${ownSum.player}, faction-owned ${ownSum.faction}, unaccounted ${ownSum.unknown} copies`);
+  console.log(`log:      ${log.count} entries (${log.source || "none"}), ${logMatched} matched to current items`);
   console.log(`usage:    ${use.rows.length} month/person/item/type rows, ${use.members.length} members`);
   console.log(`wrote ${path.relative(process.cwd(), OUT)} (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB)`);
 })();
