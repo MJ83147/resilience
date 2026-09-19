@@ -10,12 +10,14 @@
   var MEMBER_PARENTS = {
     "/eggs": "/competitions",
     "/mug/": "/competitions",
+    "/racing": "/competitions",
   };
 
   var ADMIN_LINKS = [
     { href: "/admin", label: "Admin Hub" },
     { href: "/war-pay", label: "War Pay" },
     { href: "/oc", label: "OC Tracker" },
+    { href: "/armoury", label: "Armoury" },
     { href: "/energy", label: "Energy" },
     { href: "/xr", label: "Xanax Runners" },
     { href: "/wars", label: "War Room" },

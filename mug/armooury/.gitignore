@@ -1,0 +1,13 @@
+# Generated working files. The scripts are tracked; their outputs are not.
+# The raw feeds are cached by the Actions workflow; the page reads data/armoury.json.
+raw-*.jsonl
+inv-*.json
+shapes-*.csv
+snapshots/
+*.log
+# Old ledger CSV outputs (superseded by armoury-build.js -> data/armoury.json)
+weapons.csv
+loans.csv
+weapon-deposits.csv
+usage.csv
+unparsed.csv
