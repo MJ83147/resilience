@@ -2,6 +2,8 @@
 # The raw feeds are cached by the Actions workflow; the page reads data/armoury.json.
 raw-*.jsonl
 inv-*.json
+roster.json
+items-meta.json
 shapes-*.csv
 snapshots/
 *.log

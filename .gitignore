@@ -1,2 +1,6 @@
 # Apps Script code stays out of the public repo (names the properties that hold keys/secrets)
 apps-script/
+
+# Roster snapshot has member activity data; ownership is baked into data/armoury.json already
+current-roster-sept.json
+roster.json

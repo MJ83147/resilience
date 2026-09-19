@@ -21,6 +21,15 @@ const path = require("path");
 const HERE = __dirname;
 const OUT = path.join(HERE, "..", "..", "data", "armoury.json");
 
+// Optional item metadata (damage/accuracy/armor/quality/market_value/description/
+// bonus), keyed by Torn item id. Populated by a torn/items pull into
+// items-meta.json; absent until that pull runs, in which case items show no stats.
+let META = {};
+function loadItemMeta() {
+  const p = path.join(HERE, "items-meta.json");
+  return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : {};
+}
+
 // ---------- current inventory ----------
 // One physical copy per uid. loaned:null rows sit in the armoury; loaned:{id,name}
 // rows are with that member. Torn splits an item into one row per holder.
@@ -32,7 +41,7 @@ function loadInventory() {
     const cat = m[1];
     const d = JSON.parse(fs.readFileSync(path.join(HERE, f), "utf8"));
     for (const r of d.inventory || []) {
-      for (const uid of r.uids) copies.push({ cat, item: r.name, type: r.type, uid, holder: r.loaned || null });
+      for (const uid of r.uids) copies.push({ cat, item: r.name, itemId: r.id, type: r.type, uid, holder: r.loaned || null });
     }
   }
   return copies;
@@ -96,16 +105,16 @@ function parseAll(rows, rules) {
 // ---------- tracing ----------
 // Current copies are the anchor. Walk deposits newest-first, crediting depositors
 // to each item until its current count is covered. Anything left is unknown.
-function trace(copies, deposits) {
+function trace(copies, deposits, roster) {
   const byItem = new Map();
   for (const c of copies) {
-    const e = byItem.get(c.item) || { item: c.item, cat: c.cat, type: c.type, copies: 0, onLoan: 0, holders: [] };
+    const e = byItem.get(c.item) || { item: c.item, cat: c.cat, itemId: c.itemId, type: c.type, copies: 0, onLoan: 0, holders: [] };
     e.copies++;
     if (c.holder) { e.onLoan++; e.holders.push(c.holder.name); }
     byItem.set(c.item, e);
   }
   const need = new Map([...byItem].map(([k, v]) => [k, v.copies]));
-  const credit = new Map(); // item -> Map(name -> qty)
+  const credit = new Map(); // item -> Map(depositorId -> {id, name, qty})
   const desc = [...deposits].sort((a, b) => b.ts - a.ts);
   let lastDepTs = new Map(); // item -> ts of most recent deposit seen
   for (const e of desc) {
@@ -115,19 +124,27 @@ function trace(copies, deposits) {
     if (left <= 0) continue;
     const take = Math.min(left, e.qty);
     const cm = credit.get(e.item) || new Map();
-    const key = e.actor ? e.actor.name : "(unknown)";
-    cm.set(key, (cm.get(key) || 0) + take);
+    const id = e.actor ? e.actor.id : 0;
+    const cur = cm.get(id) || { id, name: e.actor ? e.actor.name : "(unknown)", qty: 0 };
+    cur.qty += take;
+    cm.set(id, cur);
     credit.set(e.item, cm);
     need.set(e.item, left - take);
   }
   const items = [...byItem.values()].map((e) => {
     const cm = credit.get(e.item) || new Map();
-    const depositors = [...cm].map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty);
+    const depositors = [...cm.values()].map((d) => ({ id: d.id, name: d.name, qty: d.qty, current: roster.has(d.id) }))
+      .sort((a, b) => b.qty - a.qty);
     const unknown = need.get(e.item) || 0;
+    // Ownership: player = depositor still in the roster, faction = depositor who
+    // has left, unknown = no deposit found for that copy.
+    const own = { player: 0, faction: 0, unknown: unknown };
+    for (const d of depositors) (d.current ? (own.player += d.qty) : (own.faction += d.qty));
     return {
-      item: e.item, cat: e.cat, copies: e.copies, onLoan: e.onLoan,
+      item: e.item, cat: e.cat, itemId: e.itemId, type: e.type, copies: e.copies, onLoan: e.onLoan,
+      meta: META[e.itemId] || null,
       holders: e.holders.sort(),
-      depositors, unknown,
+      depositors, unknown, own,
       // Copies map to item name and quantity only; with more than one copy the
       // news cannot say which physical copy came from which deposit.
       exact: e.copies === 1,
@@ -163,13 +180,30 @@ function usage(events) {
 }
 
 // ---------- main ----------
+// Current roster: members still in the faction. A depositor in this set means
+// the copy is player-owned; a depositor who has left makes it faction-owned.
+function loadRoster() {
+  for (const p of [path.join(HERE, "roster.json"), path.join(HERE, "..", "..", "current-roster-sept.json")]) {
+    if (fs.existsSync(p)) {
+      const d = JSON.parse(fs.readFileSync(p, "utf8"));
+      const list = d.members || d;
+      const set = new Set((Array.isArray(list) ? list : Object.values(list)).map((m) => m.id));
+      return { set, count: set.size, source: path.basename(p) };
+    }
+  }
+  return { set: new Set(), count: 0, source: null };
+}
+
 (function () {
   const copies = loadInventory();
   if (!copies.length) { console.error("No inv-*.json found. Pull current inventory first."); process.exit(1); }
   const dep = parseAll(load("raw-armoryDeposit.jsonl"), DEP_RULES);
   const act = parseAll(load("raw-armoryAction.jsonl"), ACT_RULES);
+  const roster = loadRoster();
+  if (!roster.count) console.warn("No roster file found; ownership will treat every depositor as faction-owned.");
+  META = loadItemMeta();
 
-  const tracing = trace(copies, dep.events);
+  const tracing = trace(copies, dep.events, roster.set);
   const use = usage(act.events);
 
   // Per-item timeline for weapons/armour: every deposit and loan-movement for a
@@ -195,6 +229,7 @@ function usage(events) {
     inventory: { copies: copies.length, items: new Set(copies.map((c) => c.item)).size, onLoan: copies.filter((c) => c.holder).length },
     depositWindow: depTs.length ? { from: Math.min(...depTs), to: Math.max(...depTs), count: dep.events.length, unparsed: dep.unparsed } : null,
     actionWindow: actTs.length ? { from: Math.min(...actTs), to: Math.max(...actTs), count: act.events.length, unparsed: act.unparsed } : null,
+    roster: { count: roster.count, source: roster.source },
     tracing,
     usage: use,
   };
@@ -205,7 +240,9 @@ function usage(events) {
   console.log(`inventory: ${data.inventory.copies} copies, ${data.inventory.items} items, ${data.inventory.onLoan} on loan`);
   console.log(`deposits: ${dep.events.length} parsed, ${dep.unparsed} unparsed`);
   console.log(`actions:  ${act.events.length} parsed, ${act.unparsed} unparsed`);
+  const ownSum = tracing.reduce((s, t) => ({ player: s.player + t.own.player, faction: s.faction + t.own.faction, unknown: s.unknown + t.own.unknown }), { player: 0, faction: 0, unknown: 0 });
   console.log(`tracing:  ${tracing.length - unknownItems.length}/${tracing.length} items fully sourced, ${unknownCopies} unknown copies across ${unknownItems.length} items`);
+  console.log(`roster:   ${roster.count} members (${roster.source || "none"}) -> player-owned ${ownSum.player}, faction-owned ${ownSum.faction}, unaccounted ${ownSum.unknown} copies`);
   console.log(`usage:    ${use.rows.length} month/person/item/type rows, ${use.members.length} members`);
   console.log(`wrote ${path.relative(process.cwd(), OUT)} (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB)`);
 })();

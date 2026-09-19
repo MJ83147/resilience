@@ -549,6 +549,12 @@
     .ev-loaned,.ev-given{background:rgba(106,167,216,.14);color:var(--info)}
     .ev-returned,.ev-retrieved{background:rgba(255,215,0,.14);color:var(--gold)}
     .ev-took,.ev-used{background:var(--panel-2);color:var(--muted);border:1px solid var(--line)}
+
+    .ow{font-size:11px;padding:2px 8px;border-radius:20px;white-space:nowrap;font-weight:600;display:inline-block}
+    .ow-player{background:rgba(95,184,122,.14);color:var(--win)}
+    .ow-faction{background:rgba(106,167,216,.14);color:var(--info)}
+    .ow-unknown{background:rgba(224,168,60,.16);color:var(--warn)}
+    .own.left{background:rgba(106,167,216,.14);border-color:rgba(106,167,216,.4);color:var(--info)}
   </style>
   <script src="/config.js?v=20260803b"></script>
   <script src="/auth.js?v=20260803b" defer data-gate></script>
@@ -596,6 +602,15 @@
             </div>
           </div>
           <div class="grp">
+            <label class="h">Ownership</label>
+            <div class="seg" id="traceOwn">
+              <button data-v="all" class="active">All</button>
+              <button data-v="player">Player</button>
+              <button data-v="faction">Faction</button>
+              <button data-v="unknown">Unaccounted</button>
+            </div>
+          </div>
+          <div class="grp">
             <label class="h">Show</label>
             <div class="seg" id="traceShow">
               <button data-v="all" class="active">All items</button>
@@ -617,6 +632,7 @@
                   <th class="num" data-sort="copies">Copies</th>
                   <th class="num" data-sort="onLoan">On loan</th>
                   <th>Deposited by</th>
+                  <th>Ownership</th>
                   <th data-sort="conf">Source</th>
                   <th>Owner / for sale</th>
                 </tr>
@@ -774,7 +790,16 @@
       }
 
       // ---------------- tracing ----------------
-      var traceState = { cat: "all", show: "all", search: "", sort: "copies", dir: -1, expanded: {} };
+      var traceState = { cat: "all", own: "all", show: "all", search: "", sort: "copies", dir: -1, expanded: {} };
+
+      function ownBadges(t) {
+        var o = t.own || { player: 0, faction: 0, unknown: t.unknown || 0 };
+        var out = [];
+        if (o.player) out.push('<span class="ow ow-player">' + o.player + " player</span>");
+        if (o.faction) out.push('<span class="ow ow-faction">' + o.faction + " faction</span>");
+        if (o.unknown) out.push('<span class="ow ow-unknown">' + o.unknown + " unaccounted</span>");
+        return out.join(" ") || '<span class="muted">-</span>';
+      }
 
       function confOf(t) {
         if (t.unknown >= t.copies) return { cls: "unk", label: "unknown" };
@@ -787,11 +812,12 @@
         var t = DATA.tracing;
         var copies = t.reduce(function (s, x) { return s + x.copies; }, 0);
         var onLoan = t.reduce(function (s, x) { return s + x.onLoan; }, 0);
+        var player = t.reduce(function (s, x) { return s + (x.own ? x.own.player : 0); }, 0);
+        var faction = t.reduce(function (s, x) { return s + (x.own ? x.own.faction : 0); }, 0);
         var unk = t.reduce(function (s, x) { return s + x.unknown; }, 0);
-        var traced = t.filter(function (x) { return x.unknown === 0; }).length;
         document.getElementById("traceTiles").innerHTML =
           tile(t.length, "Items") + tile(fmt(copies), "Copies") + tile(fmt(onLoan), "On loan") +
-          tile(traced + "/" + t.length, "Fully sourced") + tile(fmt(unk), "Unknown copies", unk > 0);
+          tile(fmt(player), "Player-owned") + tile(fmt(faction), "Faction-owned") + tile(fmt(unk), "Unaccounted", unk > 0);
       }
       function tile(n, l, warn) { return '<div class="tile"><div class="n' + (warn ? " warn" : "") + '">' + n + '</div><div class="l">' + l + "</div></div>"; }
 
@@ -812,6 +838,12 @@
         var rows = DATA.tracing.filter(function (t) {
           if (s.cat !== "all" && t.cat !== s.cat) return false;
           if (s.show === "flagged" && t.unknown === 0) return false;
+          if (s.own !== "all") {
+            var o = t.own || {};
+            if (s.own === "player" && !o.player) return false;
+            if (s.own === "faction" && !o.faction) return false;
+            if (s.own === "unknown" && !o.unknown) return false;
+          }
           if (q) {
             var inItem = t.item.toLowerCase().indexOf(q) > -1;
             var inDep = t.depositors.some(function (d) { return d.name.toLowerCase().indexOf(q) > -1; });
@@ -837,6 +869,7 @@
             '<td class="num">' + t.copies + "</td>" +
             '<td class="num">' + (t.onLoan || "") + "</td>" +
             '<td><span class="src">' + src + "</span></td>" +
+            "<td>" + ownBadges(t) + "</td>" +
             '<td><span class="conf ' + c.cls + '">' + c.label + "</span></td>" +
             "<td>" + markBadges(t.item) + "</td></tr>";
           return main;
@@ -947,11 +980,31 @@
         }).join("") + "</div>";
       }
 
+      // Item stats/bonus, shown when the build has baked in Torn item metadata.
+      function itemMetaHtml(t) {
+        var m = t.meta;
+        if (!m) return "";
+        var rows = [];
+        var add = function (l, v) { if (v != null && v !== "") rows.push('<div class="dt-kv"><span>' + l + "</span><b>" + esc(v) + "</b></div>"); };
+        add("Damage", m.damage);
+        add("Accuracy", m.accuracy);
+        add("Armor", m.armor);
+        add("Quality", m.quality);
+        add("Market value", m.market_value ? "$" + fmt(m.market_value) : null);
+        if (m.bonus) add("Bonus", m.bonus);
+        var desc = m.description ? '<div class="muted" style="font-size:12px;margin-top:6px">' + esc(m.description) + "</div>" : "";
+        if (!rows.length && !desc) return "";
+        return '<div class="dt-sec">Item details</div>' + rows.join("") + desc;
+      }
+
       function openItemDetail(item) {
         var t = DATA.tracing.find(function (x) { return x.item === item; });
         if (!t) return openConsumableDetail(item);   // a usage-only item (consumable), no weapon timeline
         var deps = t.depositors.length
-          ? t.depositors.map(function (d) { return '<span class="own">' + esc(d.name) + (d.qty > 1 ? " ×" + d.qty : "") + "</span>"; }).join(" ")
+          ? t.depositors.map(function (d) {
+              return '<span class="own' + (d.current ? "" : " left") + '" title="' + (d.current ? "in faction (player-owned)" : "left faction (faction-owned)") + '">' +
+                esc(d.name) + (d.qty > 1 ? " ×" + d.qty : "") + (d.current ? "" : " &rarr; faction") + "</span>";
+            }).join(" ")
           : '<span class="muted">none found in news</span>';
         if (t.unknown > 0) deps += ' <span class="flag">+' + t.unknown + " unaccounted</span>";
         var holders = (t.holders && t.holders.length)
@@ -959,8 +1012,10 @@
           : '<span class="muted">none on loan</span>';
         var html =
           "<h3>" + esc(t.item) + "</h3>" +
-          '<div class="sub">' + t.cat + "</div>" +
+          '<div class="sub">' + t.cat + (t.type ? " &middot; " + esc(t.type) : "") + "</div>" +
           '<div class="dt-tiles">' + tile(t.copies, "Copies") + tile(t.onLoan, "On loan") + tile(t.copies - t.onLoan, "In armoury") + tile(t.unknown || 0, "Unknown", t.unknown > 0) + "</div>" +
+          '<div class="dt-sec">Ownership</div><div class="dt-list">' + ownBadges(t) + '</div>' +
+          itemMetaHtml(t) +
           '<div class="dt-sec">Deposited by</div><div class="dt-list">' + deps + "</div>" +
           '<div class="dt-sec">On loan to</div><div class="dt-list">' + holders + "</div>" +
           '<div class="dt-sec">Owner &amp; for sale</div>' + markEditor(t) +
@@ -1198,6 +1253,7 @@
         renderTraceTiles();
         renderUnknown();
         seg("traceCat", function (v) { traceState.cat = v; renderTrace(); });
+        seg("traceOwn", function (v) { traceState.own = v; renderTrace(); });
         seg("traceShow", function (v) { traceState.show = v; renderTrace(); });
         document.getElementById("traceSearch").addEventListener("input", function (e) { traceState.search = e.target.value; renderTrace(); });
         document.querySelectorAll("#traceTable th[data-sort]").forEach(function (th) {

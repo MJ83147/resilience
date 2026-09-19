@@ -73,6 +73,14 @@ jobs:
             done
           done
 
+      - name: Pull current roster
+        working-directory: mug/armooury
+        env:
+          TORN_KEY: ${{ secrets.TORN_KEY }}
+        run: |
+          curl -s "https://api.torn.com/v2/faction/members?striptags=true&key=$TORN_KEY&comment=res-armoury" -o roster.json
+          node -e "const d=JSON.parse(require('fs').readFileSync('roster.json'));if(!d.members)process.exit(0);console.log('roster members:',d.members.length)"
+
       - name: Rebuild armoury.json
         working-directory: mug/armooury
         run: node armoury-build.js
