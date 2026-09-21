@@ -3,7 +3,7 @@
 raw-*.jsonl
 inv-*.json
 roster.json
-items-meta.json
+# items-meta.json is public Torn catalog data, committed so rebuilds keep stats
 # Manual deposit log (member data); baked into data/armoury.json at build time
 *Deposit Log*.csv
 deposit-log.csv

@@ -997,12 +997,11 @@
         if (!m) return "";
         var rows = [];
         var add = function (l, v) { if (v != null && v !== "") rows.push('<div class="dt-kv"><span>' + l + "</span><b>" + esc(v) + "</b></div>"); };
-        add("Damage", m.damage);
-        add("Accuracy", m.accuracy);
-        add("Armor", m.armor);
-        add("Quality", m.quality);
+        add("Class", m.sub_type);
+        if (m.damage > 0) add("Base damage", m.damage);
+        if (m.accuracy > 0) add("Base accuracy", m.accuracy);
+        if (m.armor > 0) add("Base armor", m.armor);
         add("Market value", m.market_value ? "$" + fmt(m.market_value) : null);
-        if (m.bonus) add("Bonus", m.bonus);
         var desc = m.description ? '<div class="muted" style="font-size:12px;margin-top:6px">' + esc(m.description) + "</div>" : "";
         if (!rows.length && !desc) return "";
         return '<div class="dt-sec">Item details</div>' + rows.join("") + desc;
