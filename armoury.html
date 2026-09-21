@@ -555,6 +555,7 @@
     .ow-faction{background:rgba(106,167,216,.14);color:var(--info)}
     .ow-unknown{background:rgba(224,168,60,.16);color:var(--warn)}
     .own.left{background:rgba(106,167,216,.14);border-color:rgba(106,167,216,.4);color:var(--info)}
+    .own.oc{background:rgba(255,215,0,.12);border-color:rgba(255,215,0,.35);color:var(--gold)}
 
     .fs{font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:4px;background:var(--gold);color:#1a1814}
     .logrow{padding:5px 0;border-bottom:1px solid var(--gray-200);font-size:12.5px}
@@ -974,6 +975,7 @@
         switch (e.type) {
           case "deposit": return { cls: "in", t: "Deposited by " + by + q };
           case "cache": return { cls: "in", t: by + " opened a cache and gained this" };
+          case "oc": return { cls: "in", t: "Won from OC" + (e.note ? ' <span class="muted">(' + esc(e.note) + ")</span>" : "") + q };
           case "loaned": return { cls: "out", t: e.to ? by + " loaned to " + to : by + " borrowed" + q };
           case "given": return { cls: "out", t: by + " gave to " + to + q };
           case "took": return { cls: "out", t: by + " took for self" + q };
@@ -1031,6 +1033,7 @@
         if (!t) return openConsumableDetail(item);   // a usage-only item (consumable), no weapon timeline
         var deps = t.depositors.length
           ? t.depositors.map(function (d) {
+              if (d.id === -1) return '<span class="own oc" title="won from organized crime (faction-owned)">Organized crime' + (d.qty > 1 ? " ×" + d.qty : "") + "</span>";
               return '<span class="own' + (d.current ? "" : " left") + '" title="' + (d.current ? "in faction (player-owned)" : "left faction (faction-owned)") + '">' +
                 esc(d.name) + (d.qty > 1 ? " ×" + d.qty : "") + (d.current ? "" : " &rarr; faction") + "</span>";
             }).join(" ")

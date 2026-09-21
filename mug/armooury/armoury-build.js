@@ -94,6 +94,26 @@ function loadInventory() {
   return copies;
 }
 
+// Organized-crime item rewards. OC completions pay items into the armory:
+// "...successfully completed <Scenario> receiving 1x A, 2x B, and 1x C which has
+// been deposited into the faction armory (+X.XX)". No single depositor, so these
+// count as faction-owned, credited to a sentinel "Organized crime" depositor.
+function parseCrimeRewards(rows) {
+  const events = [];
+  for (const r of rows) {
+    const plain = r.text.replace(/<[^>]+>/g, "");
+    const m = /successfully completed (.+?) receiving (.+?) which has been deposited into the faction armory/i.exec(plain);
+    if (!m) continue;
+    const scenario = m[1].trim();
+    for (const part of m[2].split(/,\s*|\s+and\s+/)) {
+      const im = /^(\d+)x\s+(.+)$/.exec(part.trim());
+      if (!im) continue;
+      events.push({ ts: r.timestamp, item: im[2].trim(), qty: +im[1], actor: { id: -1, name: "Organized crime" }, how: "oc", scenario });
+    }
+  }
+  return events;
+}
+
 // ---------- news parsing ----------
 // Pull the profile links out first so quantities/verbs are easy to match.
 function actors(text) {
@@ -246,11 +266,12 @@ function loadRoster() {
   if (!copies.length) { console.error("No inv-*.json found. Pull current inventory first."); process.exit(1); }
   const dep = parseAll(load("raw-armoryDeposit.jsonl"), DEP_RULES);
   const act = parseAll(load("raw-armoryAction.jsonl"), ACT_RULES);
+  const ocEvents = parseCrimeRewards(load("raw-crime.jsonl"));
   const roster = loadRoster();
   if (!roster.count) console.warn("No roster file found; ownership will treat every depositor as faction-owned.");
   META = loadItemMeta();
 
-  const tracing = trace(copies, dep.events, roster.set);
+  const tracing = trace(copies, [...dep.events, ...ocEvents], roster.set);
   const use = usage(act.events);
 
   // Per-item timeline for weapons/armour: every deposit and loan-movement for a
@@ -262,11 +283,12 @@ function loadRoster() {
   const pushEv = (e, type) => {
     if (!tracked.has(e.item)) return;
     const arr = timeline.get(e.item) || [];
-    arr.push({ ts: e.ts, type, by: e.actor ? e.actor.name : null, to: e.other ? e.other.name : null, qty: e.qty || 1 });
+    arr.push({ ts: e.ts, type, by: e.actor ? e.actor.name : null, to: e.other ? e.other.name : null, qty: e.qty || 1, note: e.scenario });
     timeline.set(e.item, arr);
   };
   for (const e of dep.events) pushEv(e, e.how);          // deposit / cache
   for (const e of act.events) pushEv(e, e.type);         // loaned / returned / retrieved / given / took / used
+  for (const e of ocEvents) pushEv(e, "oc");             // organized-crime armory rewards
   for (const t of tracing) t.events = (timeline.get(t.item) || []).sort((a, b) => a.ts - b.ts);
 
   // Attach the manual deposit log (bonuses/perks and manual status) per item.
@@ -300,6 +322,7 @@ function loadRoster() {
   console.log(`tracing:  ${tracing.length - unknownItems.length}/${tracing.length} items fully sourced, ${unknownCopies} unknown copies across ${unknownItems.length} items`);
   console.log(`roster:   ${roster.count} members (${roster.source || "none"}) -> player-owned ${ownSum.player}, faction-owned ${ownSum.faction}, unaccounted ${ownSum.unknown} copies`);
   console.log(`log:      ${log.count} entries (${log.source || "none"}), ${logMatched} matched to current items`);
+  console.log(`oc:       ${ocEvents.length} organized-crime armory rewards parsed from crime feed`);
   console.log(`usage:    ${use.rows.length} month/person/item/type rows, ${use.members.length} members`);
   console.log(`wrote ${path.relative(process.cwd(), OUT)} (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB)`);
 })();

@@ -44,6 +44,7 @@ jobs:
           path: |
             mug/armooury/raw-armoryDeposit.jsonl
             mug/armooury/raw-armoryAction.jsonl
+            mug/armooury/raw-crime.jsonl
           key: armoury-raw-${{ github.run_id }}
           restore-keys: |
             armoury-raw-
@@ -55,6 +56,7 @@ jobs:
         run: |
           node armoury-download.js armoryDeposit 2012-01-01 || true
           node armoury-download.js armoryAction 2025-09-19 || true
+          node armoury-download.js crime 2025-01-01 || true
 
       - name: Pull current inventory
         working-directory: mug/armooury
