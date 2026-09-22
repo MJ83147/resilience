@@ -242,6 +242,7 @@ function buildPieces(copies, tracing, log, roster) {
         holder: c.holder ? c.holder.name : null,
         who, ownership, status, colour, perks, damage, accuracy, quality,
         market: meta ? meta.market_value : null,
+        tracked: !!le,   // logged in the RW spreadsheet
       });
     }
   }

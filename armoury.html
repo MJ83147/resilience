@@ -560,6 +560,9 @@
     .dot-yellow{background:#ffd700}
     .dot-orange{background:#e0863c}
     .dot-red{background:var(--loss)}
+    tr.grp-hdr>td{background:var(--panel-2);color:var(--gold);font-family:var(--font-display);font-size:17px;font-weight:700;letter-spacing:.03em;padding:10px 12px;border-top:2px solid var(--gold);position:sticky;top:0}
+    tr.grp-sub>td{background:var(--ink);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:6px 12px}
+    tr.grp-hdr:hover>td,tr.grp-sub:hover>td{background:var(--panel-2)}
 
     .fs{font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:4px;background:var(--gold);color:#1a1814}
     .logrow{padding:5px 0;border-bottom:1px solid var(--gray-200);font-size:12.5px}
@@ -580,7 +583,7 @@
 <body>
   <div id="site-nav"></div>
 
-  <div class="container container--narrow">
+  <div class="container" style="max-width:min(1920px,97vw)">
     <div class="header" style="background:transparent;box-shadow:none;text-align:center">
       <h1 style="font-size:32px;margin-bottom:8px">Armoury</h1>
       <p>Faction armoury usage and weapon/armour tracing &middot; <a href="/admin">back to admin</a></p>
@@ -856,6 +859,7 @@
           "<td>" + (x.holder ? esc(x.holder) : '<span class="muted">in armoury</span>') + "</td></tr>";
       }
 
+      var TYPE_ORDER = ["Primary", "Secondary", "Melee", "Defensive", "Other"];
       function renderTrace() {
         var s = traceState, q = s.search.toLowerCase();
         traceFiltered = DATA.pieces.filter(function (x) {
@@ -871,9 +875,25 @@
           }
           return true;
         });
-        document.querySelector("#traceTable tbody").innerHTML = traceFiltered.map(pieceRow).join("");
-        document.getElementById("traceMeta").textContent =
-          traceFiltered.length + " of " + DATA.pieces.length + " pieces. Colour, perks, owner and status come from the deposit-log spreadsheet; pieces with no sheet entry are faction stock.";
+        // split into Ranked War (in the spreadsheet) and Non-Ranked War (faction stock), each grouped by type
+        var groups = [{ name: "Ranked War", rw: true }, { name: "Non-Ranked War", rw: false }];
+        var html = "";
+        groups.forEach(function (g) {
+          var mine = traceFiltered.filter(function (x) { return !!x.tracked === g.rw; });
+          if (!mine.length) return;
+          html += '<tr class="grp-hdr"><td colspan="8">' + g.name + ' <span class="muted">· ' + mine.length + " pieces</span></td></tr>";
+          var byType = {};
+          mine.forEach(function (x) { (byType[x.type || "Other"] = byType[x.type || "Other"] || []).push(x); });
+          var ord = function (t) { var i = TYPE_ORDER.indexOf(t); return i < 0 ? 99 : i; };
+          var types = Object.keys(byType).sort(function (a, b) { return ord(a) - ord(b); });
+          types.forEach(function (t) {
+            html += '<tr class="grp-sub"><td colspan="8">' + esc(t === "Defensive" ? "Armour" : t) + " · " + byType[t].length + "</td></tr>";
+            html += byType[t].map(function (x) { return pieceRow(x, DATA.pieces.indexOf(x)); }).join("");
+          });
+        });
+        var tb = document.querySelector("#traceTable tbody");
+        tb.innerHTML = html || '<tr><td colspan="8" class="muted" style="padding:16px">No pieces match these filters.</td></tr>';
+        document.getElementById("traceMeta").textContent = "";
       }
 
       function markBadges(item) {
@@ -1289,7 +1309,7 @@
         document.getElementById("traceSearch").addEventListener("input", function (e) { traceState.search = e.target.value; renderTrace(); });
         document.querySelector("#traceTable tbody").addEventListener("click", function (e) {
           var tr = e.target.closest("tr.clk");
-          if (tr) openPieceDetail(traceFiltered[+tr.getAttribute("data-i")]);
+          if (tr) openPieceDetail(DATA.pieces[+tr.getAttribute("data-i")]);
         });
         renderTrace();
 
