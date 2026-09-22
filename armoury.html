@@ -556,6 +556,10 @@
     .ow-unknown{background:rgba(224,168,60,.16);color:var(--warn)}
     .own.left{background:rgba(106,167,216,.14);border-color:rgba(106,167,216,.4);color:var(--info)}
     .own.oc{background:rgba(255,215,0,.12);border-color:rgba(255,215,0,.35);color:var(--gold)}
+    .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+    .dot-yellow{background:#ffd700}
+    .dot-orange{background:#e0863c}
+    .dot-red{background:var(--loss)}
 
     .fs{font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:4px;background:var(--gold);color:#1a1814}
     .logrow{padding:5px 0;border-bottom:1px solid var(--gray-200);font-size:12.5px}
@@ -597,13 +601,6 @@
       <div class="arm-view active" id="view-trace">
         <div class="tiles" id="traceTiles"></div>
 
-        <div class="panel" id="unknownPanel" style="margin-bottom:16px;border-color:var(--warn)">
-          <h3 style="color:var(--warn)">Unaccounted copies</h3>
-          <p class="cap">In the armoury now, but no deposit for them exists in the downloaded news. Likely deposited
-            before the news history begins, or acquired another way.</p>
-          <div id="unknownList"></div>
-        </div>
-
         <div class="controls">
           <div class="grp">
             <label class="h">Category</label>
@@ -619,19 +616,32 @@
               <button data-v="all" class="active">All</button>
               <button data-v="player">Player</button>
               <button data-v="faction">Faction</button>
-              <button data-v="unknown">Unaccounted</button>
             </div>
           </div>
           <div class="grp">
-            <label class="h">Show</label>
-            <div class="seg" id="traceShow">
-              <button data-v="all" class="active">All items</button>
-              <button data-v="flagged">Flagged only</button>
+            <label class="h">Colour</label>
+            <div class="seg" id="traceColour">
+              <button data-v="all" class="active">All</button>
+              <button data-v="yellow">Yellow</button>
+              <button data-v="orange">Orange</button>
+              <button data-v="red">Red</button>
             </div>
           </div>
-          <div class="grp" style="flex:1;min-width:180px">
-            <label class="h">Search item or depositor</label>
-            <input type="search" id="traceSearch" placeholder="e.g. BT MP9 or Systoned">
+          <div class="grp">
+            <label class="h">Status</label>
+            <div class="seg" id="traceStatus">
+              <button data-v="all" class="active">All</button>
+              <button data-v="sale">For sale</button>
+              <button data-v="loan">Loan</button>
+            </div>
+          </div>
+          <div class="grp">
+            <label class="h">Type</label>
+            <select id="traceType"><option value="all">All types</option></select>
+          </div>
+          <div class="grp" style="flex:1;min-width:160px">
+            <label class="h">Search item or owner</label>
+            <input type="search" id="traceSearch" placeholder="e.g. China Lake or Isca">
           </div>
         </div>
 
@@ -640,13 +650,14 @@
             <table class="board" id="traceTable">
               <thead>
                 <tr>
-                  <th data-sort="item">Item</th>
-                  <th class="num" data-sort="copies">Copies</th>
-                  <th class="num" data-sort="onLoan">On loan</th>
-                  <th>Deposited by</th>
+                  <th>Item</th>
+                  <th>Type</th>
+                  <th>Colour</th>
+                  <th>Perk</th>
+                  <th>Owner</th>
                   <th>Ownership</th>
-                  <th data-sort="conf">Source</th>
-                  <th>Owner / for sale</th>
+                  <th>Status</th>
+                  <th>Held by</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -801,99 +812,68 @@
         return (d / 365).toFixed(1) + "y ago";
       }
 
-      // ---------------- tracing ----------------
-      var traceState = { cat: "all", own: "all", show: "all", search: "", sort: "copies", dir: -1, expanded: {} };
+      // ---------------- tracing: one row per individual piece ----------------
+      var traceState = { cat: "all", own: "all", colour: "all", status: "all", type: "all", search: "" };
+      var traceFiltered = [];
 
-      function ownBadges(t) {
-        var o = t.own || { player: 0, faction: 0, unknown: t.unknown || 0 };
-        var out = [];
-        if (o.player) out.push('<span class="ow ow-player">' + o.player + " player</span>");
-        if (o.faction) out.push('<span class="ow ow-faction">' + o.faction + " faction</span>");
-        if (o.unknown) out.push('<span class="ow ow-unknown">' + o.unknown + " unaccounted</span>");
-        return out.join(" ") || '<span class="muted">-</span>';
-      }
-
-      function confOf(t) {
-        if (t.unknown >= t.copies) return { cls: "unk", label: "unknown" };
-        if (t.unknown > 0) return { cls: "unk", label: t.unknown + " unknown" };
-        if (t.exact) return { cls: "exact", label: "exact" };
-        return { cls: "attr", label: "attributed" };
-      }
-
-      function renderTraceTiles() {
-        var t = DATA.tracing;
-        var copies = t.reduce(function (s, x) { return s + x.copies; }, 0);
-        var onLoan = t.reduce(function (s, x) { return s + x.onLoan; }, 0);
-        var player = t.reduce(function (s, x) { return s + (x.own ? x.own.player : 0); }, 0);
-        var faction = t.reduce(function (s, x) { return s + (x.own ? x.own.faction : 0); }, 0);
-        var unk = t.reduce(function (s, x) { return s + x.unknown; }, 0);
-        document.getElementById("traceTiles").innerHTML =
-          tile(t.length, "Items") + tile(fmt(copies), "Copies") + tile(fmt(onLoan), "On loan") +
-          tile(fmt(player), "Player-owned") + tile(fmt(faction), "Faction-owned") + tile(fmt(unk), "Unaccounted", unk > 0);
-      }
       function tile(n, l, warn) { return '<div class="tile"><div class="n' + (warn ? " warn" : "") + '">' + n + '</div><div class="l">' + l + "</div></div>"; }
 
-      function renderUnknown() {
-        var flagged = DATA.tracing.filter(function (t) { return t.unknown > 0; })
-          .sort(function (a, b) { return b.unknown - a.unknown; });
-        var el = document.getElementById("unknownPanel");
-        if (!flagged.length) { el.style.display = "none"; return; }
-        document.getElementById("unknownList").innerHTML = flagged.map(function (t) {
-          return '<div class="src clk" data-item="' + esc(t.item) + '" style="padding:3px 0;cursor:pointer"><span class="flag">' + t.unknown + " of " + t.copies +
-            '</span> <b>' + esc(t.item) + "</b> <span class=\"cat\">" + t.cat + "</span></div>";
-        }).join("");
+      function renderTraceTiles() {
+        var p = DATA.pieces;
+        var player = p.filter(function (x) { return x.ownership === "player"; }).length;
+        var sale = p.filter(function (x) { return /sale/i.test(x.status || ""); }).length;
+        var rare = p.filter(function (x) { return x.colour === "red" || x.colour === "orange"; }).length;
+        document.getElementById("traceTiles").innerHTML =
+          tile(fmt(p.length), "Pieces") + tile(fmt(player), "Player-owned") + tile(fmt(p.length - player), "Faction-owned") +
+          tile(fmt(sale), "For sale") + tile(fmt(rare), "Red / Orange");
+      }
+
+      function buildTypeOptions() {
+        var set = {};
+        DATA.pieces.forEach(function (x) { set[x.type || "Other"] = 1; });
+        document.getElementById("traceType").innerHTML =
+          '<option value="all">All types</option>' +
+          Object.keys(set).sort().map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + "</option>"; }).join("");
+      }
+
+      function pieceRow(x, i) {
+        var perk = (x.perks || []).length
+          ? x.perks.map(function (pk) { return '<span class="perk perk-' + (x.colour || "") + '">' + esc(pk.name) + (pk.pct != null ? " " + pk.pct + "%" : "") + "</span>"; }).join(" ")
+          : '<span class="muted">-</span>';
+        var col = x.colour ? '<span class="dot dot-' + x.colour + '"></span>' + x.colour : '<span class="muted">-</span>';
+        var st = x.status
+          ? '<span class="st ' + (/sale/i.test(x.status) ? "st-sale" : /faction/i.test(x.status) ? "st-faction" : "st-loan") + '">' + esc(x.status) + "</span>"
+          : '<span class="muted">-</span>';
+        var own = x.ownership === "player" ? '<span class="ow ow-player">player</span>' : '<span class="ow ow-faction">faction</span>';
+        return '<tr class="clk" data-i="' + i + '">' +
+          "<td>" + esc(x.item) + "</td>" +
+          '<td class="muted">' + esc(x.type || "-") + "</td>" +
+          "<td>" + col + "</td>" +
+          "<td>" + perk + "</td>" +
+          "<td>" + (x.who ? esc(x.who) : '<span class="muted">-</span>') + "</td>" +
+          "<td>" + own + "</td>" +
+          "<td>" + st + "</td>" +
+          "<td>" + (x.holder ? esc(x.holder) : '<span class="muted">in armoury</span>') + "</td></tr>";
       }
 
       function renderTrace() {
-        var s = traceState;
-        var q = s.search.toLowerCase();
-        var rows = DATA.tracing.filter(function (t) {
-          if (s.cat !== "all" && t.cat !== s.cat) return false;
-          if (s.show === "flagged" && t.unknown === 0) return false;
-          if (s.own !== "all") {
-            var o = t.own || {};
-            if (s.own === "player" && !o.player) return false;
-            if (s.own === "faction" && !o.faction) return false;
-            if (s.own === "unknown" && !o.unknown) return false;
-          }
+        var s = traceState, q = s.search.toLowerCase();
+        traceFiltered = DATA.pieces.filter(function (x) {
+          if (s.cat !== "all" && x.cat !== s.cat) return false;
+          if (s.own !== "all" && x.ownership !== s.own) return false;
+          if (s.colour !== "all" && x.colour !== s.colour) return false;
+          if (s.type !== "all" && (x.type || "Other") !== s.type) return false;
+          if (s.status === "sale" && !/sale/i.test(x.status || "")) return false;
+          if (s.status === "loan" && !/loan/i.test(x.status || "")) return false;
           if (q) {
-            var inItem = t.item.toLowerCase().indexOf(q) > -1;
-            var inDep = t.depositors.some(function (d) { return d.name.toLowerCase().indexOf(q) > -1; });
-            if (!inItem && !inDep) return false;
+            var hit = x.item.toLowerCase().indexOf(q) > -1 || (x.who && x.who.toLowerCase().indexOf(q) > -1) || (x.holder && x.holder.toLowerCase().indexOf(q) > -1);
+            if (!hit) return false;
           }
           return true;
         });
-        rows.sort(function (a, b) {
-          var av, bv;
-          if (s.sort === "item") { av = a.item.toLowerCase(); bv = b.item.toLowerCase(); }
-          else if (s.sort === "conf") { av = a.unknown > 0 ? 2 : a.exact ? 0 : 1; bv = b.unknown > 0 ? 2 : b.exact ? 0 : 1; }
-          else { av = a[s.sort]; bv = b[s.sort]; }
-          return av < bv ? -s.dir : av > bv ? s.dir : 0;
-        });
-        var body = rows.map(function (t) {
-          var c = confOf(t);
-          var src = t.depositors.length
-            ? t.depositors.map(function (d) { return "<b>" + esc(d.name) + "</b>" + (d.qty > 1 ? " ×" + d.qty : ""); }).join(", ")
-            : '<span class="flag">—</span>';
-          if (t.unknown > 0 && t.depositors.length) src += ' <span class="flag">+' + t.unknown + " unknown</span>";
-          var main = '<tr class="clk" data-item="' + esc(t.item) + '">' +
-            "<td>" + esc(t.item) + ' <span class="cat">' + t.cat + "</span></td>" +
-            '<td class="num">' + t.copies + "</td>" +
-            '<td class="num">' + (t.onLoan || "") + "</td>" +
-            '<td><span class="src">' + src + "</span></td>" +
-            "<td>" + ownBadges(t) + "</td>" +
-            '<td><span class="conf ' + c.cls + '">' + c.label + "</span></td>" +
-            "<td>" + (t.forSale ? '<span class="fs">FOR SALE</span> ' : "") + markBadges(t.item) + "</td></tr>";
-          return main;
-        }).join("");
-        document.querySelector("#traceTable tbody").innerHTML = body;
+        document.querySelector("#traceTable tbody").innerHTML = traceFiltered.map(pieceRow).join("");
         document.getElementById("traceMeta").textContent =
-          rows.length + " of " + DATA.tracing.length + " items shown. Multi-copy sources are best-effort: the news records item name and quantity, not which physical copy came from which deposit. Deposits span " +
-          dateShort(DATA.depositWindow.from) + " to " + dateShort(DATA.depositWindow.to) + ".";
-      }
-      function holdersFor(item) {
-        var t = DATA.tracing.find(function (x) { return x.item === item; });
-        return t && t.holders ? t.holders : [];
+          traceFiltered.length + " of " + DATA.pieces.length + " pieces. Colour, perks, owner and status come from the deposit-log spreadsheet; pieces with no sheet entry are faction stock.";
       }
 
       function markBadges(item) {
@@ -1028,32 +1008,48 @@
         return '<div class="dt-sec">Deposit log &amp; bonuses (' + t.log.length + ")</div>" + rows;
       }
 
+      // A single piece: its own colour/perks/owner/status plus the item's base stats.
+      function openPieceDetail(x) {
+        var meta = (DATA.tracing.find(function (t) { return t.item === x.item; }) || {}).meta;
+        var perks = (x.perks || []).length
+          ? x.perks.map(function (pk) { return '<span class="perk perk-' + (x.colour || "") + '">' + esc(pk.name) + (pk.pct != null ? " " + pk.pct + "%" : "") + "</span>"; }).join(" ")
+          : '<span class="muted">none logged</span>';
+        var rows = "";
+        var add = function (l, v) { if (v != null && v !== "") rows += '<div class="dt-kv"><span>' + l + "</span><b>" + esc(v) + "</b></div>"; };
+        add("Type", x.type);
+        add("Colour", x.colour);
+        add("Owner", x.who);
+        add("Ownership", x.ownership);
+        add("Status", x.status);
+        add("Held by", x.holder || "in armoury");
+        if (x.damage != null) add("Damage", x.damage);
+        if (x.accuracy != null) add("Accuracy", x.accuracy);
+        if (x.quality != null) add("Quality", x.quality + "%");
+        if (meta) { if (meta.damage > 0) add("Base damage", meta.damage); if (meta.accuracy > 0) add("Base accuracy", meta.accuracy); add("Market value", meta.market_value ? "$" + fmt(meta.market_value) : null); }
+        var desc = meta && meta.description ? '<div class="muted" style="font-size:12px;margin-top:8px">' + esc(meta.description) + "</div>" : "";
+        openOverlay("<h3>" + esc(x.item) + "</h3>" +
+          '<div class="sub">' + esc(x.type || x.cat) + (x.colour ? " &middot; " + esc(x.colour) : "") + (/sale/i.test(x.status || "") ? ' <span class="fs">FOR SALE</span>' : "") + "</div>" +
+          '<div class="dt-sec">Perks</div><div class="dt-list">' + perks + "</div>" +
+          '<div class="dt-sec">Details</div>' + rows + desc);
+      }
+
+      // An item from the Ledger/Usage tabs: base stats plus each of its pieces.
       function openItemDetail(item) {
         var t = DATA.tracing.find(function (x) { return x.item === item; });
-        if (!t) return openConsumableDetail(item);   // a usage-only item (consumable), no weapon timeline
-        var deps = t.depositors.length
-          ? t.depositors.map(function (d) {
-              if (d.id === -1) return '<span class="own oc" title="won from organized crime (faction-owned)">Organized crime' + (d.qty > 1 ? " ×" + d.qty : "") + "</span>";
-              return '<span class="own' + (d.current ? "" : " left") + '" title="' + (d.current ? "in faction (player-owned)" : "left faction (faction-owned)") + '">' +
-                esc(d.name) + (d.qty > 1 ? " ×" + d.qty : "") + (d.current ? "" : " &rarr; faction") + "</span>";
-            }).join(" ")
-          : '<span class="muted">none found in news</span>';
-        if (t.unknown > 0) deps += ' <span class="flag">+' + t.unknown + " unaccounted</span>";
-        var holders = (t.holders && t.holders.length)
-          ? t.holders.map(function (h) { return '<span class="own">' + esc(h) + "</span>"; }).join(" ")
-          : '<span class="muted">none on loan</span>';
-        var html =
-          "<h3>" + esc(t.item) + "</h3>" +
-          '<div class="sub">' + t.cat + (t.type ? " &middot; " + esc(t.type) : "") + (t.forSale ? ' <span class="fs">FOR SALE</span>' : "") + "</div>" +
-          '<div class="dt-tiles">' + tile(t.copies, "Copies") + tile(t.onLoan, "On loan") + tile(t.copies - t.onLoan, "In armoury") + tile(t.unknown || 0, "Unknown", t.unknown > 0) + "</div>" +
-          '<div class="dt-sec">Ownership</div><div class="dt-list">' + ownBadges(t) + '</div>' +
+        if (!t) return openConsumableDetail(item);
+        var pcs = DATA.pieces.filter(function (p) { return p.item === item; });
+        var list = pcs.map(function (x) {
+          var perk = (x.perks || []).map(function (pk) { return '<span class="perk perk-' + (x.colour || "") + '">' + esc(pk.name) + (pk.pct != null ? " " + pk.pct + "%" : "") + "</span>"; }).join(" ");
+          var owner = x.who ? "<b>" + esc(x.who) + "</b>" : '<span class="muted">faction stock</span>';
+          var st = x.status ? '<span class="st ' + (/sale/i.test(x.status) ? "st-sale" : /faction/i.test(x.status) ? "st-faction" : "st-loan") + '">' + esc(x.status) + "</span>" : "";
+          var dot = x.colour ? '<span class="dot dot-' + x.colour + '"></span>' : "";
+          return '<div class="logrow">' + dot + " " + owner + " " + st + (perk ? " &middot; " + perk : "") + (x.holder ? ' <span class="muted">held by ' + esc(x.holder) + "</span>" : "") + "</div>";
+        }).join("");
+        openOverlay("<h3>" + esc(t.item) + "</h3>" +
+          '<div class="sub">' + t.cat + (t.type ? " &middot; " + esc(t.type) : "") + "</div>" +
+          '<div class="dt-tiles">' + tile(t.copies, "Pieces") + tile(t.own.player, "Player-owned") + tile(t.own.faction, "Faction-owned") + "</div>" +
           itemMetaHtml(t) +
-          renderLog(t) +
-          '<div class="dt-sec">Deposited by</div><div class="dt-list">' + deps + "</div>" +
-          '<div class="dt-sec">On loan to</div><div class="dt-list">' + holders + "</div>" +
-          '<div class="dt-sec">Owner &amp; for sale</div>' + markEditor(t) +
-          '<div class="dt-sec">History (deposit &rarr; now)</div>' + renderTimeline(t.events);
-        openOverlay(html);
+          '<div class="dt-sec">Pieces</div>' + (list || '<div class="muted">none</div>'));
       }
 
       function kvRows(pairs, kind) {
@@ -1282,29 +1278,18 @@
           });
         });
 
-        // tracing
+        // tracing (per-piece)
         renderTraceTiles();
-        renderUnknown();
+        buildTypeOptions();
         seg("traceCat", function (v) { traceState.cat = v; renderTrace(); });
         seg("traceOwn", function (v) { traceState.own = v; renderTrace(); });
-        seg("traceShow", function (v) { traceState.show = v; renderTrace(); });
+        seg("traceColour", function (v) { traceState.colour = v; renderTrace(); });
+        seg("traceStatus", function (v) { traceState.status = v; renderTrace(); });
+        document.getElementById("traceType").addEventListener("change", function (e) { traceState.type = e.target.value; renderTrace(); });
         document.getElementById("traceSearch").addEventListener("input", function (e) { traceState.search = e.target.value; renderTrace(); });
-        document.querySelectorAll("#traceTable th[data-sort]").forEach(function (th) {
-          th.style.cursor = "pointer";
-          th.addEventListener("click", function () {
-            var k = th.getAttribute("data-sort");
-            if (traceState.sort === k) traceState.dir *= -1; else { traceState.sort = k; traceState.dir = k === "item" ? 1 : -1; }
-            renderTrace();
-          });
-        });
         document.querySelector("#traceTable tbody").addEventListener("click", function (e) {
           var tr = e.target.closest("tr.clk");
-          if (tr) openItemDetail(tr.getAttribute("data-item"));
-        });
-        // unaccounted panel items open the same detail
-        document.getElementById("unknownList").addEventListener("click", function (e) {
-          var row = e.target.closest("[data-item]");
-          if (row) openItemDetail(row.getAttribute("data-item"));
+          if (tr) openPieceDetail(traceFiltered[+tr.getAttribute("data-i")]);
         });
         renderTrace();
 

@@ -170,9 +170,11 @@ function parseAll(rows, rules) {
 }
 
 // ---------- tracing ----------
-// Current copies are the anchor. Walk deposits newest-first, crediting depositors
-// to each item until its current count is covered. Anything left is unknown.
-function trace(copies, deposits, roster) {
+// The current inventory grouped by item, enriched from the deposit-log
+// spreadsheet (the source of truth). Ownership is spreadsheet-driven: a copy is
+// player-owned when a current roster member has it logged as their loan or sale;
+// everything else is faction-owned. Colour and perks come from the log too.
+function trace(copies, roster, log) {
   const byItem = new Map();
   for (const c of copies) {
     const e = byItem.get(c.item) || { item: c.item, cat: c.cat, itemId: c.itemId, type: c.type, copies: 0, onLoan: 0, holders: [] };
@@ -180,45 +182,71 @@ function trace(copies, deposits, roster) {
     if (c.holder) { e.onLoan++; e.holders.push(c.holder.name); }
     byItem.set(c.item, e);
   }
-  const need = new Map([...byItem].map(([k, v]) => [k, v.copies]));
-  const credit = new Map(); // item -> Map(depositorId -> {id, name, qty})
-  const desc = [...deposits].sort((a, b) => b.ts - a.ts);
-  let lastDepTs = new Map(); // item -> ts of most recent deposit seen
-  for (const e of desc) {
-    if (!need.has(e.item)) continue;
-    if (!lastDepTs.has(e.item)) lastDepTs.set(e.item, e.ts);
-    const left = need.get(e.item);
-    if (left <= 0) continue;
-    const take = Math.min(left, e.qty);
-    const cm = credit.get(e.item) || new Map();
-    const id = e.actor ? e.actor.id : 0;
-    const cur = cm.get(id) || { id, name: e.actor ? e.actor.name : "(unknown)", qty: 0 };
-    cur.qty += take;
-    cm.set(id, cur);
-    credit.set(e.item, cm);
-    need.set(e.item, left - take);
-  }
   const items = [...byItem.values()].map((e) => {
-    const cm = credit.get(e.item) || new Map();
-    const depositors = [...cm.values()].map((d) => ({ id: d.id, name: d.name, qty: d.qty, current: roster.has(d.id) }))
-      .sort((a, b) => b.qty - a.qty);
-    const unknown = need.get(e.item) || 0;
-    // Ownership: player = depositor still in the roster, faction = depositor who
-    // has left, unknown = no deposit found for that copy.
-    const own = { player: 0, faction: 0, unknown: unknown };
-    for (const d of depositors) (d.current ? (own.player += d.qty) : (own.faction += d.qty));
+    const logs = log.byItem[e.item] || [];
+    let player = 0, forSale = false, loan = 0, factionLogged = 0;
+    const colours = {};
+    for (const le of logs) {
+      const who = String(le.who || "").trim().toLowerCase();
+      const inRoster = roster.names.has(who);
+      const isFaction = /faction/i.test(le.status || "");
+      const isSale = /sale/i.test(le.status || "");
+      if (isSale) forSale = true;
+      if (/loan/i.test(le.status || "")) loan++;
+      if (isFaction) factionLogged++;
+      if (inRoster && !isFaction) player++;
+      const col = (le.color || "").trim().toLowerCase() || "none";
+      colours[col] = (colours[col] || 0) + 1;
+    }
+    player = Math.min(player, e.copies);
     return {
       item: e.item, cat: e.cat, itemId: e.itemId, type: e.type, copies: e.copies, onLoan: e.onLoan,
       meta: META[e.itemId] || null,
       holders: e.holders.sort(),
-      depositors, unknown, own,
-      // Copies map to item name and quantity only; with more than one copy the
-      // news cannot say which physical copy came from which deposit.
-      exact: e.copies === 1,
-      lastDeposit: lastDepTs.get(e.item) || null,
+      log: logs,
+      own: { player, faction: e.copies - player },
+      forSale, colours,
     };
   }).sort((a, b) => b.copies - a.copies);
   return items;
+}
+
+// One row per individual weapon/armour piece. Sheet entries (source of truth)
+// are matched to inventory copies of the same item; a piece with a sheet entry
+// carries its colour, perks, owner and status, otherwise it is faction stock.
+function buildPieces(copies, tracing, log, roster) {
+  const metaOf = {};
+  tracing.forEach((t) => { metaOf[t.item] = t.meta; });
+  const byItem = {};
+  for (const c of copies) (byItem[c.item] = byItem[c.item] || []).push(c);
+  const pieces = [];
+  for (const item in byItem) {
+    const cs = byItem[item];
+    const logs = log.byItem[item] || [];
+    const meta = metaOf[item] || null;
+    for (let i = 0; i < cs.length; i++) {
+      const c = cs[i];
+      const le = logs[i] || null;   // match sheet entry to a copy by order
+      let ownership = "faction", who = null, status = null, colour = null, perks = [], damage = null, accuracy = null, quality = null;
+      if (le) {
+        who = le.who || null;
+        status = le.status || null;
+        colour = (le.color || "").trim().toLowerCase() || null;
+        perks = le.perks || [];
+        damage = le.damage; accuracy = le.accuracy; quality = le.quality;
+        const inRoster = roster.names.has(String(le.who || "").trim().toLowerCase());
+        ownership = inRoster && !/faction/i.test(le.status || "") ? "player" : "faction";
+      }
+      pieces.push({
+        item, cat: c.cat, type: c.type, itemId: c.itemId, uid: c.uid,
+        holder: c.holder ? c.holder.name : null,
+        who, ownership, status, colour, perks, damage, accuracy, quality,
+        market: meta ? meta.market_value : null,
+      });
+    }
+  }
+  const rank = (p) => (p.colour === "red" ? 0 : p.colour === "orange" ? 1 : p.colour === "yellow" ? 2 : p.who ? 3 : 4);
+  return pieces.sort((a, b) => rank(a) - rank(b) || a.item.localeCompare(b.item));
 }
 
 // ---------- usage ----------
@@ -254,11 +282,13 @@ function loadRoster() {
     if (fs.existsSync(p)) {
       const d = JSON.parse(fs.readFileSync(p, "utf8"));
       const list = d.members || d;
-      const set = new Set((Array.isArray(list) ? list : Object.values(list)).map((m) => m.id));
-      return { set, count: set.size, source: path.basename(p) };
+      const arr = Array.isArray(list) ? list : Object.values(list);
+      const set = new Set(arr.map((m) => m.id));
+      const names = new Set(arr.map((m) => String(m.name || "").trim().toLowerCase()));
+      return { set, names, count: set.size, source: path.basename(p) };
     }
   }
-  return { set: new Set(), count: 0, source: null };
+  return { set: new Set(), names: new Set(), count: 0, source: null };
 }
 
 (function () {
@@ -268,10 +298,11 @@ function loadRoster() {
   const act = parseAll(load("raw-armoryAction.jsonl"), ACT_RULES);
   const ocEvents = parseCrimeRewards(load("raw-crime.jsonl"));
   const roster = loadRoster();
-  if (!roster.count) console.warn("No roster file found; ownership will treat every depositor as faction-owned.");
+  if (!roster.count) console.warn("No roster file found; ownership will treat every copy as faction-owned.");
   META = loadItemMeta();
+  const log = loadLog();
 
-  const tracing = trace(copies, [...dep.events, ...ocEvents], roster.set);
+  const tracing = trace(copies, roster, log);
   const use = usage(act.events);
 
   // Per-item timeline for weapons/armour: every deposit and loan-movement for a
@@ -290,15 +321,12 @@ function loadRoster() {
   for (const e of act.events) pushEv(e, e.type);         // loaned / returned / retrieved / given / took / used
   for (const e of ocEvents) pushEv(e, "oc");             // organized-crime armory rewards
   for (const t of tracing) t.events = (timeline.get(t.item) || []).sort((a, b) => a.ts - b.ts);
+  const logMatched = tracing.reduce((s, t) => s + (t.log ? t.log.length : 0), 0);
 
-  // Attach the manual deposit log (bonuses/perks and manual status) per item.
-  const log = loadLog();
-  let logMatched = 0;
-  for (const t of tracing) {
-    t.log = log.byItem[t.item] || [];
-    if (t.log.length) logMatched += t.log.length;
-    t.forSale = t.log.some((e) => /sale/i.test(e.status));
-  }
+  // pieces: one row per individual weapon/armour piece, NOT grouped by item.
+  // The spreadsheet is the source of truth for colour, perks, owner and status;
+  // inventory copies with no sheet entry are generic faction stock.
+  const pieces = buildPieces(copies, tracing, log, roster);
 
   const depTs = dep.events.map((e) => e.ts);
   const actTs = act.events.map((e) => e.ts);
@@ -308,21 +336,17 @@ function loadRoster() {
     depositWindow: depTs.length ? { from: Math.min(...depTs), to: Math.max(...depTs), count: dep.events.length, unparsed: dep.unparsed } : null,
     actionWindow: actTs.length ? { from: Math.min(...actTs), to: Math.max(...actTs), count: act.events.length, unparsed: act.unparsed } : null,
     roster: { count: roster.count, source: roster.source },
+    pieces,
     tracing,
     usage: use,
   };
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(data));
-  const unknownItems = tracing.filter((t) => t.unknown > 0);
-  const unknownCopies = unknownItems.reduce((s, t) => s + t.unknown, 0);
   console.log(`inventory: ${data.inventory.copies} copies, ${data.inventory.items} items, ${data.inventory.onLoan} on loan`);
-  console.log(`deposits: ${dep.events.length} parsed, ${dep.unparsed} unparsed`);
-  console.log(`actions:  ${act.events.length} parsed, ${act.unparsed} unparsed`);
-  const ownSum = tracing.reduce((s, t) => ({ player: s.player + t.own.player, faction: s.faction + t.own.faction, unknown: s.unknown + t.own.unknown }), { player: 0, faction: 0, unknown: 0 });
-  console.log(`tracing:  ${tracing.length - unknownItems.length}/${tracing.length} items fully sourced, ${unknownCopies} unknown copies across ${unknownItems.length} items`);
-  console.log(`roster:   ${roster.count} members (${roster.source || "none"}) -> player-owned ${ownSum.player}, faction-owned ${ownSum.faction}, unaccounted ${ownSum.unknown} copies`);
+  console.log(`actions:  ${act.events.length} parsed (usage/ledger), ${act.unparsed} unparsed`);
+  const ownSum = tracing.reduce((s, t) => ({ player: s.player + t.own.player, faction: s.faction + t.own.faction }), { player: 0, faction: 0 });
   console.log(`log:      ${log.count} entries (${log.source || "none"}), ${logMatched} matched to current items`);
-  console.log(`oc:       ${ocEvents.length} organized-crime armory rewards parsed from crime feed`);
+  console.log(`ownership (spreadsheet-driven): player-owned ${ownSum.player}, faction-owned ${ownSum.faction} copies (roster ${roster.count})`);
   console.log(`usage:    ${use.rows.length} month/person/item/type rows, ${use.members.length} members`);
   console.log(`wrote ${path.relative(process.cwd(), OUT)} (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB)`);
 })();
