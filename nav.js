@@ -22,6 +22,7 @@
     { href: "/xr", label: "Xanax Runners" },
     { href: "/wars", label: "War Room" },
     { href: "/war", label: "War Analyzer" },
+    { href: "/war-chain-timing", label: "Chain Timing" },
     { href: "/xanax", label: "Xanax Tracker" },
     { href: "/chain", label: "Chain Performance" },
   ];
