@@ -73,6 +73,27 @@
   .flagval{color:var(--flag);font-weight:600}
   .lossval{color:var(--loss);font-weight:600}
   .muted{color:var(--muted)}
+
+  #activityNote{color:var(--muted);font-size:13px}
+  .actcounts{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:12px;margin-bottom:4px}
+  .acttoggle{margin-top:14px;background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:8px 14px;font:inherit;font-size:13.5px;cursor:pointer}
+  .acttoggle:hover{border-color:var(--gold)}
+  .actcount{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--panel-2);display:flex;align-items:center;gap:12px}
+  .actcount.warn{border-color:var(--loss);background:rgba(216,88,78,.10)}
+  .actcount.warn .n{color:var(--loss)}
+  .actcount .n{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+  .actcount .l{color:var(--muted);font-size:12.5px;margin-top:4px}
+  .dot.on{background:var(--win)}
+  .dot.idle{background:var(--warn)}
+  .dot.off{background:var(--muted)}
+  .dot.sblue{background:var(--info)}
+  .dot.sred{background:var(--loss)}
+  .actstat{display:inline-flex;align-items:center;gap:7px}
+  .statetag{font-size:13px;font-weight:600}
+  .c-green{color:var(--win)}
+  .c-blue{color:var(--info)}
+  .c-red{color:var(--loss)}
+  .c-muted{color:var(--muted)}
   @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 <script src="/config.js?v=20260803b"></script>
@@ -92,6 +113,16 @@
       </div>
     </div>
     <p id="warLabel">Loading wars…</p>
+  </div>
+
+  <div class="panel" id="activityPanel" hidden>
+    <div class="paneltop">
+      <h2>Activity</h2>
+      <span id="activityNote"></span>
+    </div>
+    <div class="actcounts" id="actCounts"></div>
+    <button type="button" class="acttoggle" id="actToggle" hidden></button>
+    <div class="tablebox" id="actList" hidden></div>
   </div>
 
   <div class="panel" id="statsPanel">
@@ -394,6 +425,7 @@ async function loadWar(w){
   const end=w.end&&w.end>w.start?w.end:(started?nowSec():w.start+DEFAULT_WAR_SECONDS);
   W={id:w.id,start:w.start,end,opponent:w.opp?.name||"Opponent",started};
   view="all";player=null;zoom=null;sel=null;hits=[];chains=[];incoming=[];loadError="";
+  if(w.ongoing||w.upcoming)startActivity(w);else stopActivity();
   const period=`${fmtDate(W.start)} ${fmtShort(W.start)} to ${fmtShort(W.end)} TCT`;
   if(!started){
     loading=false;
@@ -413,6 +445,75 @@ async function loadWar(w){
   $("warLabel").textContent=`${w.ongoing?"Ongoing war":"War"} against ${W.opponent}, ${period}.`;
   render();
 }
+
+/* ---------- live activity (online / idle / offline) ---------- */
+let members=[], activityTimer=null, activityWar=null, activityUpdated=0, activityError="", activityLoading=false, activityOpen=false;
+const ACT_ORDER={Online:0,Idle:1,Offline:2};
+const ACT_DOT={Online:"on",Idle:"idle",Offline:"off"};
+const STATE_COL={green:"c-green",blue:"c-blue",red:"c-red"};
+
+async function fetchMembers(){
+  const data=await tornFetch('v2/faction/members?striptags=true');
+  if(data.error)throw new Error(data.error.error||'API error');
+  return (data.members||[]).map(m=>({id:m.id,name:m.name,
+    status:m.last_action?.status||"Offline",rel:m.last_action?.relative||"",
+    ts:m.last_action?.timestamp||0,state:m.status?.state||"",
+    stateDesc:m.status?.description||"",color:m.status?.color||""}));
+}
+async function refreshActivity(){
+  if(activityLoading||!activityWar)return;
+  activityLoading=true;
+  try{members=await fetchMembers();activityUpdated=nowSec();activityError="";}
+  catch(e){activityError="Could not load activity: "+e.message;}
+  finally{activityLoading=false;drawActivity();}
+}
+function startActivity(w){
+  stopActivity();
+  activityWar=w;members=[];activityUpdated=0;activityError="";
+  $("activityPanel").hidden=false;
+  drawActivity();
+  refreshActivity();
+  activityTimer=setInterval(()=>{if(!document.hidden)refreshActivity();},120000);
+}
+function stopActivity(){
+  if(activityTimer){clearInterval(activityTimer);activityTimer=null;}
+  activityWar=null;$("activityPanel").hidden=true;
+}
+function drawActivity(){
+  if(!activityWar)return;
+  const note=$("activityNote");
+  if(activityError)note.textContent=activityError;
+  else if(!activityUpdated)note.textContent="Loading activity…";
+  else note.textContent=`Auto-refreshes every 2 minutes · updated ${fmt(activityUpdated)} TCT`;
+  const act={Online:0,Idle:0,Offline:0},st={};
+  members.forEach(m=>{act[m.status]=(act[m.status]||0)+1;if(m.state)st[m.state]=(st[m.state]||0)+1;});
+  const cc=(dot,n,l)=>`<div class="actcount"><span class="dot ${dot}"></span><div><div class="n">${n}</div><div class="l">${l}</div></div></div>`;
+  let ch=cc("on",act.Online,"Online")+cc("idle",act.Idle,"Idle")+cc("off",act.Offline,"Offline");
+  const STATE_TILES=[["Okay","on",true],["Hospital","sred",true],["Traveling","sblue",true],["Abroad","sblue",true],["Jail","sred",false],["Federal","sred",false]];
+  STATE_TILES.forEach(([k,dot,always])=>{if(always||st[k])ch+=cc(dot,st[k]||0,k);});
+  Object.keys(st).forEach(k=>{if(!STATE_TILES.some(t=>t[0]===k))ch+=cc("off",st[k],k);});
+  if(activityWar.ongoing){
+    const offOkay=members.filter(m=>m.status==="Offline"&&m.state==="Okay").length;
+    ch=`<div class="actcount warn"><span class="dot sred"></span><div><div class="n">${offOkay}</div><div class="l">Offline &amp; okay</div></div></div>`+ch;
+  }
+  $("actCounts").innerHTML=ch;
+  const toggle=$("actToggle"),box=$("actList");
+  if(!members.length){toggle.hidden=true;box.hidden=true;box.innerHTML="";return;}
+  toggle.hidden=false;
+  toggle.textContent=(activityOpen?"Hide members":"Show members")+` (${members.length})`;
+  box.hidden=!activityOpen;
+  if(!activityOpen){box.innerHTML="";return;}
+  const rows=members.slice().sort((a,b)=>(ACT_ORDER[a.status]-ACT_ORDER[b.status])||b.ts-a.ts);
+  const head=`<tr><th>Member</th><th>Activity</th><th>Status</th><th>Last action</th></tr>`;
+  const body=rows.map(m=>`<tr><td>${pcell(m.id,m.name)}</td>`+
+    `<td><span class="actstat"><span class="dot ${ACT_DOT[m.status]||"off"}"></span>${esc(m.status)}</span></td>`+
+    `<td><span class="statetag ${STATE_COL[m.color]||"c-muted"}" title="${esc(m.stateDesc)}">${esc(m.state||"—")}</span></td>`+
+    `<td class="muted">${esc(m.rel)}</td></tr>`).join("");
+  box.innerHTML=`<table><thead>${head}</thead><tbody>${body||`<tr><td colspan="4" class="muted">No members found.</td></tr>`}</tbody></table>`;
+  bindNames(box);
+}
+$("actToggle").addEventListener("click",()=>{activityOpen=!activityOpen;drawActivity();});
+addEventListener("visibilitychange",()=>{if(!document.hidden&&activityWar&&nowSec()-activityUpdated>30)refreshActivity();});
 
 /* ---------- wiring ---------- */
 document.querySelectorAll("#viewTabs .tab").forEach(t=>t.addEventListener("click",()=>{view=t.dataset.v;zoom=null;render()}));
