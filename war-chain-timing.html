@@ -27,7 +27,7 @@
   .warpick select{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font:inherit}
   #warLabel{color:var(--muted);font-size:13.5px;margin:10px 0 0}
 
-  .paneltop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;margin-bottom:12px}
+  .paneltop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;margin:14px 0 10px}
 
   .statcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
   .statcard{border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:var(--panel-2)}
@@ -42,30 +42,37 @@
   .legend span{display:inline-flex;align-items:center;gap:6px}
   .dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
   .zoomhint{color:var(--faint);font-size:12px;margin:8px 0 0}
-  .zoombar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;background:rgba(255,215,0,.08);border:1px solid var(--gold);border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:13.5px}
+  .zoombar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;background:rgba(255,215,0,.08);border:1px solid var(--gold);border-radius:8px;padding:9px 14px;margin:0 0 4px;font-size:13.5px}
   .zoombar .zd b{color:var(--text);font-weight:600}
   .zoombar button{margin-left:auto;background:var(--gold);color:#241f00;border:0;border-radius:6px;padding:7px 13px;font:inherit;font-weight:600;cursor:pointer}
   .zoombar button:hover{filter:brightness(1.08)}
 
-  .tabs{display:flex;flex-wrap:wrap;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:4px;margin-bottom:14px}
+  .filtbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .tabs{display:flex;flex-wrap:wrap;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:4px}
   .tab{background:none;border:0;color:var(--muted);padding:8px 14px;border-radius:6px;cursor:pointer;font:inherit;font-size:13.5px;white-space:nowrap}
   .tab:hover{color:var(--text)}
   .tab.active{background:var(--panel);color:var(--text);font-weight:600;box-shadow:var(--shadow)}
   .tab .cnt{color:var(--muted);font-weight:400;margin-left:5px;font-variant-numeric:tabular-nums}
   .tab.active .cnt{color:var(--flag)}
+  .pchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--gold);border-radius:999px;padding:4px 8px 4px 12px;font-size:13.5px;background:rgba(255,215,0,.08)}
+  .pchip b{color:var(--text);font-weight:600}
+  .pchip button{background:none;border:0;color:var(--muted);cursor:pointer;font:inherit;line-height:1;padding:0 2px}
+  .pchip button:hover{color:var(--text)}
 
   .ct table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
   .ct th,.ct td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
   .ct th{color:var(--muted);font-weight:500;font-size:12.5px}
   .ct tbody tr:hover{background:var(--panel-2)}
   .ct tr.clickable{cursor:pointer}
-  .tablebox{overflow:auto;max-height:620px}
+  .tablebox{overflow:auto;max-height:620px;margin-top:16px}
   .num{text-align:right}
-  .name{color:var(--info);text-decoration:none}
+  .name{color:var(--info);cursor:pointer}
   .name:hover{text-decoration:underline}
+  .ext{color:var(--faint);text-decoration:none;font-size:12px}
+  .ext:hover{color:var(--muted)}
   .flagval{color:var(--flag);font-weight:600}
   .lossval{color:var(--loss);font-weight:600}
-  .statemsg{color:var(--muted);padding:28px 4px;text-align:center}
+  .muted{color:var(--muted)}
   @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 <script src="/config.js?v=20260803b"></script>
@@ -93,50 +100,50 @@
   </div>
 
   <div class="panel">
-    <div class="tabs" id="viewTabs">
-      <button type="button" class="tab active" data-v="all">All hits<span class="cnt" id="cnt-all"></span></button>
-      <button type="button" class="tab" data-v="late">Hits at 1:30 or below<span class="cnt" id="cnt-late"></span></button>
-      <button type="button" class="tab" data-v="players">By player<span class="cnt" id="cnt-players"></span></button>
-      <button type="button" class="tab" data-v="bleeders">Bleeders<span class="cnt" id="cnt-bleeders"></span></button>
-      <button type="button" class="tab" data-v="chains">Chains<span class="cnt" id="cnt-chains"></span></button>
+    <div class="filtbar">
+      <div class="tabs" id="viewTabs">
+        <button type="button" class="tab active" data-v="all">All hits<span class="cnt" id="cnt-all"></span></button>
+        <button type="button" class="tab" data-v="late">Hits at 1:30 or below<span class="cnt" id="cnt-late"></span></button>
+        <button type="button" class="tab" data-v="players">By player<span class="cnt" id="cnt-players"></span></button>
+        <button type="button" class="tab" data-v="bleeders">Bleeders<span class="cnt" id="cnt-bleeders"></span></button>
+        <button type="button" class="tab" data-v="chains">Chains<span class="cnt" id="cnt-chains"></span></button>
+      </div>
+      <span id="playerChip"></span>
     </div>
     <div class="paneltop">
       <h2 id="timelineHeading">Timeline</h2>
-      <div class="legend">
-        <span><i class="dot" style="background:var(--hit)"></i>Hit</span>
-        <span><i class="dot" style="background:var(--flag)"></i>1:30 or less left</span>
-        <span><i class="dot" style="background:var(--hit);box-shadow:0 0 0 2px var(--bonus)"></i>Bonus hit</span>
-      </div>
+      <div class="legend" id="legend"></div>
     </div>
     <div class="zoombar" id="zoomBar" hidden></div>
     <div class="svgbox" id="overview"></div>
-    <p class="statemsg" id="timelineMsg" hidden></p>
-    <p class="zoomhint" id="zoomhint" hidden>Drag across the timeline to zoom into a time range.</p>
-    <div class="tablebox" id="tableBox" style="margin-top:16px"></div>
+    <p class="zoomhint" id="zoomhint" hidden>Drag across the timeline to zoom in. Click a player to see just their hits.</p>
+    <div class="tablebox" id="tableBox"></div>
   </div>
 </div>
 
 <script>
 /* ============================================================
    War Chain Timing
-   War window from v2/faction/rankedwars. Chains from
-   v2/faction/chains (real start/end/length/respect). Attacks from
-   v2/faction/attacks, mapped into the chain whose window they fall
-   in. Within a chain, a hit's "time left" is 300 - (gap since the
-   previous hit); 1:30 (90s) or below is what the leader wants to see.
-   The timeline zoom is the only filter; tables follow the zoom.
+   One filter at the top (All hits / 1:30 or below / By player /
+   Bleeders / Chains) drives both the grid and the table. A
+   selected player narrows both to that person. The grid rescales
+   to whatever is shown; dragging sets an explicit zoom.
+   Chains come from v2/faction/chains; attacks are mapped into them.
    ============================================================ */
 const OUR_FACTION_NAME = "Resilience";
 const PROFILE = id => `https://www.torn.com/profiles.php?XID=${id}`;
 const nowSec = () => Math.floor(Date.now() / 1000);
 const BONUS_SET = new Set([10,25,50,100,250,500,1000,2500,5000,10000,25000,50000,100000]);
 const LOST_TO_US = new Set(["Hospitalized","Hospitalised","Mugged","Attacked","Looted"]);
+const DEFAULT_WAR_SECONDS = 8*3600;   // axis span for a war that has not finished / started
 
-let WARS=[], war=null, W=null;
+let WARS=[], war=null, W=null, loading=false, loadError="";
 let hits=[], chains=[], incoming=[];
-let filters={from:null, to:null};
-let viewMode="all";
-let sel=null;
+let view="all";        // all | late | players | bleeders | chains
+let player=null;       // selected attacker id, or null
+let zoom=null;         // {from,to} explicit zoom, or null (auto-fit)
+let sel=null;          // drag selection in progress
+let frameFrom=0, frameTo=0;
 
 /* ---------- helpers ---------- */
 const fmt=t=>new Date(t*1000).toISOString().substr(11,8);
@@ -146,18 +153,16 @@ const mmss=s=>Math.floor(s/60)+":"+String(Math.round(s%60)).padStart(2,"0");
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const comma=n=>Math.round(n).toLocaleString();
-function colour(h){return !h.ok?css("--miss"):h.flagged?css("--flag"):css("--hit")}
 function tickStep(span,w){const o=[15,30,60,120,300,600,900,1800,3600,7200,10800,21600];return o.find(s=>span/s<=w/70)||43200}
 const $=id=>document.getElementById(id);
-const link=(id,name)=>`<a class="name" href="${PROFILE(id)}" target="_blank" rel="noopener">${esc(name)}</a>`;
+const pcell=(id,name)=>`<a class="name" data-p="${id}">${esc(name)}</a> <a class="ext" href="${PROFILE(id)}" target="_blank" rel="noopener" title="Open Torn profile">↗</a>`;
 
 /* ---------- map attacks into real chains ---------- */
 function buildChains(apiChains, atks){
   const cs=apiChains.slice().sort((a,b)=>a.start-b.start)
     .map((c,i)=>({no:i+1,id:c.id,start:c.start,end:c.end,length:c.chain,respect:c.respect,count:0,flagged:0}));
-  const chainHits=atks.filter(a=>a.ok);
   cs.forEach(c=>{
-    const hs=chainHits.filter(a=>a.ended>=c.start&&a.ended<=c.end).sort((a,b)=>a.ended-b.ended||a.chain-b.chain);
+    const hs=atks.filter(a=>a.ended>=c.start&&a.ended<=c.end).sort((a,b)=>a.ended-b.ended||a.chain-b.chain);
     c.count=hs.length;
     let prev=null;
     hs.forEach(a=>{a.chainNo=c.no;if(prev){a.left=300-(a.ended-prev.ended);a.flagged=a.left<=90}prev=a});
@@ -166,154 +171,179 @@ function buildChains(apiChains, atks){
   return cs;
 }
 
-/* ---------- filtering (time window only) ---------- */
-const inFrame=t=>t>=filters.from&&t<=filters.to;
-const framedHits=()=>hits.filter(h=>inFrame(h.ended));
-const framedIncoming=()=>incoming.filter(a=>inFrame(a.ended));
-const wholeFrame=()=>filters.from===W.start&&filters.to===W.end;
+/* ---------- selection of what to show ---------- */
+function baseHits(){return player!=null?hits.filter(h=>h.attacker_id===player):hits}
+function eventsFor(){               // events to plot/list for the current view+player (before frame)
+  if(view==="bleeders")return player!=null?incoming.filter(a=>a.id===player):incoming;
+  const a=baseHits();
+  return view==="late"?a.filter(h=>h.flagged):a;
+}
+function autoRange(){
+  if(view==="chains"&&chains.length)return [Math.min(...chains.map(c=>c.start)),Math.max(...chains.map(c=>c.end))];
+  const ev=eventsFor();
+  if(!ev.length)return [W.start,W.end];
+  let lo=Math.min(...ev.map(e=>e.ended)),hi=Math.max(...ev.map(e=>e.ended));
+  if(hi-lo<120){lo-=120;hi+=120}
+  const pad=Math.max((hi-lo)*0.03,30);
+  return [Math.max(W.start,lo-pad),Math.min(W.end,hi+pad)];
+}
+const inFrame=t=>t>=frameFrom&&t<=frameTo;
+const framedHits=()=>baseHits().filter(h=>inFrame(h.ended));
+const framedIncoming=()=>(player!=null?incoming.filter(a=>a.id===player):incoming).filter(a=>inFrame(a.ended));
+const framedChains=()=>chains.filter(c=>c.end>=frameFrom&&c.start<=frameTo);
 
 /* ---------- render ---------- */
 function render(){
-  if(!hits.length){showMessage("No attacks were recorded for this war.");$("statcards").innerHTML="";return}
-  $("timelineMsg").hidden=true;$("zoomhint").hidden=false;
-  drawStats();drawTimeline();drawZoomBar();drawTabs();renderView();
-  $("timelineHeading").textContent=wholeFrame()?"Timeline: whole war":`Timeline: ${fmt(filters.from)} to ${fmt(filters.to)} TCT`;
+  if(!W)return;
+  [frameFrom,frameTo]=zoom?[zoom.from,zoom.to]:autoRange();
+  drawStats();drawFilterbar();drawLegend();drawTimeline();drawZoomBar();drawTable();
+  $("timelineHeading").textContent=(zoom?"Zoomed: ":"")+`${fmt(frameFrom)} to ${fmt(frameTo)} TCT`;
 }
 
 function card(n,l,flag){return `<div class="statcard"><div class="n${flag?" flag":""}">${n}</div><div class="l">${l}</div></div>`}
 function drawStats(){
-  const F=framedHits(),ok=F.filter(h=>h.ok),late=F.filter(h=>h.flagged);
-  const players=new Set(ok.map(h=>h.attacker_id)).size;
-  const chainsN=chains.filter(c=>c.end>=filters.from&&c.start<=filters.to).length;
-  const resp=ok.reduce((a,h)=>a+h.respect_gain,0);
-  $("statcards").innerHTML=card(ok.length,"chain hits")+card(late.length,"at 1:30 or below",true)+
-    card(players,"players hitting")+card(chainsN,"chains")+card(comma(resp),"respect earned");
+  const fh=framedHits(),ok=fh.length,late=fh.filter(h=>h.flagged).length,resp=fh.reduce((a,h)=>a+h.respect_gain,0);
+  if(player!=null){
+    const inc=framedIncoming();
+    $("statsHeading").textContent=nameOf(player);
+    $("statcards").innerHTML=card(ok,"chain hits")+card(late,"at 1:30 or below",true)+card(comma(resp),"respect earned")+
+      card(comma(inc.reduce((a,x)=>a+x.respect_loss,0)),"respect bled")+card(inc.filter(x=>x.beaten).length,"times beaten");
+    return;
+  }
+  $("statsHeading").textContent="Summary";
+  const players=new Set(fh.map(h=>h.attacker_id)).size;
+  $("statcards").innerHTML=card(ok,"chain hits")+card(late,"at 1:30 or below",true)+
+    card(players,"players hitting")+card(framedChains().length,"chains")+card(comma(resp),"respect earned");
+}
+
+const nameOf=id=>{const h=hits.find(x=>x.attacker_id===id);if(h)return h.attacker_name;const a=incoming.find(x=>x.id===id);return a?a.name:"Player "+id};
+
+function drawFilterbar(){
+  $("cnt-all").textContent=baseHits().length;
+  $("cnt-late").textContent=baseHits().filter(h=>h.flagged).length;
+  $("cnt-players").textContent=new Set(hits.map(h=>h.attacker_id)).size;
+  $("cnt-bleeders").textContent=new Set((player!=null?incoming.filter(a=>a.id===player):incoming).map(a=>a.id)).size;
+  $("cnt-chains").textContent=chains.length;
+  document.querySelectorAll("#viewTabs .tab").forEach(t=>t.classList.toggle("active",t.dataset.v===view));
+  const chip=$("playerChip");
+  if(player!=null){
+    chip.innerHTML=`<span class="pchip">Showing <b>${esc(nameOf(player))}</b> <button type="button" title="Show everyone">✕</button></span>`;
+    chip.querySelector("button").addEventListener("click",()=>{player=null;zoom=null;render()});
+  }else chip.innerHTML="";
+}
+
+function drawLegend(){
+  $("legend").innerHTML=view==="bleeders"
+    ? `<span><i class="dot" style="background:var(--loss)"></i>Respect lost</span>`
+    : `<span><i class="dot" style="background:var(--hit)"></i>Hit</span>`+
+      `<span><i class="dot" style="background:var(--flag)"></i>1:30 or less left</span>`+
+      `<span><i class="dot" style="background:var(--hit);box-shadow:0 0 0 2px var(--bonus)"></i>Bonus hit</span>`;
 }
 
 function drawZoomBar(){
   const z=$("zoomBar");
-  if(wholeFrame()){z.hidden=true;return}
+  if(!zoom){z.hidden=true;return}
   z.hidden=false;
-  z.innerHTML=`<span class="zd">Zoomed in to <b>${fmt(filters.from)}</b> to <b>${fmt(filters.to)}</b> TCT.</span>`;
-  const btn=document.createElement("button");btn.type="button";btn.textContent="Show whole war";
-  btn.addEventListener("click",()=>{filters.from=W.start;filters.to=W.end;render()});
+  z.innerHTML=`<span class="zd">Zoomed in to <b>${fmt(zoom.from)}</b> to <b>${fmt(zoom.to)}</b> TCT.</span>`;
+  const btn=document.createElement("button");btn.type="button";btn.textContent="Clear zoom";
+  btn.addEventListener("click",()=>{zoom=null;render()});
   z.appendChild(btn);
 }
 
-function drawTabs(){
-  const F=framedHits();
-  $("cnt-all").textContent=F.length;
-  $("cnt-late").textContent=F.filter(h=>h.flagged).length;
-  $("cnt-players").textContent=new Set(F.filter(h=>h.ok).map(h=>h.attacker_id)).size;
-  $("cnt-bleeders").textContent=new Set(framedIncoming().map(a=>a.id)).size;
-  $("cnt-chains").textContent=chains.filter(c=>c.end>=filters.from&&c.start<=filters.to).length;
-  document.querySelectorAll("#viewTabs .tab").forEach(t=>t.classList.toggle("active",t.dataset.v===viewMode));
-}
-
-/* ---------- views ---------- */
-function renderView(){
-  if(viewMode==="all")tableHits(framedHits(),"No hits in this time range.",false);
-  else if(viewMode==="late")tableHits(framedHits().filter(h=>h.flagged),"No hits at 1:30 or below in this time range.",true);
-  else if(viewMode==="players")tablePlayers();
-  else if(viewMode==="bleeders")tableBleeders();
-  else tableChains();
-}
-
-function tableHits(rows,emptyMsg,showLeft){
-  const box=$("tableBox");
-  rows=rows.slice().sort((a,b)=>a.ended-b.ended);
-  if(!rows.length){box.innerHTML=`<p class="statemsg">${esc(emptyMsg)}</p>`;return}
-  const head=`<tr><th>Time (TCT)</th><th>Player</th><th>Chain</th><th>Hit no.</th>${showLeft?"<th>Time left</th>":""}<th>Result</th><th>Target</th><th class="num">Respect</th></tr>`;
-  const body=rows.map(h=>{
-    const left=showLeft?`<td><span class="flagval">${h.left!=null?mmss(h.left):""}</span></td>`:"";
-    return `<tr><td>${fmt(h.ended)}</td><td>${link(h.attacker_id,h.attacker_name)}</td><td>${h.chainNo||""}</td><td>${h.chain||""}</td>${left}<td>${esc(h.result)}${h.is_ranked_war?"":" (not war)"}</td><td>${esc(h.defender_name)}</td><td class="num">${h.respect_gain.toFixed(2)}</td></tr>`;
-  }).join("");
-  box.innerHTML=`<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
-}
-
-function tablePlayers(){
-  const box=$("tableBox"),by={};
-  framedHits().forEach(h=>{const b=by[h.attacker_id]||(by[h.attacker_id]={id:h.attacker_id,name:h.attacker_name,ok:0,late:0,resp:0});
-    if(h.ok)b.ok++;if(h.flagged)b.late++;b.resp+=h.respect_gain;});
-  const rows=Object.values(by).sort((a,b)=>b.late-a.late||b.ok-a.ok);
-  if(!rows.length){box.innerHTML=`<p class="statemsg">No attacks in this time range.</p>`;return}
-  const head=`<tr><th>Player</th><th class="num">Hits</th><th class="num">At 1:30 or below</th><th class="num">Respect earned</th></tr>`;
-  const body=rows.map(b=>`<tr><td>${link(b.id,b.name)}</td><td class="num">${b.ok}</td><td class="num ${b.late?"flagval":""}">${b.late}</td><td class="num">${comma(b.resp)}</td></tr>`).join("");
-  box.innerHTML=`<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
-}
-
-function tableBleeders(){
-  const box=$("tableBox"),by={};
-  framedIncoming().forEach(a=>{const b=by[a.id]||(by[a.id]={id:a.id,name:a.name,bled:0,beaten:0});
-    b.bled+=a.respect_loss;if(a.beaten)b.beaten++;});
-  const rows=Object.values(by).sort((a,b)=>b.bled-a.bled||b.beaten-a.beaten);
-  if(!rows.length){box.innerHTML=`<p class="statemsg">No one on our side lost respect in this time range.</p>`;return}
-  const head=`<tr><th>Player</th><th class="num">Respect bled</th><th class="num">Times beaten</th></tr>`;
-  const body=rows.map(b=>`<tr><td>${link(b.id,b.name)}</td><td class="num lossval">${comma(b.bled)}</td><td class="num">${b.beaten}</td></tr>`).join("");
-  box.innerHTML=`<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
-}
-
-function tableChains(){
-  const box=$("tableBox");
-  const rows=chains.filter(c=>c.end>=filters.from&&c.start<=filters.to);
-  if(!rows.length){box.innerHTML=`<p class="statemsg">No chains in this time range.</p>`;return}
-  const head=`<tr><th>Chain</th><th>Start (TCT)</th><th>End (TCT)</th><th class="num">Hits</th><th class="num">At 1:30 or below</th><th class="num">Respect</th></tr>`;
-  const body=rows.map(c=>`<tr class="clickable" data-c="${c.no}"><td>Chain ${c.no}</td><td>${fmt(c.start)}</td><td>${fmt(c.end)}</td><td class="num">${c.count}</td><td class="num ${c.flagged?"flagval":""}">${c.flagged}</td><td class="num">${comma(c.respect)}</td></tr>`).join("");
-  box.innerHTML=`<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
-  box.querySelectorAll("tr.clickable").forEach(tr=>tr.addEventListener("click",()=>{
-    const c=chains.find(x=>x.no===+tr.dataset.c);if(!c)return;
-    filters.from=Math.max(W.start,c.start-60);filters.to=Math.min(W.end,c.end+60);viewMode="all";render();
-  }));
-}
-
 /* ---------- timeline ---------- */
-function hitDot(h){return {t:h.ended,col:colour(h),big:h.flagged,ring:h.bonus,label:h.flagged?mmss(h.left):null,
-  title:`${esc(h.attacker_name)} at ${fmt(h.ended)}\n${h.result}${h.chain?", chain "+h.chain:""}${h.bonus?" (bonus)":""}${h.left!=null?"\n"+mmss(h.left)+" left":""}`};}
-function bleedDot(a){return {t:a.ended,col:css("--loss"),big:true,ring:false,label:null,
-  title:`${esc(a.name)} at ${fmt(a.ended)}\nlost ${a.respect_loss.toFixed(2)} respect`};}
-// the grid shows exactly what the current tab shows
-function timelineDots(){
-  if(viewMode==="late")return framedHits().filter(h=>h.flagged).map(hitDot);
-  if(viewMode==="bleeders")return framedIncoming().map(bleedDot);
-  return framedHits().map(hitDot);
-}
 function drawTimeline(){
-  const box=$("overview"),w=Math.max(box.clientWidth,600),pad=10,F=filters.from,T=filters.to;
-  const x=t=>pad+(t-F)/(T-F)*(w-2*pad);
-  const px5=300/(T-F)*(w-2*pad);
-  const r=Math.max(4,Math.min(14,px5/10)),gap=2*r+2;
-  const dots=timelineDots();
-  const stack={};dots.forEach(d=>{const k=Math.round(x(d.t)/gap);d._y=stack[k]=(stack[k]||0)+1});
-  const maxStack=Math.max(1,...Object.values(stack));
-  const top=10,plotH=Math.max(190,Math.min(460,maxStack*gap+24)),h=top+plotH+26,base=top+plotH-8;
-  const labelHits=px5>=90;   // when zoomed right in, write the time-left on late hits
+  const box=$("overview"),w=Math.max(box.clientWidth,600),pad=10,F=frameFrom,T=frameTo;
+  const x=t=>pad+(t-F)/(T-F||1)*(w-2*pad);
+  const px5=300/(T-F||1)*(w-2*pad);
   const step=tickStep(T-F,w),firstTick=Math.ceil(F/step)*step;
+  const top=10;let plotH,base,dots=[];
+  if(view==="chains"){
+    plotH=120;
+  }else{
+    const r=Math.max(4,Math.min(14,px5/10)),gap=2*r+2;
+    const src=view==="bleeders"?framedIncoming():framedHits().filter(h=>view!=="late"||h.flagged);
+    dots=src.map(d=>view==="bleeders"?{t:d.ended,col:css("--loss"),big:true,ring:false,label:null,title:`${esc(d.name)} at ${fmt(d.ended)}\nlost ${d.respect_loss.toFixed(2)} respect`}
+      :{t:d.ended,col:d.flagged?css("--flag"):css("--hit"),big:d.flagged,ring:d.bonus,label:d.flagged?mmss(d.left):null,
+        title:`${esc(d.attacker_name)} at ${fmt(d.ended)}\n${d.result}${d.chain?", chain "+d.chain:""}${d.bonus?" (bonus)":""}${d.left!=null?"\n"+mmss(d.left)+" left":""}`,pid:d.attacker_id});
+    const stack={};dots.forEach(d=>{const k=Math.round(x(d.t)/gap);d._y=stack[k]=(stack[k]||0)+1});
+    const maxStack=Math.max(1,...Object.values(stack));
+    plotH=Math.max(170,Math.min(460,maxStack*gap+24));
+    dots.forEach(d=>{d._r=d.big?r+1.5:r;d._cy=0});
+    base=top+plotH-8;dots.forEach(d=>d._cy=base-(d._y-1)*gap);
+    var labelHits=px5>=90,r0=r;
+  }
+  const h=top+plotH+26;
   let s=`<svg width="${w}" height="${h}" role="img" aria-label="War chain timeline">`;
-  // vertical gridlines, one per time axis tick
   for(let t=firstTick;t<=T;t+=step)s+=`<line x1="${x(t)}" x2="${x(t)}" y1="${top}" y2="${top+plotH}" stroke="${css("--line")}" stroke-opacity=".5"/>`;
-  dots.forEach(d=>{const cy=base-(d._y-1)*gap,rr=d.big?r+1.5:r;
-    s+=`<circle cx="${x(d.t)}" cy="${cy}" r="${rr}" fill="${d.col}"${d.ring?` stroke="${css("--bonus")}" stroke-width="2.5"`:""}><title>${d.title}</title></circle>`;
-    if(labelHits&&d.label)s+=`<text x="${x(d.t)}" y="${cy-rr-3}" text-anchor="middle" style="fill:${css("--flag")};font-weight:600">${d.label}</text>`;});
+  if(view==="chains"){
+    const bh=30,y=top+(plotH-bh)/2;
+    framedChains().forEach((c,i)=>{const x0=Math.max(x(c.start),pad),x1=Math.min(x(c.end),w-pad),bw=Math.max(x1-x0,2);
+      s+=`<rect x="${x0}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="${css("--hit")}" fill-opacity=".30" stroke="${css("--hit")}" data-chain="${c.no}" style="cursor:pointer"><title>Chain ${c.no}: ${c.count} hits, ${comma(c.respect)} respect</title></rect>`;
+      if(bw>=26)s+=`<text x="${x0+6}" y="${y+19}" style="fill:${css("--text")};font-weight:600;pointer-events:none">${c.no}${bw>=90?`  ·  ${c.count} hits`:""}</text>`;});
+  }else{
+    dots.forEach(d=>{s+=`<circle cx="${x(d.t)}" cy="${d._cy}" r="${d._r}" fill="${d.col}"${d.ring?` stroke="${css("--bonus")}" stroke-width="2.5"`:""}${d.pid!=null?` data-p="${d.pid}" style="cursor:pointer"`:""}><title>${d.title}</title></circle>`;
+      if(labelHits&&d.label)s+=`<text x="${x(d.t)}" y="${d._cy-d._r-3}" text-anchor="middle" style="fill:${css("--flag")};font-weight:600">${d.label}</text>`;});
+  }
   s+=`<line x1="${pad}" x2="${w-pad}" y1="${top+plotH}" y2="${top+plotH}" stroke="${css("--line")}"/>`;
   for(let t=firstTick;t<=T;t+=step)s+=`<text x="${x(t)}" y="${h-7}" text-anchor="middle">${step<60?fmt(t):fmt(t).slice(0,5)}</text>`;
   if(sel)s+=`<rect x="${Math.min(sel.a,sel.b)}" y="${top}" width="${Math.abs(sel.b-sel.a)}" height="${plotH}" fill="${css("--gold")}" fill-opacity=".16" stroke="${css("--gold")}" stroke-dasharray="4 3"/>`;
   s+=`</svg>`;box.innerHTML=s;
 
   const svg=box.querySelector("svg");
+  svg.querySelectorAll("circle[data-p]").forEach(c=>c.addEventListener("click",e=>{e.stopPropagation();selectPlayer(+c.dataset.p)}));
+  svg.querySelectorAll("rect[data-chain]").forEach(rc=>rc.addEventListener("click",e=>{e.stopPropagation();drillChain(+rc.dataset.chain)}));
   const rect=()=>svg.getBoundingClientRect();
   const toT=px=>Math.min(T,Math.max(F,F+(px-pad)/(w-2*pad)*(T-F))),px=e=>e.clientX-rect().left;
-  svg.addEventListener("pointerdown",e=>{sel={a:px(e),b:px(e)};svg.setPointerCapture(e.pointerId)});
+  svg.addEventListener("pointerdown",e=>{if(e.target.tagName==="circle"||e.target.getAttribute("data-chain"))return;sel={a:px(e),b:px(e)};svg.setPointerCapture(e.pointerId)});
   svg.addEventListener("pointermove",e=>{if(!sel)return;sel.b=px(e);drawTimeline()});
-  svg.addEventListener("pointerup",e=>{if(!sel)return;const a=toT(sel.a),b=toT(px(e));const dragged=Math.abs(b-a)>=60;sel=null;
-    if(dragged){filters.from=Math.min(a,b);filters.to=Math.max(a,b);render()}else drawTimeline();});
+  svg.addEventListener("pointerup",e=>{if(!sel)return;const a=toT(sel.a),b=toT(px(e));const dragged=Math.abs(b-a)>=30;sel=null;
+    if(dragged){zoom={from:Math.min(a,b),to:Math.max(a,b)};render()}else drawTimeline();});
 }
 
-function showMessage(msg){
-  $("overview").innerHTML="";
-  const m=$("timelineMsg");m.textContent=msg;m.hidden=false;
-  $("zoomhint").hidden=true;$("zoomBar").hidden=true;
-  $("tableBox").innerHTML=`<p class="statemsg">${esc(msg)}</p>`;
+/* ---------- table ---------- */
+function bindNames(box){box.querySelectorAll(".name").forEach(b=>b.addEventListener("click",()=>selectPlayer(+b.dataset.p)))}
+function drawTable(){
+  const box=$("tableBox");
+  if(loading){box.innerHTML=`<p class="muted" style="padding:20px 2px">Loading attacks…</p>`;return}
+  if(loadError){box.innerHTML=`<p class="muted" style="padding:20px 2px">${esc(loadError)}</p>`;return}
+  if(view==="players")return tablePlayers(box);
+  if(view==="bleeders")return tableBleeders(box);
+  if(view==="chains")return tableChains(box);
+  const rows=framedHits().filter(h=>view!=="late"||h.flagged).sort((a,b)=>a.ended-b.ended);
+  const showLeft=view==="late",showPlayer=player==null;
+  const head=`<tr><th>Time (TCT)</th>${showPlayer?"<th>Player</th>":""}<th>Chain</th><th>Hit no.</th>${showLeft?"<th>Time left</th>":""}<th>Result</th><th>Target</th><th class="num">Respect</th></tr>`;
+  const body=rows.map(h=>`<tr><td>${fmt(h.ended)}</td>${showPlayer?`<td>${pcell(h.attacker_id,h.attacker_name)}</td>`:""}<td>${h.chainNo||""}</td><td>${h.chain||""}</td>${showLeft?`<td class="flagval">${h.left!=null?mmss(h.left):""}</td>`:""}<td>${esc(h.result)}${h.is_ranked_war?"":" (not war)"}</td><td>${esc(h.defender_name)}</td><td class="num">${h.respect_gain.toFixed(2)}</td></tr>`).join("");
+  box.innerHTML=`<table><thead>${head}</thead><tbody>${body||`<tr><td colspan="8" class="muted">${W&&!W.started?"No hits yet. The war has not started.":"No hits in this selection."}</td></tr>`}</tbody></table>`;
+  bindNames(box);
 }
+function tablePlayers(box){
+  const by={};framedHits().forEach(h=>{const b=by[h.attacker_id]||(by[h.attacker_id]={id:h.attacker_id,name:h.attacker_name,ok:0,late:0,resp:0});b.ok++;if(h.flagged)b.late++;b.resp+=h.respect_gain});
+  const rows=Object.values(by).sort((a,b)=>b.late-a.late||b.ok-a.ok);
+  const head=`<tr><th>Player</th><th class="num">Hits</th><th class="num">At 1:30 or below</th><th class="num">Respect earned</th></tr>`;
+  const body=rows.map(b=>`<tr class="clickable" data-p="${b.id}"><td>${pcell(b.id,b.name)}</td><td class="num">${b.ok}</td><td class="num ${b.late?"flagval":""}">${b.late}</td><td class="num">${comma(b.resp)}</td></tr>`).join("");
+  box.innerHTML=`<table><thead>${head}</thead><tbody>${body||`<tr><td colspan="4" class="muted">${W&&!W.started?"No hits yet. The war has not started.":"No hits in this selection."}</td></tr>`}</tbody></table>`;
+  box.querySelectorAll("tr.clickable").forEach(tr=>tr.addEventListener("click",e=>{if(!e.target.closest(".ext"))selectPlayer(+tr.dataset.p)}));
+  bindNames(box);
+}
+function tableBleeders(box){
+  const by={};framedIncoming().forEach(a=>{const b=by[a.id]||(by[a.id]={id:a.id,name:a.name,bled:0,beaten:0});b.bled+=a.respect_loss;if(a.beaten)b.beaten++});
+  const rows=Object.values(by).sort((a,b)=>b.bled-a.bled||b.beaten-a.beaten);
+  const head=`<tr><th>Player</th><th class="num">Respect bled</th><th class="num">Times beaten</th></tr>`;
+  const body=rows.map(b=>`<tr class="clickable" data-p="${b.id}"><td>${pcell(b.id,b.name)}</td><td class="num lossval">${comma(b.bled)}</td><td class="num">${b.beaten}</td></tr>`).join("");
+  box.innerHTML=`<table><thead>${head}</thead><tbody>${body||`<tr><td colspan="3" class="muted">${W&&!W.started?"Nothing yet. The war has not started.":"No one on our side lost respect here."}</td></tr>`}</tbody></table>`;
+  box.querySelectorAll("tr.clickable").forEach(tr=>tr.addEventListener("click",e=>{if(!e.target.closest(".ext"))selectPlayer(+tr.dataset.p)}));
+  bindNames(box);
+}
+function tableChains(box){
+  const rows=framedChains();
+  const head=`<tr><th>Chain</th><th>Start (TCT)</th><th>End (TCT)</th><th class="num">Hits</th><th class="num">At 1:30 or below</th><th class="num">Respect</th></tr>`;
+  const body=rows.map(c=>`<tr class="clickable" data-c="${c.no}"><td>Chain ${c.no}</td><td>${fmt(c.start)}</td><td>${fmt(c.end)}</td><td class="num">${c.count}</td><td class="num ${c.flagged?"flagval":""}">${c.flagged}</td><td class="num">${comma(c.respect)}</td></tr>`).join("");
+  box.innerHTML=`<table><thead>${head}</thead><tbody>${body||`<tr><td colspan="6" class="muted">${W&&!W.started?"No chains yet. The war has not started.":"No chains here."}</td></tr>`}</tbody></table>`;
+  box.querySelectorAll("tr.clickable").forEach(tr=>tr.addEventListener("click",()=>drillChain(+tr.dataset.c)));
+}
+
+function selectPlayer(id){player=id;zoom=null;if(view==="chains")view="all";render()}
+function drillChain(no){const c=chains.find(x=>x.no===no);if(!c)return;view="all";zoom={from:Math.max(W.start,c.start-60),to:Math.min(W.end,c.end+60)};render()}
 
 /* ---------- data ---------- */
 async function fetchWars(){
@@ -328,7 +358,6 @@ async function fetchWars(){
       upcoming:w.start>nowSec()};
   }).sort((a,b)=>b.start-a.start);
 }
-
 async function pageAll(firstUrl){
   let url=firstUrl;const out=[];
   while(url){
@@ -340,7 +369,6 @@ async function pageAll(firstUrl){
   }
   return out;
 }
-
 async function fetchWarData(w){
   const end=w.end&&w.end>w.start?w.end:nowSec();
   const [rawAttacks,apiChains]=await Promise.all([
@@ -351,42 +379,44 @@ async function fetchWarData(w){
   const atks=rawAttacks
     .filter(a=>a.attacker?.faction?.id===ours&&a.attacker?.id&&(a.chain||0)>0)
     .map(a=>({ended:a.ended,attacker_id:a.attacker.id,attacker_name:a.attacker.name,
-      defender_name:a.defender?.name||"Unknown",result:a.result,chain:a.chain||0,ok:true,
+      defender_name:a.defender?.name||"Unknown",result:a.result,chain:a.chain||0,
       bonus:BONUS_SET.has(a.chain||0),is_ranked_war:a.is_ranked_war?1:0,respect_gain:a.respect_gain||0}))
     .sort((a,b)=>a.ended-b.ended);
   const inc=rawAttacks
     .filter(a=>a.defender?.faction?.id===ours&&a.defender?.id)
-    .map(a=>({ended:a.ended,id:a.defender.id,name:a.defender.name,
-      respect_loss:a.respect_loss||0,beaten:LOST_TO_US.has(a.result)}));
+    .map(a=>({ended:a.ended,id:a.defender.id,name:a.defender.name,respect_loss:a.respect_loss||0,beaten:LOST_TO_US.has(a.result)}));
   return{attacks:atks,apiChains,incoming:inc};
 }
 
 async function loadWar(w){
-  war=w;W={id:w.id,start:w.start,end:w.end&&w.end>w.start?w.end:nowSec(),opponent:w.opp?.name||"Opponent"};
-  filters={from:W.start,to:W.end};viewMode="all";sel=null;hits=[];chains=[];incoming=[];
+  war=w;
+  const started=!w.upcoming;
+  const end=w.end&&w.end>w.start?w.end:(started?nowSec():w.start+DEFAULT_WAR_SECONDS);
+  W={id:w.id,start:w.start,end,opponent:w.opp?.name||"Opponent",started};
+  view="all";player=null;zoom=null;sel=null;hits=[];chains=[];incoming=[];loadError="";
   const period=`${fmtDate(W.start)} ${fmtShort(W.start)} to ${fmtShort(W.end)} TCT`;
-  if(w.upcoming){
+  if(!started){
+    loading=false;
     $("warLabel").textContent=`Upcoming war against ${W.opponent}. Starts ${fmtDate(w.start)} at ${fmtShort(w.start)} TCT.`;
-    $("statcards").innerHTML="";$("timelineHeading").textContent="Timeline";
-    showMessage(`This war has not started yet. It begins ${fmtDate(w.start)} at ${fmtShort(w.start)} TCT.`);
+    render();
     return;
   }
-  $("warLabel").textContent=`Loading attacks for the war against ${W.opponent}…`;
-  showMessage("Loading attacks…");$("statcards").innerHTML="";
+  loading=true;
+  $("warLabel").textContent=`Loading the war against ${W.opponent}…`;
+  render();
   let data;
   try{data=await fetchWarData(w);}
-  catch(e){$("warLabel").textContent="Could not load this war: "+e.message;showMessage("Could not load this war: "+e.message);return;}
+  catch(e){if(war!==w)return;loading=false;loadError="Could not load this war: "+e.message;$("warLabel").textContent=loadError;render();return;}
   if(war!==w)return;
-  incoming=data.incoming;
-  hits=data.attacks;
-  chains=buildChains(data.apiChains,hits);
+  loading=false;
+  incoming=data.incoming;hits=data.attacks;chains=buildChains(data.apiChains,hits);
   $("warLabel").textContent=`${w.ongoing?"Ongoing war":"War"} against ${W.opponent}, ${period}.`;
   render();
 }
 
 /* ---------- wiring ---------- */
-document.querySelectorAll("#viewTabs .tab").forEach(t=>t.addEventListener("click",()=>{viewMode=t.dataset.v;if(hits.length){drawTabs();drawTimeline();renderView()}}));
-let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(hits.length)drawTimeline()},150)});
+document.querySelectorAll("#viewTabs .tab").forEach(t=>t.addEventListener("click",()=>{view=t.dataset.v;zoom=null;render()}));
+let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(W)drawTimeline()},150)});
 
 (async function init(){
   if(typeof tornFetch!=="function"){await new Promise(r=>addEventListener("DOMContentLoaded",r,{once:true}));}
@@ -400,9 +430,7 @@ let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(hit
     const tag=w.upcoming?"Upcoming: ":w.ongoing?"Ongoing: ":"";
     return `<option value="${i}">${tag}vs ${esc(w.opp?.name||"Opponent")} (${fmtDate(w.start)})</option>`;
   }).join("");
-  let def=wars.findIndex(w=>w.ongoing);
-  if(def<0)def=wars.findIndex(w=>w.upcoming);
-  if(def<0)def=0;
+  let def=wars.findIndex(w=>w.ongoing);if(def<0)def=wars.findIndex(w=>w.upcoming);if(def<0)def=0;
   selEl.value=String(def);
   selEl.addEventListener("change",()=>loadWar(wars[+selEl.value]));
   loadWar(wars[def]);
