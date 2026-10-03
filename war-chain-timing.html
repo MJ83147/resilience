@@ -93,6 +93,13 @@
   </div>
 
   <div class="panel">
+    <div class="tabs" id="viewTabs">
+      <button type="button" class="tab active" data-v="all">All hits<span class="cnt" id="cnt-all"></span></button>
+      <button type="button" class="tab" data-v="late">Hits at 1:30 or below<span class="cnt" id="cnt-late"></span></button>
+      <button type="button" class="tab" data-v="players">By player<span class="cnt" id="cnt-players"></span></button>
+      <button type="button" class="tab" data-v="bleeders">Bleeders<span class="cnt" id="cnt-bleeders"></span></button>
+      <button type="button" class="tab" data-v="chains">Chains<span class="cnt" id="cnt-chains"></span></button>
+    </div>
     <div class="paneltop">
       <h2 id="timelineHeading">Timeline</h2>
       <div class="legend">
@@ -105,17 +112,7 @@
     <div class="svgbox" id="overview"></div>
     <p class="statemsg" id="timelineMsg" hidden></p>
     <p class="zoomhint" id="zoomhint" hidden>Drag across the timeline to zoom into a time range.</p>
-  </div>
-
-  <div class="panel">
-    <div class="tabs" id="viewTabs">
-      <button type="button" class="tab active" data-v="all">All hits<span class="cnt" id="cnt-all"></span></button>
-      <button type="button" class="tab" data-v="late">Hits at 1:30 or below<span class="cnt" id="cnt-late"></span></button>
-      <button type="button" class="tab" data-v="players">By player<span class="cnt" id="cnt-players"></span></button>
-      <button type="button" class="tab" data-v="bleeders">Bleeders<span class="cnt" id="cnt-bleeders"></span></button>
-      <button type="button" class="tab" data-v="chains">Chains<span class="cnt" id="cnt-chains"></span></button>
-    </div>
-    <div class="tablebox" id="tableBox"></div>
+    <div class="tablebox" id="tableBox" style="margin-top:16px"></div>
   </div>
 </div>
 
@@ -270,13 +267,23 @@ function tableChains(){
 }
 
 /* ---------- timeline ---------- */
+function hitDot(h){return {t:h.ended,col:colour(h),big:h.flagged,ring:h.bonus,label:h.flagged?mmss(h.left):null,
+  title:`${esc(h.attacker_name)} at ${fmt(h.ended)}\n${h.result}${h.chain?", chain "+h.chain:""}${h.bonus?" (bonus)":""}${h.left!=null?"\n"+mmss(h.left)+" left":""}`};}
+function bleedDot(a){return {t:a.ended,col:css("--loss"),big:true,ring:false,label:null,
+  title:`${esc(a.name)} at ${fmt(a.ended)}\nlost ${a.respect_loss.toFixed(2)} respect`};}
+// the grid shows exactly what the current tab shows
+function timelineDots(){
+  if(viewMode==="late")return framedHits().filter(h=>h.flagged).map(hitDot);
+  if(viewMode==="bleeders")return framedIncoming().map(bleedDot);
+  return framedHits().map(hitDot);
+}
 function drawTimeline(){
   const box=$("overview"),w=Math.max(box.clientWidth,600),pad=10,F=filters.from,T=filters.to;
   const x=t=>pad+(t-F)/(T-F)*(w-2*pad);
   const px5=300/(T-F)*(w-2*pad);
   const r=Math.max(4,Math.min(14,px5/10)),gap=2*r+2;
-  const vis=framedHits();
-  const stack={};vis.forEach(h=>{const k=Math.round(x(h.ended)/gap);h._y=stack[k]=(stack[k]||0)+1});
+  const dots=timelineDots();
+  const stack={};dots.forEach(d=>{const k=Math.round(x(d.t)/gap);d._y=stack[k]=(stack[k]||0)+1});
   const maxStack=Math.max(1,...Object.values(stack));
   const top=10,plotH=Math.max(190,Math.min(460,maxStack*gap+24)),h=top+plotH+26,base=top+plotH-8;
   const labelHits=px5>=90;   // when zoomed right in, write the time-left on late hits
@@ -284,9 +291,9 @@ function drawTimeline(){
   let s=`<svg width="${w}" height="${h}" role="img" aria-label="War chain timeline">`;
   // vertical gridlines, one per time axis tick
   for(let t=firstTick;t<=T;t+=step)s+=`<line x1="${x(t)}" x2="${x(t)}" y1="${top}" y2="${top+plotH}" stroke="${css("--line")}" stroke-opacity=".5"/>`;
-  vis.forEach(h=>{const cy=base-(h._y-1)*gap,rr=h.flagged?r+1.5:r;
-    s+=`<circle cx="${x(h.ended)}" cy="${cy}" r="${rr}" fill="${colour(h)}"${h.bonus?` stroke="${css("--bonus")}" stroke-width="2.5"`:""}><title>${esc(h.attacker_name)} at ${fmt(h.ended)}\n${h.result}${h.chain?", chain "+h.chain:""}${h.bonus?" (bonus)":""}${h.left!=null?"\n"+mmss(h.left)+" left":""}</title></circle>`;
-    if(labelHits&&h.flagged)s+=`<text x="${x(h.ended)}" y="${cy-rr-3}" text-anchor="middle" style="fill:${css("--flag")};font-weight:600">${mmss(h.left)}</text>`;});
+  dots.forEach(d=>{const cy=base-(d._y-1)*gap,rr=d.big?r+1.5:r;
+    s+=`<circle cx="${x(d.t)}" cy="${cy}" r="${rr}" fill="${d.col}"${d.ring?` stroke="${css("--bonus")}" stroke-width="2.5"`:""}><title>${d.title}</title></circle>`;
+    if(labelHits&&d.label)s+=`<text x="${x(d.t)}" y="${cy-rr-3}" text-anchor="middle" style="fill:${css("--flag")};font-weight:600">${d.label}</text>`;});
   s+=`<line x1="${pad}" x2="${w-pad}" y1="${top+plotH}" y2="${top+plotH}" stroke="${css("--line")}"/>`;
   for(let t=firstTick;t<=T;t+=step)s+=`<text x="${x(t)}" y="${h-7}" text-anchor="middle">${step<60?fmt(t):fmt(t).slice(0,5)}</text>`;
   if(sel)s+=`<rect x="${Math.min(sel.a,sel.b)}" y="${top}" width="${Math.abs(sel.b-sel.a)}" height="${plotH}" fill="${css("--gold")}" fill-opacity=".16" stroke="${css("--gold")}" stroke-dasharray="4 3"/>`;
@@ -378,7 +385,7 @@ async function loadWar(w){
 }
 
 /* ---------- wiring ---------- */
-document.querySelectorAll("#viewTabs .tab").forEach(t=>t.addEventListener("click",()=>{viewMode=t.dataset.v;if(hits.length){drawTabs();renderView()}}));
+document.querySelectorAll("#viewTabs .tab").forEach(t=>t.addEventListener("click",()=>{viewMode=t.dataset.v;if(hits.length){drawTabs();drawTimeline();renderView()}}));
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(hits.length)drawTimeline()},150)});
 
 (async function init(){
