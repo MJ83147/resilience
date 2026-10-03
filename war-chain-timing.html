@@ -186,6 +186,11 @@ const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim
 const comma=n=>Math.round(n).toLocaleString();
 function tickStep(span,w){const o=[15,30,60,120,300,600,900,1800,3600,7200,10800,21600];return o.find(s=>span/s<=w/70)||43200}
 const $=id=>document.getElementById(id);
+/* localStorage cache so a reload shows the last data at once instead of a
+   blank page, and a failed live refresh keeps the saved data on screen. */
+const CACHE_PREFIX="wct:";
+function cacheGet(k){try{return JSON.parse(localStorage.getItem(CACHE_PREFIX+k));}catch(e){return null}}
+function cacheSet(k,v){try{localStorage.setItem(CACHE_PREFIX+k,JSON.stringify(v));}catch(e){}}
 const pcell=(id,name)=>`<a class="name" data-p="${id}">${esc(name)}</a> <a class="ext" href="${PROFILE(id)}" target="_blank" rel="noopener" title="Open Torn profile">↗</a>`;
 
 /* ---------- map attacks into real chains ---------- */
@@ -433,16 +438,32 @@ async function loadWar(w){
     render();
     return;
   }
-  loading=true;
-  $("warLabel").textContent=`Loading the war against ${W.opponent}…`;
-  render();
+  const label=`${w.ongoing?"Ongoing war":"War"} against ${W.opponent}, ${period}`;
+  const cached=cacheGet("war:"+w.id);
+  if(cached&&Array.isArray(cached.attacks)){
+    loading=false;
+    incoming=cached.incoming||[];hits=cached.attacks;chains=buildChains(cached.apiChains||[],hits);
+    $("warLabel").textContent=`${label}. Showing saved data from ${fmt(cached.ts)} TCT, refreshing…`;
+    render();
+  }else{
+    loading=true;
+    $("warLabel").textContent=`Loading the war against ${W.opponent}…`;
+    render();
+  }
   let data;
   try{data=await fetchWarData(w);}
-  catch(e){if(war!==w)return;loading=false;loadError="Could not load this war: "+e.message;$("warLabel").textContent=loadError;render();return;}
+  catch(e){
+    if(war!==w)return;
+    loading=false;
+    if(hits.length){$("warLabel").textContent=`${label}. Live refresh failed (${e.message}); showing saved data.`;}
+    else{loadError="Could not load this war: "+e.message;$("warLabel").textContent=loadError;}
+    render();return;
+  }
   if(war!==w)return;
   loading=false;
   incoming=data.incoming;hits=data.attacks;chains=buildChains(data.apiChains,hits);
-  $("warLabel").textContent=`${w.ongoing?"Ongoing war":"War"} against ${W.opponent}, ${period}.`;
+  cacheSet("war:"+w.id,{ts:nowSec(),attacks:data.attacks,apiChains:data.apiChains,incoming:data.incoming});
+  $("warLabel").textContent=`${label}.`;
   render();
 }
 
@@ -463,13 +484,16 @@ async function fetchMembers(){
 async function refreshActivity(){
   if(activityLoading||!activityWar)return;
   activityLoading=true;
-  try{members=await fetchMembers();activityUpdated=nowSec();activityError="";}
+  try{members=await fetchMembers();activityUpdated=nowSec();activityError="";cacheSet("members",{ts:activityUpdated,members});}
   catch(e){activityError="Could not load activity: "+e.message;}
   finally{activityLoading=false;drawActivity();}
 }
 function startActivity(w){
   stopActivity();
-  activityWar=w;members=[];activityUpdated=0;activityError="";
+  activityWar=w;activityError="";
+  const cm=cacheGet("members");
+  if(cm&&Array.isArray(cm.members)){members=cm.members;activityUpdated=cm.ts||0;}
+  else{members=[];activityUpdated=0;}
   $("activityPanel").hidden=false;
   drawActivity();
   refreshActivity();

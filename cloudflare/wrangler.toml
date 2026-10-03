@@ -1,0 +1,13 @@
+name = "torn-proxy"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Bind to your own domain. Replace with your zone and the hostname you want.
+# You can also skip this and just use the free torn-proxy.<account>.workers.dev URL.
+# [[routes]]
+# pattern = "torn-proxy.example.com/*"
+# zone_name = "example.com"
+
+# TORN_KEYS is a SECRET, not set here. Add it with:
+#   npx wrangler secret put TORN_KEYS
+# (or in the dashboard: Worker > Settings > Variables and Secrets)

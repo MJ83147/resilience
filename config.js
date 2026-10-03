@@ -12,12 +12,13 @@ const CONFIG = {
   // Wars Apps Script: admin checks, war data, and (once deployed) the Torn proxy.
   SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwIL60E_q7Qtv9AAXJk9FxvU4Wbq6JyI63M9xFNXA9w8wnx4pZNx0Vbg6L7KdmhEe-Mgw/exec',
 
-  // Set true after the ?action=torn proxy is added to the Apps Script.
-  USE_PROXY: false,
+  // Cloudflare Worker Torn proxy (cloudflare/worker.js). All Torn calls go
+  // through it; keys live in the Worker's TORN_KEYS secret, so none is
+  // exposed here.
+  WORKER_URL: 'https://torn-proxy.systoned.workers.dev',
 
-  // TEMPORARY direct-call key, used only while USE_PROXY is false.
-  // Delete this line when USE_PROXY goes true.
-  apiKey: 'Ai7FeouMaJd9ufVr'
+  // Legacy Apps Script ?action=torn proxy. Superseded by WORKER_URL.
+  USE_PROXY: false
 };
 
 // Fetch a Torn API path, e.g. tornFetch('v2/faction/basic').
@@ -29,6 +30,12 @@ async function tornFetch(path) {
     .replace(/^\//, '')
     .replace(/([?&])key=[^&]*&?/, '$1')
     .replace(/[?&]$/, '');
+
+  if (CONFIG.WORKER_URL) {
+    const wsep = CONFIG.WORKER_URL.indexOf('?') > -1 ? '&' : '?';
+    const r = await fetch(CONFIG.WORKER_URL + wsep + 'path=' + encodeURIComponent(path));
+    return r.json();
+  }
 
   if (CONFIG.USE_PROXY) {
     const r = await fetch(CONFIG.SCRIPT_URL + '?action=torn&path=' + encodeURIComponent(path));
